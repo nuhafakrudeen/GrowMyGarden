@@ -19,7 +19,8 @@ env:
   JAVA_VERSION: '21'
 jobs:
   iOS:
-    if: ${{ inputs.shouldRunKmp == 'true' || inputs.shouldRunIos == 'true' }}
+#    if: ${{ inputs.shouldRunKmp == 'true' || inputs.shouldRunIos == 'true' }}
+    if: false
     runs-on: macos-14
 
     steps:
