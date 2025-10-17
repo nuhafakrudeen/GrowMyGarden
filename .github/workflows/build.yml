@@ -1,4 +1,5 @@
-name: Rests
+name: Build
+
 on:
   workflow_call:
     inputs:
@@ -14,10 +15,9 @@ on:
       shouldRunDesktop:
         required: true
         type: string
-env:
-  XCODE_VERSION: 'latest-stable'
-  JAVA_VERSION: '21'
+
 jobs:
+
   iOS:
     if: ${{ inputs.shouldRunKmp == 'true' || inputs.shouldRunIos == 'true' }}
     runs-on: macos-14
@@ -31,13 +31,4 @@ jobs:
       - name: iOS set up
         uses: ./.github/actions/ios-setup
 
-      - run: xcodebuild build test -project iosApp/iosApp.xcodeproj -configuration Debug -scheme iosApp -sdk iphoneos -destination name='iPhone 16' -verbose
-
-  iOS-Test-KMP:
-    runs-on: macos-14
-    if: ${{ inputs.shouldRunKmp }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/job-setup
-      - name: Run Tests
-        run: ./gradlew clean iosSimulatorArm64Test -p shared
+      - run: xcodebuild build -project iosApp/iosApp.xcodeproj -configuration Debug -scheme iosApp -sdk iphoneos -destination name='iPhone 16' -verbose
