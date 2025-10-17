@@ -25,9 +25,14 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.alarmee)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.alarmee)
         }
     }
 }
