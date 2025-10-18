@@ -83,10 +83,8 @@ struct PlantsHomeView: View {
         ZStack{
             HStack {
                 Text("Your Plants")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(1.5)
-                
+                            .font(.system(size: 34, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color("DarkGreen")) //  dark green
                 Spacer()
                 
                 // “+” button opens AddPlantSheet
@@ -94,8 +92,9 @@ struct PlantsHomeView: View {
                     ZStack {
                         Circle().stroke(Color.primary.opacity(0.25), lineWidth: 2)
                             .frame(width: 40, height: 40)
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .bold))
+                        Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 39, weight: .semibold))
+                                        .foregroundColor(Color("DarkGreen"))
                     }
                 }
                 .buttonStyle(.plain)
@@ -110,44 +109,53 @@ struct PlantsHomeView: View {
 // ===============================================================
 // MARK: - PLANT CARD
 // ===============================================================
-
 struct PlantCard: View {
     @Binding var plant: Plant
-    @State private var showReminders = false // For dropdown animation
-    
+    @State private var showReminders = false
+    @State private var isEditing = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // ---------------- HEADER ROW ----------------
+
+            // ===== HEADER ROW =====
             HStack(spacing: 12) {
-                Text(plant.name.isEmpty ? "Plant Name" : plant.name)
-                    .font(.system(size: 24, weight: .heavy))
-                    .padding(.vertical, 8)
-                    .padding(.leading, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                
-                Group {
-                    if let data = plant.imageData, let ui = UIImage(data: data) {
-                        Image(uiImage: ui)
-                            .resizable()
-                            .scaledToFill()
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    } else {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.primary.opacity(0.25), lineWidth: 2)
-                            .overlay(
-                                Image(systemName: "photo.on.rectangle")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.secondary)
-                            )
+
+                // Left: name + Edit button inside the gray slab
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(plant.name.isEmpty ? "Plant Name" : plant.name)
+                            .font(.system(size: 24, weight: .heavy))
+                            .foregroundColor(.primary)
+
+                        Spacer()
+
+                        // EDIT — nudged slightly down & left
+                        Button("Edit") { isEditing = true }
+                            .font(.system(size: 14))
+                            .foregroundColor(Color("DarkGreen"))
+                            .buttonStyle(.plain)
+                            .padding(.top, 4)
+                            .padding(.trailing, 8)
                     }
                 }
-                .frame(width: 60, height: 55)
+                .padding(.vertical, 8)
+                .padding(.leading, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.gray.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                // Right: ONLY show image if one exists (no empty placeholder)
+                if let data = plant.imageData, let ui = UIImage(data: data) {
+                    Image(uiImage: ui)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 60, height: 55)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
             }
             .padding(.horizontal, 6)
-            
-            // ---------------- REMINDERS BUTTON ----------------
+
+            // ===== REMINDERS BUTTON =====
             Button {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
                     showReminders.toggle()
@@ -155,7 +163,7 @@ struct PlantCard: View {
             } label: {
                 HStack {
                     Image(systemName: showReminders ? "chevron.up" : "chevron.down")
-                    Text("Reminders")
+                    Text("reminders")
                     Spacer()
                 }
                 .font(.subheadline.weight(.semibold))
@@ -163,38 +171,31 @@ struct PlantCard: View {
                 .padding(.horizontal, 6)
             }
             .buttonStyle(.plain)
-            
-            // ---------------- DROPDOWN CONTENT ----------------
+
+            // ===== DROPDOWN =====
             if showReminders {
                 VStack(alignment: .leading, spacing: 8) {
-                    // ✅ NEW: Section title for the switches
                     HStack {
-                        Spacer() // pushes the text to the far right
+                        Spacer()
                         Text("Enable Notifications")
                             .font(.headline)
                             .padding(.bottom, 2)
                     }
-                    
-                    // Each To-Do item with a right-side toggle
+
                     ForEach($plant.tasks) { $task in
                         HStack {
-                            // Left side: task name (e.g. “water”)
                             HStack(spacing: 8) {
                                 Text("-")
                                 Text(task.title)
                             }
                             .font(.system(size: 18, weight: .semibold))
-                            
                             Spacer()
-                            
-                            // Right side: toggle switch
                             Toggle("", isOn: $task.reminderEnabled)
                                 .labelsHidden()
                         }
                         .padding(.vertical, 4)
                     }
-                    
-                    // Optional notes section
+
                     if !plant.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text("Notes:")
                             .font(.subheadline.weight(.semibold))
@@ -220,6 +221,9 @@ struct PlantCard: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color.primary.opacity(0.18), lineWidth: 2)
         )
+        .sheet(isPresented: $isEditing) {
+            EditPlantSheet(isPresented: $isEditing, plant: $plant)
+        }
     }
 }
 
@@ -321,6 +325,106 @@ struct AddPlantSheet: View {
         }
     }
 }
+
+// ===============================================================
+// MARK: - EDIT PLANT SHEET
+// ===============================================================
+
+struct EditPlantSheet: View {
+    @Binding var isPresented: Bool
+    @Binding var plant: Plant
+    
+    @State private var newName: String = ""
+    @State private var newNotes: String = ""
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var newImageData: Data?
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Photo") {
+                    HStack(spacing: 16) {
+                        Group {
+                            if let newImageData, let ui = UIImage(data: newImageData) {
+                                Image(uiImage: ui)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else if let data = plant.imageData, let ui = UIImage(data: data) {
+                                Image(uiImage: ui)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(.quaternary, lineWidth: 1.5)
+                                    Image(systemName: "photo.on.rectangle")
+                                        .font(.title3)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            Label("Choose Photo", systemImage: "photo")
+                        }
+                        .onChange(of: selectedPhotoItem) { item in
+                            Task {
+                                if let data = try? await item?.loadTransferable(type: Data.self) {
+                                    newImageData = data
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Section("Plant Name") {
+                    TextField("Enter new name", text: $newName)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                }
+                
+                Section("Notes") {
+                    TextEditor(text: $newNotes)
+                        .frame(minHeight: 120)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.quaternary, lineWidth: 1)
+                        )
+                }
+            }
+            .navigationTitle("Edit Plant")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { isPresented = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        // Apply changes to the bound plant
+                        if !newName.trimmingCharacters(in: .whitespaces).isEmpty {
+                            plant.name = newName.trimmingCharacters(in: .whitespaces)
+                        }
+                        if !newNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            plant.notes = newNotes
+                        }
+                        if let data = newImageData {
+                            plant.imageData = data
+                        }
+                        isPresented = false
+                    }
+                }
+            }
+            // Preload existing data when sheet appears
+            .onAppear {
+                newName = plant.name
+                newNotes = plant.notes
+            }
+        }
+    }
+}
+
 
 // ===============================================================
 // MARK: - BOTTOM BAR COMPONENTS
