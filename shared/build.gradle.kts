@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.spotless)
 //    alias(libs.plugins.androidLibrary)
 }
 
@@ -32,6 +33,27 @@ kotlin {
 
     }
 
+}
+
+repositories {
+    mavenCentral() // For Spotless
+}
+spotless {
+  kotlin {
+    // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
+    ktlint(libs.versions.ktlint.asProvider().get())
+      .editorConfigOverride(
+        mapOf(
+          "indent_size" to 2,
+          // intellij_idea is the default style we preset in Spotless, you can override it referring to https://pinterest.github.io/ktlint/latest/rules/code-styles.
+          "ktlint_code_style" to "intellij_idea",
+        )
+      ).customRuleSets(
+                listOf(
+                    libs.ktlint.rules.get().toString()
+                )
+            )
+  }
 }
 
 //android {
