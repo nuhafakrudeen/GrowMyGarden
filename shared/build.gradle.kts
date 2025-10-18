@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
 //    alias(libs.plugins.androidLibrary)
 }
 
@@ -23,9 +25,26 @@ kotlin {
         }
     }
 
+
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
+            // Added a few implementations for notification system
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(libs.androidx.compose.uiToolingsPreview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            //Libraries
+            implementation(compose.material3)
+            implementation(libs.koin.compose)
+            api(libs.koin.core)
+
+            implementation(libs.alarmee)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -55,6 +74,8 @@ spotless {
             )
   }
 }
+
+
 
 //android {
 //    namespace = "com.gmg.growmygarden.shared"

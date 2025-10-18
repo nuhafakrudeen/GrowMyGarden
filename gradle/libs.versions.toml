@@ -16,6 +16,13 @@ spotless = "8.0.0"
 ktlint = "1.0.0"
 ktlint-rules = "0.4.25"
 
+#Added by Justin, not sure if this is how we are supposed to do it
+koin = "4.0.0"
+koinComposeMultiplatform = "4.0.0"
+compose = "1.6.5"
+
+alarmeeV = "2.4.0"
+
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -27,7 +34,16 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "a
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+androidx-compose-uiToolingsPreview = {module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose"}
 ktlint-rules = {module = "io.nlopez.compose.rules:ktlint", version.ref = "ktlint-rules"}
+
+#Added by Justin
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinComposeMultiplatform" }
+
+alarmee = { group = "io.github.tweener", name = "alarmee", version.ref = "alarmeeV" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
