@@ -1,0 +1,12 @@
+name: Lint
+on: workflow_call
+env:
+  JAVA_VERSION: '21'
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/job-setup
+      - name: Lint
+        run: ./gradlew lint

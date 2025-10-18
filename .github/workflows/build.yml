@@ -1,0 +1,34 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      shouldRunKmp:
+        required: true
+        type: string
+      shouldRunAndroid:
+        required: true
+        type: string
+      shouldRunIos:
+        required: true
+        type: string
+      shouldRunDesktop:
+        required: true
+        type: string
+
+jobs:
+
+  iOS:
+    if: ${{ inputs.shouldRunKmp == 'true' || inputs.shouldRunIos == 'true' }}
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Job set up
+        uses: ./.github/actions/job-setup
+
+      - name: iOS set up
+        uses: ./.github/actions/ios-setup
+
+      - run: xcodebuild build -project iosApp/iosApp.xcodeproj -configuration Debug -scheme iosApp -sdk iphoneos -destination name='iPhone 16' -verbose
