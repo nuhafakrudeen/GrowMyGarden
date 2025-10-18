@@ -1,4 +1,4 @@
-name: Rests
+name: Run Tests
 on:
   workflow_call:
     inputs:

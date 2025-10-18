@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.realmMultiplatform)
 //    alias(libs.plugins.androidLibrary)
 }
 
@@ -26,17 +27,25 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.realm.base)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.realm.base)
         }
 
     }
 
 }
 
-repositories {
-    mavenCentral() // For Spotless
+tasks.withType<AbstractTestTask> {
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
 }
 spotless {
   kotlin {
