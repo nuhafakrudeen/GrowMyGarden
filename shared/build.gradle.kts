@@ -26,6 +26,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.realm.base)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -35,9 +36,6 @@ kotlin {
 
 }
 
-repositories {
-    mavenCentral() // For Spotless
-}
 spotless {
   kotlin {
     // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
