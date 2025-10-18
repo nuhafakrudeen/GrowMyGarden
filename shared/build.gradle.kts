@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kmp.nativecoroutines)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
 }
 
 kotlin {
@@ -48,6 +50,7 @@ kotlin {
         }
     }
 
+
     sourceSets {
         all {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
@@ -56,11 +59,20 @@ kotlin {
             languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
+            implementation(libs.koin.compose)
             implementation(libs.kotlinx.serialization.json)
-            api(libs.androidx.lifecycle.runtimeCompose)
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(libs.androidx.compose.uiToolingsPreview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.alarmee)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -101,6 +113,8 @@ spotless {
         )
     }
 }
+
+
 
 //android {
 //    namespace = "com.gmg.growmygarden.shared"
