@@ -25,6 +25,7 @@ androidx-coroutine-test = "1.10.2"
 koin = "4.0.0"
 compose = "1.6.5"
 alarmee = "2.4.0"
+moko = "0.20.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -48,6 +49,10 @@ kmp-observableviewmodel-core = {module = "com.rickclephas.kmp:kmp-observableview
 androidx-compose-uiToolingsPreview = {module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose"}
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinComposeMultiplatform" }
 alarmee = { group = "io.github.tweener", name = "alarmee", version.ref = "alarmee" }
+moko-permissions = {group = "dev.icerock.moko", name = "permissions", version.ref = "moko"}
+moko-permissions-test = {group = "dev.icerock.moko", name = "permissions-test", version.ref = "moko"}
+moko-permissions-notifications = {group = "dev.icerock.moko", name = "permissions-notifications", version.ref = "moko"}
+moko-permissions-compose = {group = "dev.icerock.moko", name = "permissions-compose", version.ref = "moko"}
 
 
 [plugins]

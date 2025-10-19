@@ -79,8 +79,14 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.test)
             implementation(libs.androidx.coroutine.test)
+            implementation(libs.kotlin.test)
+            implementation(libs.moko.permissions.test)
         }
         iosTest.dependencies {
+            implementation(libs.alarmee)
+            api(libs.moko.permissions)
+            implementation(libs.moko.permissions.notifications)
+            api(libs.moko.permissions.compose)
 
         }
 
