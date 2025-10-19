@@ -1,47 +1,48 @@
-import SwiftUI
-import PhotosUI
-import Photos            // 👈 Added to request photo permissions explicitly
 import UserNotifications
+import Photos
+import PhotosUI
+import SwiftUI
 
-// Simple local notifications manager
 enum NotificationManager {
-    static func requestAuthorizationIfNeeded() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            guard settings.authorizationStatus != .authorized else { return }
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+    static func currentStatus(_ completion: @escaping (UNAuthorizationStatus) -> Void) {
+        UNUserNotificationCenter.current().getNotificationSettings { s in
+            completion(s.authorizationStatus)
         }
     }
-    
-    static func scheduleRepeating(taskTitle: String, plantName: String, identifier: String, everyDays: Int) {
-        // Cancel any previous with same identifier first
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
-        
-        let content = UNMutableNotificationContent()
-        content.title = "Time to \(taskTitle)"
-        content.body = "Remember to \(taskTitle) your \(plantName)"
-        content.sound = .default
-        
-        // Repeat every N days from now (simple & reliable)
-        let seconds = max(60, everyDays * 24 * 60 * 60) // must be >= 60 to allow repeats
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: true)
-        
-        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    static func requestAuthorization(_ completion: @escaping (Bool) -> Void) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+            DispatchQueue.main.async { completion(granted) }
+        }
     }
-    
+    static func scheduleRepeating(taskTitle: String, plantName: String, identifier: String, everyDays: Int) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+        let content = UNMutableNotificationContent()
+        content.title = "Time to \(taskTitle.capitalized)"
+        content.body  = "Don’t forget to \(taskTitle) your \(plantName) 🌿"
+        content.sound = .default
+        let seconds = max(60, everyDays * 24 * 60 * 60)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: true)
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
+    }
     static func cancel(identifier: String) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
     }
+    static func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+    }
 }
 
-// 👇 New: Explicit photo permission helper
 enum PhotoPermissionManager {
-    static func requestPhotoAccess(completion: @escaping (Bool) -> Void = { _ in }) {
-        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-            DispatchQueue.main.async {
-                completion(status == .authorized || status == .limited)
-            }
+    static func status() -> PHAuthorizationStatus {
+        PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    }
+    static func requestReadWrite(_ completion: @escaping (Bool) -> Void) {
+        PHPhotoLibrary.requestAuthorization(for: .readWrite) { s in
+            DispatchQueue.main.async { completion(s == .authorized || s == .limited) }
         }
+    }
+    static func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
     }
 }
 
@@ -254,6 +255,7 @@ struct PlantCard: View {
 private struct ReminderRow: View {
     @Binding var task: PlantTask
     let plant: Plant
+    @State private var showNotifDeniedAlert = false
 
     var body: some View {
         HStack(alignment: .top) {
@@ -265,14 +267,18 @@ private struct ReminderRow: View {
                 }
                 subLabel
             }
-
             Spacer()
-
             Toggle("", isOn: $task.reminderEnabled)
                 .labelsHidden()
                 .onChange(of: task.reminderEnabled) { isOn in
                     handleToggle(isOn: isOn)
                 }
+        }
+        .alert("Notifications are Off", isPresented: $showNotifDeniedAlert) {
+            Button("Open Settings") { NotificationManager.openSettings() }
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("To receive watering and fertilizing reminders, enable notifications in Settings.")
         }
     }
 
@@ -296,59 +302,86 @@ private struct ReminderRow: View {
     }
 
     private func handleToggle(isOn: Bool) {
-        // 👇 Ask for permissions when enabling notifications for the first time
-        if isOn {
-            NotificationManager.requestAuthorizationIfNeeded()
-            PhotoPermissionManager.requestPhotoAccess()
-        }
-
-        // Then schedule or cancel reminders
         let id = "\(plant.id.uuidString)::\(task.title.lowercased())"
         let days = (task.title.lowercased() == "water") ? 3 : 30
 
         if isOn {
-            NotificationManager.scheduleRepeating(
-                taskTitle: task.title,
-                plantName: plant.name.isEmpty ? "your plant" : plant.name,
-                identifier: id,
-                everyDays: days
-            )
+            // 1) Check current status
+            NotificationManager.currentStatus { status in
+                switch status {
+                case .notDetermined:
+                    // 2) First time: request → schedule or revert
+                    NotificationManager.requestAuthorization { granted in
+                        if granted {
+                            NotificationManager.scheduleRepeating(
+                                taskTitle: task.title,
+                                plantName: plant.name.isEmpty ? "your plant" : plant.name,
+                                identifier: id,
+                                everyDays: days
+                            )
+                        } else {
+                            task.reminderEnabled = false
+                            showNotifDeniedAlert = true
+                        }
+                    }
+                case .denied:
+                    // 3) Already denied → revert & alert with Settings
+                    task.reminderEnabled = false
+                    showNotifDeniedAlert = true
+                case .authorized, .provisional, .ephemeral:
+                    // 4) Good to go (no prompt)
+                    NotificationManager.scheduleRepeating(
+                        taskTitle: task.title,
+                        plantName: plant.name.isEmpty ? "your plant" : plant.name,
+                        identifier: id,
+                        everyDays: days
+                    )
+                @unknown default:
+                    task.reminderEnabled = false
+                }
+            }
         } else {
             NotificationManager.cancel(identifier: id)
         }
     }
+
 }
 
-private extension View {
-    func eraseToAnyView() -> AnyView { AnyView(self) }
-}
+private extension View { func eraseToAnyView() -> AnyView { AnyView(self) } }
 
 // ===============================================================
 // MARK: - ADD PLANT SHEET (NO SPECIES OR CARE)
 // ===============================================================
-
 struct AddPlantSheet: View {
     @Binding var isPresented: Bool
     var onSave: (Plant) -> Void
-    
+
+    // Form state
     @State private var name = ""
+    @State private var notes = ""
+
+    // Photo state
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var imageData: Data?
-    @State private var notes = ""
-    
+    @State private var showPhotoPicker = false
+    @State private var showPhotoDeniedAlert = false
+
+    // Validation
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
-    
+
     var body: some View {
         NavigationStack {
-            ZStack{
+            ZStack {
+                // Match the app’s green layout
                 LinearGradient(
                     colors: [Color("LightGreen"), Color("SoftCream")],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
+
                 Form {
-                    // ---- PHOTO PICKER ----
+                    // PHOTO
                     Section("Photo") {
                         HStack(spacing: 16) {
                             Group {
@@ -368,28 +401,43 @@ struct AddPlantSheet: View {
                             }
                             .frame(width: 80, height: 80)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
-                            
-                            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                                Label("Choose Photo", systemImage: "photo")
-                            }
-                            .onChange(of: selectedPhotoItem) { item in
-                                Task {
-                                    if let data = try? await item?.loadTransferable(type: Data.self) {
-                                        imageData = data
+
+                            // Tap -> check status; if .notDetermined, request; else act accordingly
+                            Button {
+                                let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                                switch status {
+                                case .notDetermined:
+                                    PHPhotoLibrary.requestAuthorization(for: .readWrite) { s in
+                                        DispatchQueue.main.async {
+                                            if s == .authorized || s == .limited {
+                                                showPhotoPicker = true
+                                            } else {
+                                                showPhotoDeniedAlert = true
+                                            }
+                                        }
                                     }
+                                case .authorized, .limited:
+                                    showPhotoPicker = true
+                                case .denied, .restricted:
+                                    showPhotoDeniedAlert = true
+                                @unknown default:
+                                    break
                                 }
+                            } label: {
+                                Label("Choose Photo", systemImage: "photo")
+                                    .foregroundColor(Color("DarkGreen"))
                             }
                         }
                     }
-                    
-                    // ---- NAME ----
+
+                    // BASICS
                     Section("Basics") {
                         TextField("Plant name (required)", text: $name)
                             .textInputAutocapitalization(.words)
                             .autocorrectionDisabled()
                     }
-                    
-                    // ---- NOTES ----
+
+                    // NOTES
                     Section("Notes") {
                         TextEditor(text: $notes)
                             .frame(minHeight: 120)
@@ -400,7 +448,7 @@ struct AddPlantSheet: View {
                             .listRowInsets(EdgeInsets())
                     }
                 }
-                .scrollContentBackground(.hidden)  // 👈 hides white form background
+                .scrollContentBackground(.hidden)
                 .background(Color.clear)
             }
             .navigationTitle("Add Plant")
@@ -411,7 +459,6 @@ struct AddPlantSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        // Create new plant with default tasks
                         let defaultTasks = [
                             PlantTask(title: "water", reminderEnabled: false),
                             PlantTask(title: "fertilize", reminderEnabled: false)
@@ -429,13 +476,37 @@ struct AddPlantSheet: View {
                 }
             }
         }
+        // Present Photos picker only after permission is granted
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $selectedPhotoItem,
+            matching: .images
+        )
+        .onChange(of: selectedPhotoItem) { item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self) {
+                    imageData = data
+                }
+            }
+        }
+        .alert("Photos Access Needed", isPresented: $showPhotoDeniedAlert) {
+            // If you have PhotoPermissionManager.openSettings(), call it here.
+            // Otherwise, open Settings directly:
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Allow photo access to pick a plant image.")
+        }
     }
 }
 
 // ===============================================================
 // MARK: - EDIT PLANT SHEET
 // ===============================================================
-
 struct EditPlantSheet: View {
     @Binding var isPresented: Bool
     @Binding var plant: Plant
@@ -445,6 +516,11 @@ struct EditPlantSheet: View {
     @State private var newNotes: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newImageData: Data?
+
+    // NEW: permission & picker state
+    @State private var showPhotoPicker = false
+    @State private var showPhotoDeniedAlert = false
+
     @State private var showDeleteConfirm = false
 
     var body: some View {
@@ -523,17 +599,31 @@ struct EditPlantSheet: View {
                                 .frame(width: 90, height: 90)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                // 👉 Tap: check status → request if needed → show picker if granted
+                                Button {
+                                    let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                                    switch status {
+                                    case .notDetermined:
+                                        PHPhotoLibrary.requestAuthorization(for: .readWrite) { s in
+                                            DispatchQueue.main.async {
+                                                if s == .authorized || s == .limited {
+                                                    showPhotoPicker = true
+                                                } else {
+                                                    showPhotoDeniedAlert = true
+                                                }
+                                            }
+                                        }
+                                    case .authorized, .limited:
+                                        showPhotoPicker = true
+                                    case .denied, .restricted:
+                                        showPhotoDeniedAlert = true
+                                    @unknown default:
+                                        break
+                                    }
+                                } label: {
                                     Label("Choose Photo", systemImage: "photo")
                                         .foregroundColor(Color("DarkGreen"))
                                         .font(.system(size: 16, weight: .medium))
-                                }
-                                .onChange(of: selectedPhotoItem) { item in
-                                    Task {
-                                        if let data = try? await item?.loadTransferable(type: Data.self) {
-                                            newImageData = data
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -558,7 +648,7 @@ struct EditPlantSheet: View {
                                 )
                         }
 
-                    
+                        // 📝 Notes
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Notes")
                                 .font(.headline)
@@ -637,12 +727,36 @@ struct EditPlantSheet: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.9), value: showDeleteConfirm)
             }
         }
+        // Present Photos picker only after permission is granted
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $selectedPhotoItem,
+            matching: .images
+        )
+        .onChange(of: selectedPhotoItem) { item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self) {
+                    newImageData = data
+                }
+            }
+        }
+        .alert("Photos Access Needed", isPresented: $showPhotoDeniedAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Allow photo access to pick or update a plant image.")
+        }
         .onAppear {
             newName = plant.name
             newNotes = plant.notes
         }
     }
 }
+
 
 //MARK: - BOTTOM PAGES
 enum AppTab: Hashable{
