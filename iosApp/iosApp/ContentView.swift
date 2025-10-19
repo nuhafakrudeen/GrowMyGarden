@@ -41,6 +41,7 @@ final class PlantStore: ObservableObject {
 struct PlantsHomeView: View {
     @StateObject private var store = PlantStore()
     @State private var isAddingPlant = false
+    @State private var selectedTab: AppTab = .home
     
     var body: some View {
         ZStack {
@@ -53,21 +54,38 @@ struct PlantsHomeView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                header
-                Divider().padding(.top, 8)
-                
-                ScrollView {
-                    VStack(spacing: 18) {
-                        ForEach($store.plants) { $plant in
-                            PlantCard(plant: $plant)
-                        }
-                        Spacer(minLength: 120)
+                switch selectedTab {
+                case .home:
+                    HomeHeader(count: store.plants.count) {
+                        isAddingPlant = true
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
+                    
+                    ScrollView {
+                        LazyVStack(spacing: 18) {
+                            ForEach($store.plants) { $plant in
+                                PlantCard(
+                                    plant: $plant,
+                                    onDelete: { id in
+                                        store.plants.removeAll { $0.id == id }
+                                    }
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear.frame(height: 120) // height ≈ your bottom bar
+                    }
+                case .search:
+                    Spacer(minLength: 0)
+                case .community:
+                    Spacer(minLength: 0)
+                case .plantbook:
+                    Spacer(minLength: 0)
                 }
                 
-                RoundedBottomBar()
+                RoundedBottomBar(selected: $selectedTab)
             }
         }
         .sheet(isPresented: $isAddingPlant) {
@@ -77,33 +95,6 @@ struct PlantsHomeView: View {
         }
     }
 
-    
-    // MARK: - Header component
-    private var header: some View {
-        ZStack{
-            HStack {
-                Text("Your Plants")
-                            .font(.system(size: 34, weight: .semibold, design: .rounded))
-                            .foregroundColor(Color("DarkGreen")) //  dark green
-                Spacer()
-                
-                // “+” button opens AddPlantSheet
-                Button { isAddingPlant = true } label: {
-                    ZStack {
-                        Circle().stroke(Color.primary.opacity(0.25), lineWidth: 2)
-                            .frame(width: 40, height: 40)
-                        Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 39, weight: .semibold))
-                                        .foregroundColor(Color("DarkGreen"))
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Add Plant")
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-        }
-    }
 }
 
 // ===============================================================
@@ -111,6 +102,7 @@ struct PlantsHomeView: View {
 // ===============================================================
 struct PlantCard: View {
     @Binding var plant: Plant
+    var onDelete: (UUID) -> Void = { _ in }
     @State private var showReminders = false
     @State private var isEditing = false
 
@@ -222,7 +214,7 @@ struct PlantCard: View {
                 .stroke(Color.primary.opacity(0.18), lineWidth: 2)
         )
         .sheet(isPresented: $isEditing) {
-            EditPlantSheet(isPresented: $isEditing, plant: $plant)
+            EditPlantSheet(isPresented: $isEditing, plant: $plant, onDelete: { onDelete(plant.id) })
         }
     }
 }
@@ -244,58 +236,68 @@ struct AddPlantSheet: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                // ---- PHOTO PICKER ----
-                Section("Photo") {
-                    HStack(spacing: 16) {
-                        Group {
-                            if let imageData, let ui = UIImage(data: imageData) {
-                                Image(uiImage: ui)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(.quaternary, lineWidth: 1.5)
-                                    Image(systemName: "photo.on.rectangle")
-                                        .font(.title3)
-                                        .foregroundColor(.secondary)
+            ZStack{
+                LinearGradient(
+                    colors: [Color("LightGreen"), Color("SoftCream")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                Form {
+                    // ---- PHOTO PICKER ----
+                    Section("Photo") {
+                        HStack(spacing: 16) {
+                            Group {
+                                if let imageData, let ui = UIImage(data: imageData) {
+                                    Image(uiImage: ui)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(.quaternary, lineWidth: 1.5)
+                                        Image(systemName: "photo.on.rectangle")
+                                            .font(.title3)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
                             }
-                        }
-                        .frame(width: 80, height: 80)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                            Label("Choose Photo", systemImage: "photo")
-                        }
-                        .onChange(of: selectedPhotoItem) { item in
-                            Task {
-                                if let data = try? await item?.loadTransferable(type: Data.self) {
-                                    imageData = data
+                            .frame(width: 80, height: 80)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            
+                            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                Label("Choose Photo", systemImage: "photo")
+                            }
+                            .onChange(of: selectedPhotoItem) { item in
+                                Task {
+                                    if let data = try? await item?.loadTransferable(type: Data.self) {
+                                        imageData = data
+                                    }
                                 }
                             }
                         }
                     }
+                    
+                    // ---- NAME ----
+                    Section("Basics") {
+                        TextField("Plant name (required)", text: $name)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                    }
+                    
+                    // ---- NOTES ----
+                    Section("Notes") {
+                        TextEditor(text: $notes)
+                            .frame(minHeight: 120)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(.quaternary, lineWidth: 1)
+                            )
+                            .listRowInsets(EdgeInsets())
+                    }
                 }
-                
-                // ---- NAME ----
-                Section("Basics") {
-                    TextField("Plant name (required)", text: $name)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                }
-                
-                // ---- NOTES ----
-                Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 120)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.quaternary, lineWidth: 1)
-                        )
-                        .listRowInsets(EdgeInsets())
-                }
+                .scrollContentBackground(.hidden)  // 👈 hides white form background
+                .background(Color.clear)
             }
             .navigationTitle("Add Plant")
             .navigationBarTitleDisplayMode(.inline)
@@ -326,6 +328,8 @@ struct AddPlantSheet: View {
     }
 }
 
+
+
 // ===============================================================
 // MARK: - EDIT PLANT SHEET
 // ===============================================================
@@ -333,76 +337,40 @@ struct AddPlantSheet: View {
 struct EditPlantSheet: View {
     @Binding var isPresented: Bool
     @Binding var plant: Plant
-    
+    var onDelete: () -> Void
+
     @State private var newName: String = ""
     @State private var newNotes: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newImageData: Data?
-    
+    @State private var showDeleteConfirm = false
+
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Photo") {
-                    HStack(spacing: 16) {
-                        Group {
-                            if let newImageData, let ui = UIImage(data: newImageData) {
-                                Image(uiImage: ui)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else if let data = plant.imageData, let ui = UIImage(data: data) {
-                                Image(uiImage: ui)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(.quaternary, lineWidth: 1.5)
-                                    Image(systemName: "photo.on.rectangle")
-                                        .font(.title3)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                        .frame(width: 80, height: 80)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                            Label("Choose Photo", systemImage: "photo")
-                        }
-                        .onChange(of: selectedPhotoItem) { item in
-                            Task {
-                                if let data = try? await item?.loadTransferable(type: Data.self) {
-                                    newImageData = data
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                Section("Plant Name") {
-                    TextField("Enter new name", text: $newName)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                }
-                
-                Section("Notes") {
-                    TextEditor(text: $newNotes)
-                        .frame(minHeight: 120)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.quaternary, lineWidth: 1)
-                        )
-                }
-            }
-            .navigationTitle("Edit Plant")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+        ZStack {
+            // 🌿 Gradient background matching home page
+            LinearGradient(
+                colors: [Color("LightGreen"), Color("SoftCream")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                // Header
+                HStack {
                     Button("Cancel") { isPresented = false }
-                }
-                ToolbarItem(placement: .confirmationAction) {
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(Color("DarkGreen"))
+
+                    Spacer()
+
+                    Text("Edit Plant")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color("DarkGreen"))
+
+                    Spacer()
+
                     Button("Save") {
-                        // Apply changes to the bound plant
                         if !newName.trimmingCharacters(in: .whitespaces).isEmpty {
                             plant.name = newName.trimmingCharacters(in: .whitespaces)
                         }
@@ -414,14 +382,247 @@ struct EditPlantSheet: View {
                         }
                         isPresented = false
                     }
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color("DarkGreen"))
                 }
-            }
-            // Preload existing data when sheet appears
-            .onAppear {
-                newName = plant.name
-                newNotes = plant.notes
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+
+                ScrollView {
+                    VStack(spacing: 24) {
+
+                        // 🪴 Photo picker section
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Photo")
+                                .font(.headline)
+                                .foregroundColor(Color("DarkGreen"))
+
+                            HStack(spacing: 16) {
+                                Group {
+                                    if let newImageData, let ui = UIImage(data: newImageData) {
+                                        Image(uiImage: ui)
+                                            .resizable()
+                                            .scaledToFill()
+                                    } else if let data = plant.imageData, let ui = UIImage(data: data) {
+                                        Image(uiImage: ui)
+                                            .resizable()
+                                            .scaledToFill()
+                                    } else {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color("DarkGreen").opacity(0.25), lineWidth: 1.5)
+                                                .background(RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.6)))
+                                            Image(systemName: "photo.on.rectangle")
+                                                .font(.title3)
+                                                .foregroundColor(Color("DarkGreen").opacity(0.8))
+                                        }
+                                    }
+                                }
+                                .frame(width: 90, height: 90)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                    Label("Choose Photo", systemImage: "photo")
+                                        .foregroundColor(Color("DarkGreen"))
+                                        .font(.system(size: 16, weight: .medium))
+                                }
+                                .onChange(of: selectedPhotoItem) { item in
+                                    Task {
+                                        if let data = try? await item?.loadTransferable(type: Data.self) {
+                                            newImageData = data
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 🌱 Name field
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Plant Name")
+                                .font(.headline)
+                                .foregroundColor(Color("DarkGreen"))
+
+                            TextField("Enter new name", text: $newName)
+                                .textInputAutocapitalization(.words)
+                                .autocorrectionDisabled()
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.white.opacity(0.85))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color("DarkGreen").opacity(0.2), lineWidth: 1)
+                                        )
+                                )
+                        }
+
+                    
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Notes")
+                                .font(.headline)
+                                .foregroundColor(Color("DarkGreen"))
+
+                            TextEditor(text: $newNotes)
+                                .frame(minHeight: 140)
+                                .padding(8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.white.opacity(0.85))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color("DarkGreen").opacity(0.2), lineWidth: 1)
+                                        )
+                                )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .scrollIndicators(.hidden)
+                }
+
+                Spacer()
+
+                // 🗑️ Custom trash + popup overlay
+                VStack(spacing: 12) {
+                    if showDeleteConfirm {
+                        VStack(spacing: 12) {
+                            Text("Delete this plant?")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            HStack(spacing: 28) {
+                                Button("Cancel") {
+                                    withAnimation(.easeInOut) { showDeleteConfirm = false }
+                                }
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+
+                                Button("Delete", role: .destructive) {
+                                    onDelete()
+                                    isPresented = false
+                                }
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.red.opacity(0.9))
+                            }
+                        }
+                        .frame(width: 320)
+                        .padding(.vertical, 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(Color("DarkGreen"))
+                                .shadow(color: Color("DarkGreen").opacity(0.35), radius: 10, y: 4)
+                        )
+                        .padding(.bottom, 70)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            showDeleteConfirm.toggle()
+                        }
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 54, height: 54)
+                                .shadow(color: .black.opacity(0.1), radius: 6, y: 3)
+                            Image(systemName: "trash")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .padding(.bottom, 32)
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.9), value: showDeleteConfirm)
             }
         }
+        .onAppear {
+            newName = plant.name
+            newNotes = plant.notes
+        }
+    }
+}
+
+
+//MARK: - BOTTOM PAGES
+enum AppTab: Hashable{
+    case home, search, community, plantbook
+}
+
+// ===============================================================
+// MARK: - HOME HEADER (Floating Capsule)
+// ===============================================================
+
+struct HomeHeader: View {
+    let count: Int
+    let onAdd: () -> Void
+    
+    var body: some View {
+        ZStack(alignment: .top) {
+            // Edge-to-edge background that hugs top/left/right
+            Rectangle()
+                .fill(Color("DarkGreen").opacity(0.12))
+                .overlay(
+                    Rectangle()
+                        .stroke(Color("DarkGreen").opacity(0.18), lineWidth: 1)
+                )
+                .ignoresSafeArea(edges: .top)       // cover behind status bar
+                .frame(maxWidth: .infinity)
+                .frame(height: 110)                 // header height
+
+            // Content stays in the same place with 16pt insets
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "leaf.fill")
+                            .foregroundColor(Color("DarkGreen"))
+                            .font(.system(size: 20, weight: .bold))
+                            .accessibilityHidden(true)
+                        
+                        Text("Your Plants")
+                            .font(.system(size: 35, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color("DarkGreen"))
+                    }
+
+                    Text("\(count) \(count == 1 ? "plant" : "plants")")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color("DarkGreen"))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(Color.white.opacity(0.85))
+                                .overlay(
+                                    Capsule(style: .continuous)
+                                        .stroke(Color("DarkGreen").opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .animation(.spring(response: 0.25, dampingFraction: 0.9), value: count)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Button(action: onAdd) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.95))
+                            .overlay(
+                                Circle().stroke(Color("DarkGreen").opacity(0.2), lineWidth: 1)
+                            )
+                            .frame(width: 44, height: 44)
+                            .shadow(color: Color("DarkGreen").opacity(0.18), radius: 8, y: 3)
+
+                        Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 41, weight: .semibold))
+                                        .foregroundColor(Color("DarkGreen"))
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add Plant")
+            }
+            .padding(.horizontal, 35)
+            .padding(.top, 16)
+        }
+        // No outer horizontal padding — lets the background hit the edges
+        // Keep a small spacer below the header in your parent if needed.
     }
 }
 
@@ -431,39 +632,90 @@ struct EditPlantSheet: View {
 // ===============================================================
 
 struct RoundedBottomBar: View {
+    @Binding var selected: AppTab
+
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 28)
-                .fill(Color(.systemGray6))
-                .frame(height: 84)
-                .shadow(color: .black.opacity(0.06), radius: 6, y: -2)
-                .padding(.horizontal, 10)
+            // Floating dark-green capsule
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(Color("DarkGreen").opacity(0.95))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+                .shadow(color: Color("DarkGreen").opacity(0.35), radius: 10, y: 6)
+                .frame(height: 90)
+                .frame(width: 370)
+                .padding(.horizontal, 28)
+                .padding(.bottom, 6)
+
             HStack(spacing: 28) {
-                CircleIcon(selected: true, systemName: "house.fill")
-                CircleIcon(systemName: "magnifyingglass")
-                CircleIcon(systemName: "hand.raised.fill")
-                CircleIcon(systemName: "book")
+                TabButton(
+                    systemName: "house.fill",
+                    isActive: selected == .home,
+                    label: "Home",
+                    selected: $selected,
+                    tab: .home
+                )
+                TabButton(
+                    systemName: "magnifyingglass",
+                    isActive: selected == .search,
+                    label: "Search",
+                    selected: $selected,
+                    tab: .search
+                )
+                TabButton(
+                    systemName: "hand.raised.fill",
+                    isActive: selected == .community,
+                    label: "Community",
+                    selected: $selected,
+                    tab: .community
+                )
+                TabButton(
+                    systemName: "book.fill",
+                    isActive: selected == .plantbook,
+                    label: "Plantbook",
+                    selected: $selected,
+                    tab: .plantbook
+                )
             }
-            .padding(.bottom, 6)
+            .padding(.bottom, 2)
         }
-        .padding(.bottom, 8)
         .ignoresSafeArea(edges: .bottom)
     }
 }
 
-/// Individual circular icon for the bottom bar
-struct CircleIcon: View {
-    var selected = false
+struct TabButton: View {
     let systemName: String
+    let isActive: Bool
+    let label: String
+    @Binding var selected: AppTab
+    let tab: AppTab
+
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(selected ? Color.green.opacity(0.2) : Color.clear)
-                .overlay(Circle().stroke(Color.primary.opacity(0.25), lineWidth: 2))
-                .frame(width: 64, height: 64)
-            Image(systemName: systemName)
-                .font(.system(size: 24, weight: .bold))
+        Button {
+            withAnimation(.easeInOut(duration: 0.12)) {
+                selected = tab
+            }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(isActive ? Color.white.opacity(0.16) : Color.clear)
+                Circle()
+                    .stroke(isActive ? Color.white.opacity(0.35)
+                                     : Color.white.opacity(0.18), lineWidth: 1.5)
+            }
+            .frame(width: 58, height: 58)
+            .overlay(
+                Image(systemName: systemName)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(isActive ? .white : .white.opacity(0.8))
+                    .scaleEffect(isActive ? 1.12 : 1.0)
+                    .shadow(color: isActive ? .white.opacity(0.25) : .clear, radius: 6)
+            )
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
         .contentShape(Circle())
     }
 }
