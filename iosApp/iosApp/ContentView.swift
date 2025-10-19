@@ -1,5 +1,49 @@
 import SwiftUI
 import PhotosUI
+import Photos            // 👈 Added to request photo permissions explicitly
+import UserNotifications
+
+// Simple local notifications manager
+enum NotificationManager {
+    static func requestAuthorizationIfNeeded() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus != .authorized else { return }
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+        }
+    }
+    
+    static func scheduleRepeating(taskTitle: String, plantName: String, identifier: String, everyDays: Int) {
+        // Cancel any previous with same identifier first
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+        
+        let content = UNMutableNotificationContent()
+        content.title = "Time to \(taskTitle)"
+        content.body = "Remember to \(taskTitle) your \(plantName)"
+        content.sound = .default
+        
+        // Repeat every N days from now (simple & reliable)
+        let seconds = max(60, everyDays * 24 * 60 * 60) // must be >= 60 to allow repeats
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: true)
+        
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    }
+    
+    static func cancel(identifier: String) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+    }
+}
+
+// 👇 New: Explicit photo permission helper
+enum PhotoPermissionManager {
+    static func requestPhotoAccess(completion: @escaping (Bool) -> Void = { _ in }) {
+        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+            DispatchQueue.main.async {
+                completion(status == .authorized || status == .limited)
+            }
+        }
+    }
+}
 
 // ===============================================================
 // MARK: - DATA MODELS
@@ -94,7 +138,6 @@ struct PlantsHomeView: View {
             }
         }
     }
-
 }
 
 // ===============================================================
@@ -111,8 +154,6 @@ struct PlantCard: View {
 
             // ===== HEADER ROW =====
             HStack(spacing: 12) {
-
-                // Left: name + Edit button inside the gray slab
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(plant.name.isEmpty ? "Plant Name" : plant.name)
@@ -121,7 +162,6 @@ struct PlantCard: View {
 
                         Spacer()
 
-                        // EDIT — nudged slightly down & left
                         Button("Edit") { isEditing = true }
                             .font(.system(size: 14))
                             .foregroundColor(Color("DarkGreen"))
@@ -136,7 +176,6 @@ struct PlantCard: View {
                 .background(Color.gray.opacity(0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                // Right: ONLY show image if one exists (no empty placeholder)
                 if let data = plant.imageData, let ui = UIImage(data: data) {
                     Image(uiImage: ui)
                         .resizable()
@@ -174,18 +213,10 @@ struct PlantCard: View {
                             .padding(.bottom, 2)
                     }
 
+                    // 👇 For each reminder
                     ForEach($plant.tasks) { $task in
-                        HStack {
-                            HStack(spacing: 8) {
-                                Text("-")
-                                Text(task.title)
-                            }
-                            .font(.system(size: 18, weight: .semibold))
-                            Spacer()
-                            Toggle("", isOn: $task.reminderEnabled)
-                                .labelsHidden()
-                        }
-                        .padding(.vertical, 4)
+                        ReminderRow(task: $task, plant: plant)
+                            .padding(.vertical, 6)
                     }
 
                     if !plant.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -205,7 +236,7 @@ struct PlantCard: View {
                         .stroke(Color.primary.opacity(0.15), lineWidth: 2)
                 )
                 .padding(.horizontal, 6)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
         }
         .padding(10)
@@ -217,6 +248,79 @@ struct PlantCard: View {
             EditPlantSheet(isPresented: $isEditing, plant: $plant, onDelete: { onDelete(plant.id) })
         }
     }
+}
+
+
+private struct ReminderRow: View {
+    @Binding var task: PlantTask
+    let plant: Plant
+
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text("-")
+                    Text(task.title.capitalized)
+                        .font(.system(size: 18, weight: .semibold))
+                }
+                subLabel
+            }
+
+            Spacer()
+
+            Toggle("", isOn: $task.reminderEnabled)
+                .labelsHidden()
+                .onChange(of: task.reminderEnabled) { isOn in
+                    handleToggle(isOn: isOn)
+                }
+        }
+    }
+
+    private var subLabel: some View {
+        switch task.title.lowercased() {
+        case "water":
+            return Text("Every 3 days recommended")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 16)
+                .eraseToAnyView()
+        case "fertilize":
+            return Text("Every 30 days recommended")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 16)
+                .eraseToAnyView()
+        default:
+            return EmptyView().eraseToAnyView()
+        }
+    }
+
+    private func handleToggle(isOn: Bool) {
+        // 👇 Ask for permissions when enabling notifications for the first time
+        if isOn {
+            NotificationManager.requestAuthorizationIfNeeded()
+            PhotoPermissionManager.requestPhotoAccess()
+        }
+
+        // Then schedule or cancel reminders
+        let id = "\(plant.id.uuidString)::\(task.title.lowercased())"
+        let days = (task.title.lowercased() == "water") ? 3 : 30
+
+        if isOn {
+            NotificationManager.scheduleRepeating(
+                taskTitle: task.title,
+                plantName: plant.name.isEmpty ? "your plant" : plant.name,
+                identifier: id,
+                everyDays: days
+            )
+        } else {
+            NotificationManager.cancel(identifier: id)
+        }
+    }
+}
+
+private extension View {
+    func eraseToAnyView() -> AnyView { AnyView(self) }
 }
 
 // ===============================================================
@@ -327,8 +431,6 @@ struct AddPlantSheet: View {
         }
     }
 }
-
-
 
 // ===============================================================
 // MARK: - EDIT PLANT SHEET
@@ -541,7 +643,6 @@ struct EditPlantSheet: View {
         }
     }
 }
-
 
 //MARK: - BOTTOM PAGES
 enum AppTab: Hashable{
