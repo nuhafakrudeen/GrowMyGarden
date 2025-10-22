@@ -19,8 +19,8 @@ kotlin {
         binaries.framework {
             baseName = "Shared"
             isStatic = true
-            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
-            linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLiteSwift.xcframework/ios-arm64"
+            linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
         }
     }
@@ -28,8 +28,8 @@ kotlin {
     iosSimulatorArm64 {
         binaries.framework {
             baseName = "shared"
-            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x85_64-simulator"
-            linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
+            linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
         }
     }
@@ -45,7 +45,12 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
 //            api(libs.androidx.lifecycle.viewmodel)
-            api(libs.kmp.observableviewmodel.core)
+            api(libs.kmp.observableviewmodel.core.get().toString()) {
+                exclude(group = "androidx.lifecycle")
+                exclude(group = "androidx.annotation")
+                exclude(group = "androidx.collection")
+            }
+            api(libs.androidx.lifecycle.runtimeCompose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
