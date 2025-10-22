@@ -36,8 +36,8 @@ jobs:
       uses: ./.github/workflows/lint.yml
 
   UnitTests:
-    needs: [Setup, Lint]
-#    needs: Setup
+#    needs: [Setup, Lint]
+    needs: Setup
     uses: ./.github/workflows/run-tests.yml
     with:
       shouldRunKmp: ${{ needs.Setup.outputs.shouldRunKmp }}
@@ -46,8 +46,8 @@ jobs:
       shouldRunDesktop: ${{ needs.Setup.outputs.shouldRunDesktop }}
 
   Build:
-    needs: [Setup, Lint]
-#    needs: Setup
+#    needs: [Setup, Lint]
+    needs: Setup
     uses: ./.github/workflows/build.yml
     with:
       shouldRunKmp: ${{ needs.Setup.outputs.shouldRunKmp }}

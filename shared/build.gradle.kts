@@ -3,7 +3,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.spotless)
-    alias(libs.plugins.realmMultiplatform)
+    alias(libs.plugins.kmp.nativecoroutines)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinx.serialization)
 //    alias(libs.plugins.androidLibrary)
 }
 
@@ -14,28 +16,60 @@ kotlin {
 //        }
 //    }
 
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+    iosArm64 {
+        binaries.framework {
             baseName = "Shared"
             isStatic = true
+            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
+            linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+        }
+    }
+
+    iosSimulatorArm64 {
+        binaries.framework {
+            baseName = "shared"
+            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x85_64-simulator"
+            linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
         }
     }
 
     sourceSets {
+        all {
+            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+        }
         commonMain.dependencies {
             // put your Multiplatform dependencies here
-            implementation(libs.realm.base)
+            implementation(libs.alarmee.get().toString()) {
+                exclude(group = "androidx.lifecycle")
+                exclude(group = "androidx.annotation")
+                exclude(group = "androidx.collection")
+                exclude(group = "androidx.savedstate")
+                exclude(group = "androidx.compose.runtime")
+            }
+            implementation(libs.kotbase.ktx.get().toString()) {
+                exclude(group = "androidx.lifecycle")
+                exclude(group = "androidx.annotation")
+                exclude(group = "androidx.collection")
+                exclude(group = "androidx.savedstate")
+                exclude(group = "androidx.compose.runtime")
+            }
+            implementation(libs.koin.core)
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation(libs.realm.base)
+        }
+        iosMain.dependencies {
+            implementation(libs.alarmee.get().toString()) {
+                exclude(group = "androidx.lifecycle")
+                exclude(group = "androidx.annotation")
+                exclude(group = "androidx.collection")
+                exclude(group = "androidx.savedstate")
+                exclude(group = "androidx.compose.runtime")
+            }
         }
 
     }
-
 }
 
 tasks.withType<AbstractTestTask> {
@@ -48,21 +82,20 @@ tasks.withType<AbstractTestTask> {
     }
 }
 spotless {
-  kotlin {
-    // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
-    ktlint(libs.versions.ktlint.asProvider().get())
-      .editorConfigOverride(
-        mapOf(
-          "indent_size" to 2,
-          // intellij_idea is the default style we preset in Spotless, you can override it referring to https://pinterest.github.io/ktlint/latest/rules/code-styles.
-          "ktlint_code_style" to "intellij_idea",
-        )
-      ).customRuleSets(
-                listOf(
-                    libs.ktlint.rules.get().toString()
-                )
+    kotlin {
+        // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
+        ktlint(libs.versions.ktlint.asProvider().get()).editorConfigOverride(
+            mapOf(
+                "indent_size" to 2,
+                // intellij_idea is the default style we preset in Spotless, you can override it referring to https://pinterest.github.io/ktlint/latest/rules/code-styles.
+                "ktlint_code_style" to "intellij_idea",
             )
-  }
+        ).customRuleSets(
+            listOf(
+                libs.ktlint.rules.get().toString()
+            )
+        )
+    }
 }
 
 //android {
