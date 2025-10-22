@@ -16,12 +16,19 @@ kotlin {
 //    }
 
     iosArm64 {
-        binaries.framework {
-            baseName = "Shared"
-            isStatic = true
-            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLiteSwift.xcframework/ios-arm64"
-            linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
+        binaries {
+            framework {
+                baseName = "Shared"
+                isStatic = true
+                val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
+                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
+            }
+
+//            getTest("DEBUG").apply {
+//                val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
+//                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+//            }
         }
     }
 
@@ -30,13 +37,13 @@ kotlin {
             framework {
                 baseName = "shared"
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
+                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
             }
-            getTest("DEBUG").apply {
-                val path = "$rootDir/vendor/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
-            }
+//            getTest("DEBUG").apply {
+//                val path = "$rootDir/vendor/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
+//                linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
+//            }
         }
     }
 
