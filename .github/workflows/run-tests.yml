@@ -41,4 +41,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/job-setup
       - name: Run Tests
-        run: ./gradlew clean iosSimulatorArm64Test -p shared
+        run: ./gradlew clean iosSimulatorArm64Test -p shared --info

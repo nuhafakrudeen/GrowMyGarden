@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.kmp.nativecoroutines)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinx.serialization)
-//    alias(libs.plugins.androidLibrary)
 }
 
 kotlin {
@@ -22,6 +21,7 @@ kotlin {
             isStatic = true
             val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
             linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+//            export(libs.androidx.lifecycle.viewmodel)
         }
     }
 
@@ -30,43 +30,27 @@ kotlin {
             baseName = "shared"
             val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x85_64-simulator"
             linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+//            export(libs.androidx.lifecycle.viewmodel)
         }
     }
 
     sourceSets {
         all {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            languageSettings.optIn("kotlin.experimental.ExperimentalObjCName")
         }
         commonMain.dependencies {
             // put your Multiplatform dependencies here
-            implementation(libs.alarmee.get().toString()) {
-                exclude(group = "androidx.lifecycle")
-                exclude(group = "androidx.annotation")
-                exclude(group = "androidx.collection")
-                exclude(group = "androidx.savedstate")
-                exclude(group = "androidx.compose.runtime")
-            }
-            implementation(libs.kotbase.ktx.get().toString()) {
-                exclude(group = "androidx.lifecycle")
-                exclude(group = "androidx.annotation")
-                exclude(group = "androidx.collection")
-                exclude(group = "androidx.savedstate")
-                exclude(group = "androidx.compose.runtime")
-            }
+            implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
+//            api(libs.androidx.lifecycle.viewmodel)
+            api(libs.kmp.observableviewmodel.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-        }
-        iosMain.dependencies {
-            implementation(libs.alarmee.get().toString()) {
-                exclude(group = "androidx.lifecycle")
-                exclude(group = "androidx.annotation")
-                exclude(group = "androidx.collection")
-                exclude(group = "androidx.savedstate")
-                exclude(group = "androidx.compose.runtime")
-            }
+            implementation(libs.koin.core)
+            implementation(libs.koin.test)
         }
 
     }
