@@ -52,6 +52,9 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.test)
         }
+        iosTest.dependencies {
+
+        }
 
     }
 }
