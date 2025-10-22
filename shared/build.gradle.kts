@@ -26,11 +26,17 @@ kotlin {
     }
 
     iosSimulatorArm64 {
-        binaries.framework {
-            baseName = "shared"
-            val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
-            linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
+        binaries {
+            framework {
+                baseName = "shared"
+                val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
+            }
+            getTest("DEBUG").apply {
+                val path = "$rootDir/vendor/CouchbaseLiteSwift.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$path", "-framework", "CouchbaseLiteSwift", "-rpath", path)
+            }
         }
     }
 
