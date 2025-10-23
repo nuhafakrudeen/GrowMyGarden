@@ -67,6 +67,6 @@ class PlantDatabaseTest : KoinTest {
 
     @AfterTest
     fun stopKoin() {
-        startKoin()
+        stopKoin()
     }
 }
