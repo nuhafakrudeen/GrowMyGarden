@@ -20,6 +20,7 @@ kotlin {
             framework {
                 baseName = "Shared"
                 isStatic = true
+                binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
@@ -35,8 +36,10 @@ kotlin {
     iosSimulatorArm64 {
         binaries {
             framework {
-                baseName = "shared"
+                baseName = "Shared"
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
+                isStatic = true
+                binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 //            export(libs.androidx.lifecycle.viewmodel)
             }
