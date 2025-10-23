@@ -89,6 +89,7 @@ tasks.withType<AbstractTestTask> {
         showStackTraces = true
     }
 }
+
 spotless {
     kotlin {
         // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
