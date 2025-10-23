@@ -56,11 +56,12 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
+        println("Successfully Saved Plant")
         val plants = plantRepository.plants
         ((CoroutineName("DatabasePlantRead") + Dispatchers.IO) as CoroutineScope).launch {
             plants.collect { results ->
-                assertNotNull(results)
-                assertEquals(results.first(), examplePlants.first())
+                assertNotNull(results, "Database Read Returned Null")
+                assertEquals(results.first(), examplePlants.first(), "Plants were not equal")
             }
         }
     }

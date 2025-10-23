@@ -1,6 +1,7 @@
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotbase.MutableDocument
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
@@ -47,6 +48,7 @@ class PlantRepository(
     private val collection
         get() = dbProvider.database.defaultCollection
 
+    @NativeCoroutines
     val plants: Flow<List<Plant>>
         get() {
             val query = select(all()) from collection orderBy { "name" }
