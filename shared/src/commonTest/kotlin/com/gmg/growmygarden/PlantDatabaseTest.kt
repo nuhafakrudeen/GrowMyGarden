@@ -10,8 +10,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
 import org.koin.test.inject
 import kotlin.test.Test
@@ -44,30 +47,32 @@ class PlantDatabaseTest : KoinTest {
     val plantRepository: PlantRepository by inject()
 
     @BeforeTest
-    fun startKoin() {
+    fun setup() {
         startKoin {
             modules(dataModule)
         }
         assertNotNull(plantRepository)
     }
 
+    suspend fun testPlantDatabase(plants: Flow<List<Plant>>) {
+        plants.collect { results ->
+            assertNotNull(results, "Database Read Returned Null")
+            assertEquals(results.first(), examplePlants.first(), "Plants were not equal")
+        }
+
+    }
+
     @Test
-    fun testDatabase() {
+    fun testDatabase() = runTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
         println("Successfully Saved Plant")
         val plants = plantRepository.plants
-        ((CoroutineName("DatabasePlantRead") + Dispatchers.IO) as CoroutineScope).launch {
-            plants.collect { results ->
-                assertNotNull(results, "Database Read Returned Null")
-                assertEquals(results.first(), examplePlants.first(), "Plants were not equal")
-            }
-        }
     }
 
     @AfterTest
-    fun stopKoin() {
+    fun cleanup() {
         stopKoin()
     }
 }

@@ -72,6 +72,7 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.koin.core)
             implementation(libs.koin.test)
+            implementation(libs.androidx.coroutine.test)
         }
         iosTest.dependencies {
 
