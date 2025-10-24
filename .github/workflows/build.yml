@@ -37,8 +37,5 @@ jobs:
             -configuration Debug \
             -scheme iosApp \
             -sdk iphonesimulator \
-            FRAMEWORK_SEARCH_PATHS='$(inherited) $(PROJECT_DIR)/../vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator $(PROJECT_DIR)/../shared/build/bin/iosSimulatorArm64/debugFramework' \
-            LD_RUNPATH_SEARCH_PATHS='$(inherited) @executable_path/Frameworks @loader_path/Frameworks' \
-            OTHER_LDFLAGS='$(inherited) -framework CouchbaseLite' \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             -verbose
