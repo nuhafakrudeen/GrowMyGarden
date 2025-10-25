@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
@@ -6,7 +8,6 @@ import kotbase.MutableDocument
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration
-import kotbase.Meta
 import kotbase.ktx.select
 import kotbase.ktx.from
 import kotbase.ktx.orderBy
@@ -21,10 +22,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.String
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * name of plant (users choice)
@@ -34,6 +36,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * */
 @Serializable
 data class Plant(
+    val id: Uuid = Uuid.random(),
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
@@ -75,7 +78,7 @@ class PlantRepository(
 
     operator fun contains(plant: Plant) : Boolean {
        val query = select(all()) from collection where {
-          "name" equalTo plant.name
+          "id" equalTo plant.id.toHexDashString()
        }
         return query.execute().allResults().isNotEmpty()
     }

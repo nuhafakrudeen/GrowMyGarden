@@ -52,6 +52,8 @@ kotlin {
         all {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
             languageSettings.optIn("kotlin.experimental.ExperimentalObjCName")
+            languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
         commonMain.dependencies {
             // put your Multiplatform dependencies here
