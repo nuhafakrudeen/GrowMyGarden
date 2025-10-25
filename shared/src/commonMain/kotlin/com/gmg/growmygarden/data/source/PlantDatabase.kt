@@ -114,7 +114,7 @@ class PlantRepository(
     fun delete(plant: Plant) {
         dbProvider.scope.launch {
             val coll = collection
-            coll.getDocument(plant.name)?.let {
+            coll.getDocument(plant.uuid.toHexDashString())?.let {
                 coll.delete(it)
             }
         }
