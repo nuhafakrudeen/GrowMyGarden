@@ -23,7 +23,6 @@ kotlin {
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
-//            export(libs.androidx.lifecycle.viewmodel)
             }
 
             getTest("DEBUG").apply {
@@ -41,7 +40,6 @@ kotlin {
                 isStatic = true
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
-//            export(libs.androidx.lifecycle.viewmodel)
             }
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
@@ -60,12 +58,6 @@ kotlin {
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
-//            api(libs.androidx.lifecycle.viewmodel)
-            api(libs.kmp.observableviewmodel.core.get().toString()) {
-                exclude(group = "androidx.lifecycle")
-                exclude(group = "androidx.annotation")
-                exclude(group = "androidx.collection")
-            }
             api(libs.androidx.lifecycle.runtimeCompose)
         }
         commonTest.dependencies {
