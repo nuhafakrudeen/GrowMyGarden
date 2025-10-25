@@ -102,7 +102,7 @@ class PlantRepository(
                     fertilizingFrequency = plant.fertilizingFrequency,
                 )
                 val json = Json.encodeToString(updated)
-                val mutableDoc = MutableDocument(plant.name, json)
+                val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
                 coll.save(mutableDoc)
 
             }
