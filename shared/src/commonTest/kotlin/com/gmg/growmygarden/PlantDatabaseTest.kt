@@ -7,6 +7,8 @@ import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import di.dataModule
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -78,7 +80,7 @@ class PlantDatabaseTest : KoinTest {
             examplePlants.first()
         )
         val plants = plantRepository.plants
-        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
+        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database | Plants: ${plantRepository.plants.collect{print(it)}}" }
         plants.collect { results ->
             assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
         }
@@ -89,8 +91,8 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlants(
             *examplePlants.slice(0..1).toTypedArray()
         )
-        assert(examplePlants[0] in plantRepository) {"Plant 1 Not Found in Database"}
-        assert(examplePlants[1] in plantRepository) {"Plant 2 Not Found in Database"}
+        assert(examplePlants[0] in plantRepository) {"Plant 1 Not Found in Database | Plants: ${plantRepository.plants.collect{print(it)}}"}
+        assert(examplePlants[1] in plantRepository) {"Plant 2 Not Found in Database | Plants: ${plantRepository.plants.collect{print(it)}}"}
         plantRepository.plants.collect {
             for(plant in it) {
                 plantRepository.delete(plant)
