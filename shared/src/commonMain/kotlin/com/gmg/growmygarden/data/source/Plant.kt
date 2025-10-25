@@ -12,8 +12,10 @@ import kotbase.ktx.from
 import kotbase.ktx.orderBy
 import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.all
+import kotbase.ktx.where
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -63,10 +65,25 @@ class PlantRepository(
         saveChannel.trySend(plant)
     }
 
+    @NativeCoroutines
+    suspend fun savePlants(vararg plants: Plant) {
+        for(plant in plants ) {
+            savePlant(plant)
+            delay(debounceTime + 10.milliseconds)
+        }
+    }
+
+    operator fun contains(plant: Plant) : Boolean {
+       val query = select(all()) from collection where {
+          "name" equalTo plant.name
+       }
+        return query.execute().allResults().isNotEmpty()
+    }
+
     init {
         @OptIn(FlowPreview::class)
         saveChannel.receiveAsFlow()
-            .debounce(500.milliseconds)
+            .debounce(debounceTime)
             .onEach { plant ->
                 val coll = collection
                 val doc = coll.getDocument(plant.name)
@@ -98,6 +115,7 @@ class PlantRepository(
 
     companion object {
         private const val PLANT_DOC_ID = "plant"
+        private val debounceTime = 250.milliseconds
     }
 }
 

@@ -1,32 +1,23 @@
 package com.gmg.growmygarden
 
-import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import di.dataModule
-import kotbase.Database
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
 import org.koin.test.inject
 import kotlin.test.Test
-import kotlin.test.BeforeClass
-import kotlin.test.AfterClass
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.test.assertNotNull
-import kotlin.time.Duration.Companion.milliseconds
 
 
 class PlantDatabaseTest : KoinTest {
@@ -54,22 +45,63 @@ class PlantDatabaseTest : KoinTest {
         assertNotNull(plantRepository)
     }
 
-    suspend fun testPlantDatabase(plants: Flow<List<Plant>>) {
+    @NativeCoroutinesIgnore
+    suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, against: List<Plant>) {
         plants.collect { results ->
             assertNotNull(results, "Database Read Returned Null")
-            assertEquals(results.first(), examplePlants.first(), "Plants were not equal")
+            for (index in results.indices) {
+                assertEquals(results[index], examplePlants[index], "Plants were not equal")
+            }
         }
+    }
 
+    @NativeCoroutinesIgnore
+    suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, vararg against: Plant) {
+        plants.collect { results ->
+            assertNotNull(results, "Database Read Returned Null")
+            for (index in results.indices) {
+                assertEquals(results[index], examplePlants[index], "Plants were not equal")
+            }
+        }
     }
 
     @Test
-    fun testDatabase() = runTest {
+    fun testDatabaseInsert() = runTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        println("Successfully Saved Plant")
         val plants = plantRepository.plants
+        compareDatabaseContents(plants, examplePlants)
     }
+
+    @Test
+    fun testDatabaseMultiInsert() = runTest {
+        plantRepository.savePlants(
+            *examplePlants.slice(0..1).toTypedArray()
+        )
+        compareDatabaseContents(plantRepository.plants, examplePlants)
+    }
+
+    @Test
+    fun testDatabaseDelete() = runTest {
+        plantRepository.savePlant(examplePlants.first())
+        plantRepository.delete(examplePlants.first())
+        assertFalse {
+            examplePlants.first() in plantRepository
+        }
+    }
+
+    @Test
+    fun testDatabseUpdate() = runTest {
+        val SPECIES_UPDATED_VALUE = "Poison Oak"
+        val normalPlant = examplePlants.first()
+        val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
+        plantRepository.savePlant(normalPlant)
+        compareDatabaseContents(plantRepository.plants, normalPlant)
+        plantRepository.savePlant(normalPlant)
+        compareDatabaseContents(plantRepository.plants, updatedPlant)
+    }
+
 
     @AfterTest
     fun cleanup() {
