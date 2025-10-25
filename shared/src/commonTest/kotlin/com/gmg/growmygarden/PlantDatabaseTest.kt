@@ -77,9 +77,9 @@ class PlantDatabaseTest : KoinTest {
             examplePlants.first()
         )
         val plants = plantRepository.plants
-        assert(examplePlants.first() in plantRepository)
+        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
         plants.collect { results ->
-            assertEquals(results.first(), examplePlants.first())
+            assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
         }
     }
 
@@ -88,8 +88,8 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlants(
             *examplePlants.slice(0..1).toTypedArray()
         )
-        assert(examplePlants[0] in plantRepository)
-        assert(examplePlants[1] in plantRepository)
+        assert(examplePlants[0] in plantRepository) {"Plant 1 Not Found in Database"}
+        assert(examplePlants[1] in plantRepository) {"Plant 2 Not Found in Database"}
         plantRepository.plants.collect {
             for(plant in it) {
                 plantRepository.delete(plant)
@@ -102,7 +102,7 @@ class PlantDatabaseTest : KoinTest {
     fun testDatabaseDelete() = runTest {
         plantRepository.savePlant(examplePlants.first())
         plantRepository.delete(examplePlants.first())
-        assertFalse {
+        assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
         }
     }

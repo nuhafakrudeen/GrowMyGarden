@@ -80,8 +80,8 @@ tasks.withType<AbstractTestTask> {
         events("passed", "skipped", "failed", "standardOut", "standardError")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
         showExceptions = true
-        showCauses = true
-        showStackTraces = true
+        showCauses = false
+        showStackTraces = false
     }
 }
 
