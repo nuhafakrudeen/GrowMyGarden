@@ -22,6 +22,7 @@ import kotlin.test.assertFalse
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 
 
@@ -109,6 +110,9 @@ class PlantDatabaseTest : KoinTest {
 
     @Test
     fun testDatabaseUpdate() = runTest {
+        plantRepository.plants.collect {
+            assert(it.isEmpty()) { "Database is Not Empty"}
+        }
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
