@@ -65,7 +65,10 @@ class PlantRepository(
 
     private val saveChannel = Channel<Plant>(Channel.CONFLATED)
     fun savePlant(plant: Plant) {
-        saveChannel.trySend(plant)
+        val result = saveChannel.trySend(plant)
+        if(result.isFailure ) {
+           println("Failed to Send Write Action to Channel")
+        }
     }
 
     @NativeCoroutines
@@ -90,7 +93,7 @@ class PlantRepository(
             .debounce(debounceTime)
             .onEach { plant ->
                 val coll = collection
-                val doc = coll.getDocument(plant.name)
+                val doc = coll.getDocument(plant.uuid.toHexDashString())
                     ?.let(::decodeDocument)
                     ?: PlantDoc()
                 val updated = doc.copy(
@@ -104,7 +107,6 @@ class PlantRepository(
                 val json = Json.encodeToString(updated)
                 val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
                 coll.save(mutableDoc)
-
             }
             .launchIn(dbProvider.scope)
     }
