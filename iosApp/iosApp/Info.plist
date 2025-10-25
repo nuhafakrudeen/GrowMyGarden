@@ -4,5 +4,12 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We use your photo library so you can attach plant photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need access to save plant photos to your library.</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>We send notifications to remind you to water and fertilize your plants.</string>
+
 </dict>
 </plist>
