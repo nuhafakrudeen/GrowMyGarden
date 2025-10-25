@@ -51,7 +51,7 @@ class PlantRepository(
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     private val collection
-        get() = dbProvider.database.defaultCollection
+        get() = dbProvider.database.createCollection(COLLECTION_NAME)
 
     @NativeCoroutines
     val plants: Flow<List<Plant>>
@@ -120,6 +120,7 @@ class PlantRepository(
 
     companion object {
         private const val PLANT_DOC_ID = "plant"
+        private const val COLLECTION_NAME = "plants"
         private val debounceTime = 250.milliseconds
     }
 }
