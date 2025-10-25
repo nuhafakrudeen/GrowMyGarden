@@ -36,7 +36,7 @@ import kotlin.uuid.Uuid
  * */
 @Serializable
 data class Plant(
-    val id: Uuid = Uuid.random(),
+    val uuid: Uuid = Uuid.random(),
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
@@ -56,7 +56,7 @@ class PlantRepository(
     @NativeCoroutines
     val plants: Flow<List<Plant>>
         get() {
-            val query = select(all()) from collection orderBy { "name" }
+            val query = select(all()) from collection orderBy { "name".descending() }
             return query.asObjectsFlow { json: String ->
                 Json.decodeFromString<Plant>(json)
             }
@@ -70,16 +70,17 @@ class PlantRepository(
 
     @NativeCoroutines
     suspend fun savePlants(vararg plants: Plant) {
-        for(plant in plants ) {
+        for (plant in plants) {
             savePlant(plant)
             delay(debounceTime + 10.milliseconds)
         }
     }
 
-    operator fun contains(plant: Plant) : Boolean {
-       val query = select(all()) from collection where {
-          "id" equalTo plant.id.toHexDashString()
-       }
+    operator fun contains(plant: Plant): Boolean {
+        val query = select(all()) from collection where {
+            "uuid" equalTo plant.uuid.toHexDashString()
+        }
+        println((select(all()) from collection).execute().allResults())
         return query.execute().allResults().isNotEmpty()
     }
 
@@ -93,6 +94,7 @@ class PlantRepository(
                     ?.let(::decodeDocument)
                     ?: PlantDoc()
                 val updated = doc.copy(
+                    uuid = plant.uuid,
                     name = plant.name,
                     scientificName = plant.scientificName,
                     species = plant.species,

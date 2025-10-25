@@ -116,6 +116,8 @@ class PlantDatabaseTest : KoinTest {
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
+        println(normalPlant)
+        println(updatedPlant)
         plantRepository.savePlant(normalPlant)
         compareDatabaseContents(plantRepository.plants, normalPlant)
         plantRepository.savePlant(normalPlant)
