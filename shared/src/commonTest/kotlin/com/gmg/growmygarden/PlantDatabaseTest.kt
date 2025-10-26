@@ -12,6 +12,7 @@ import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.from
 import kotbase.ktx.orderBy
 import kotbase.ktx.select
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -48,26 +51,14 @@ import kotlin.uuid.Uuid
 
 class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
-    val plantsBlocking: List<Plant>
-        get() {
-            val query = select(all()) from super.collection orderBy { "name".descending() }
-            return query.execute().let { rs ->
-                rs.map {
-                    val json = it.toJSON()
-                    Json.decodeFromString<Plant>(Json.decodeFromString<JsonObject>(json)["plants"].toString())
-//                   Plant(
-//                       uuid = Uuid.parse(mapFromJson["uuid"].toString()),
-//                       name = mapFromJson["name"].toString(),
-//                       species = mapFromJson["species"].toString(),
-//                       scientificName = mapFromJson["scientificName"].toString(),
-//                       wateringFrequency = Duration.parse(mapFromJson["wateringFrequency"])
-//
-//                   )
-                }
-            }
+    fun clearDatabase() {
+        for(id in collection.indexes) {
+            collection.purge(id)
         }
+    }
 }
 
+@ExperimentalCoroutinesApi
 class PlantDatabaseTest : KoinTest {
     val examplePlants: List<Plant> = listOf(
         Plant(
@@ -83,17 +74,17 @@ class PlantDatabaseTest : KoinTest {
         )
     )
 
-    val plantRepository: PlantRepository by inject()
+    val plantRepository: TestPlantRepository by inject()
 
     @BeforeTest
     fun setup() {
         startKoin {
-            modules(dataModule)
-//            modules(
-//                module {
-//                    single { DatabaseProvider() }
-//                    single { TestPlantRepository(get()) }
-//                })
+//            modules(dataModule)
+            modules(
+                module {
+                    single { DatabaseProvider(dispatcher = StandardTestDispatcher()) }
+                    single { TestPlantRepository(get()) }
+                })
         }
         assertNotNull(plantRepository)
     }
@@ -120,9 +111,10 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        delay(1500.milliseconds)
+        advanceUntilIdle()
         val plants = plantRepository.plants
-        assertEquals(plants.first().first(), examplePlants.first(), "Database Returned Bad Plant")
+        assertEquals(plants.first{ it.isNotEmpty() }.first(), examplePlants.first(), "Database Returned Bad Plant")
+        plantRepository.clearDatabase()
     }
 
     @Test
@@ -130,27 +122,24 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlants(
             *examplePlants.slice(0..1).toTypedArray()
         )
-        delay(2000.milliseconds)
+        advanceUntilIdle()
         val plants = plantRepository.plants
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
-        for (plant in plantRepository.plants.first()) {
-            plantRepository.delete(plant)
-        }
+        plantRepository.clearDatabase()
     }
 
     @Test
     fun testDatabaseDelete() = runTest {
         plantRepository.savePlant(examplePlants.first())
-        delay(500.milliseconds)
+        advanceUntilIdle()
         plantRepository.delete(examplePlants.first())
+        advanceUntilIdle()
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
         }
         val results = plantRepository.plants.first()
-        for (plant in results) {
-            plantRepository.delete(plant)
-        }
+        plantRepository.clearDatabase()
     }
 
 
@@ -162,11 +151,12 @@ class PlantDatabaseTest : KoinTest {
         println(normalPlant)
         println(updatedPlant)
         plantRepository.savePlant(normalPlant)
-        delay(500.milliseconds)
+        advanceUntilIdle()
         compareDatabaseContents(plantRepository.plants, normalPlant)
         plantRepository.savePlant(normalPlant)
-        delay(500.milliseconds)
+        advanceUntilIdle()
         compareDatabaseContents(plantRepository.plants, updatedPlant)
+        plantRepository.clearDatabase()
     }
 
 

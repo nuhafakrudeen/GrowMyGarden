@@ -93,6 +93,7 @@ open class PlantRepository(
 //            "uuid" equalTo plant.uuid.toHexDashString()
 //        }
 //        return query.execute().allResults().isNotEmpty()
+        println("All Document Indexes: ${collection.indexes()}")
         return collection.getDocument(plant.uuid.toHexDashString()) != null
     }
 
