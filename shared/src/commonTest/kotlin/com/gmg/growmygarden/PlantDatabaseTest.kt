@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
@@ -111,7 +112,7 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        advanceUntilIdle()
+        advanceTimeBy(500.milliseconds)
         val plants = plantRepository.plants
         assertEquals(plants.first{ it.isNotEmpty() }.first(), examplePlants.first(), "Database Returned Bad Plant")
         plantRepository.clearDatabase()
@@ -119,9 +120,10 @@ class PlantDatabaseTest : KoinTest {
 
     @Test
     fun testDatabaseMultiInsert() = runTest {
-        plantRepository.savePlants(
-            *examplePlants.slice(0..1).toTypedArray()
-        )
+        plantRepository.savePlant(examplePlants[0])
+        advanceTimeBy(500.milliseconds)
+        plantRepository.savePlant(examplePlants[1])
+        advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
         val plants = plantRepository.plants
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
@@ -132,8 +134,10 @@ class PlantDatabaseTest : KoinTest {
     @Test
     fun testDatabaseDelete() = runTest {
         plantRepository.savePlant(examplePlants.first())
+        advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
         plantRepository.delete(examplePlants.first())
+        advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
@@ -148,12 +152,12 @@ class PlantDatabaseTest : KoinTest {
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
-        println(normalPlant)
-        println(updatedPlant)
         plantRepository.savePlant(normalPlant)
+        advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
         compareDatabaseContents(plantRepository.plants, normalPlant)
         plantRepository.savePlant(normalPlant)
+        advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
         compareDatabaseContents(plantRepository.plants, updatedPlant)
         plantRepository.clearDatabase()

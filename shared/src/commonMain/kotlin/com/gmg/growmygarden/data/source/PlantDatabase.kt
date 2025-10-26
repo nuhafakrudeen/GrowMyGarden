@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlin.String
 import kotlin.time.Duration.Companion.milliseconds
@@ -65,10 +66,7 @@ open class PlantRepository(
 
     private val saveChannel = Channel<Plant>(Channel.CONFLATED)
     fun savePlant(plant: Plant) {
-        val result = saveChannel.trySend(plant)
-        if(result.isFailure ) {
-           println("Failed to Send Write Action to Channel")
-        }
+        saveChannel.trySend(plant)
     }
 
     @NativeCoroutines
@@ -88,18 +86,33 @@ open class PlantRepository(
         }
     }
 
+    @NativeCoroutines
+    suspend fun getPlant(id: String): Plant? {
+        return withContext(dbProvider.readContext) {
+            collection.getDocument(id)
+                ?.let(::decodeDocument)
+                ?.let(::docToPlant)
+        }
+    }
+
+    private fun docToPlant(doc: PlantDoc): Plant {
+        return Plant(
+            uuid = doc.uuid,
+            name = doc.name,
+            species = doc.species,
+            scientificName = doc.scientificName,
+            wateringFrequency = doc.wateringFrequency,
+            fertilizingFrequency = doc.fertilizingFrequency,
+        )
+    }
+
     operator fun contains(plant: Plant): Boolean {
-//        val query = select(all()) from collection where {
-//            "uuid" equalTo plant.uuid.toHexDashString()
-//        }
-//        return query.execute().allResults().isNotEmpty()
         println("All Document Indexes: ${collection.indexes()}")
-        return collection.getDocument(plant.uuid.toHexDashString()) != null
+        return plant.uuid.toHexDashString() in collection.indexes
     }
 
     init {
-        @OptIn(FlowPreview::class)
-        saveChannel.receiveAsFlow()
+        @OptIn(FlowPreview::class) saveChannel.receiveAsFlow()
             .debounce(debounceTime)
             .onEach { plant ->
                 val coll = collection
@@ -116,8 +129,6 @@ open class PlantRepository(
                 )
                 val json = Json.encodeToString(updated)
                 val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
-                println("Saved a Plant :D | $plant")
-                println("Doc: ${mutableDoc.toString()}")
                 coll.save(mutableDoc)
             }
             .launchIn(dbProvider.scope)
