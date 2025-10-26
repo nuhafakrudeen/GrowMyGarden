@@ -18,7 +18,9 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
@@ -38,13 +40,28 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 import org.koin.dsl.module
 import org.koin.core.module.dsl.singleOf
+import kotlin.time.Duration
+import kotlin.uuid.Uuid
 
 class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     val plantsBlocking: List<Plant>
         get() {
             val query = select(all()) from super.collection orderBy { "name".descending() }
-            return query.execute().allResults().map { Json.decodeFromString(it.toJSON()) }
+            return query.execute().let { rs ->
+                rs.map {
+                    val json = it.toJSON()
+                    Json.decodeFromString<Plant>(Json.decodeFromString<JsonObject>(json)["plants"].toString())
+//                   Plant(
+//                       uuid = Uuid.parse(mapFromJson["uuid"].toString()),
+//                       name = mapFromJson["name"].toString(),
+//                       species = mapFromJson["species"].toString(),
+//                       scientificName = mapFromJson["scientificName"].toString(),
+//                       wateringFrequency = Duration.parse(mapFromJson["wateringFrequency"])
+//
+//                   )
+                }
+            }
         }
 }
 
@@ -71,7 +88,7 @@ class PlantDatabaseTest : KoinTest {
             modules(
                 module {
                     single { DatabaseProvider() }
-                    single { TestPlantRepository(get())}
+                    single { TestPlantRepository(get()) }
                 })
         }
         assertNotNull(plantRepository)
