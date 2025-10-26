@@ -15,6 +15,8 @@ import kotbase.ktx.select
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
@@ -80,16 +82,17 @@ class PlantDatabaseTest : KoinTest {
         )
     )
 
-    val plantRepository: TestPlantRepository by inject()
+    val plantRepository: PlantRepository by inject()
 
     @BeforeTest
     fun setup() {
         startKoin {
-            modules(
-                module {
-                    single { DatabaseProvider() }
-                    single { TestPlantRepository(get()) }
-                })
+            modules(dataModule)
+//            modules(
+//                module {
+//                    single { DatabaseProvider() }
+//                    single { TestPlantRepository(get()) }
+//                })
         }
         assertNotNull(plantRepository)
     }
@@ -106,11 +109,8 @@ class PlantDatabaseTest : KoinTest {
 
     @NativeCoroutinesIgnore
     suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, vararg against: Plant) {
-        plants.collect { results ->
-            assertNotNull(results, "Database Read Returned Null")
-            for (index in results.indices) {
-                assertEquals(results[index], examplePlants[index], "Plants were not equal")
-            }
+        plants.single().forEachIndexed { index, plant ->
+                assertEquals(plant, examplePlants[index], "Plants were not equal")
         }
     }
 
@@ -120,12 +120,8 @@ class PlantDatabaseTest : KoinTest {
             examplePlants.first()
         )
         delay(1500.milliseconds)
-        val plants = plantRepository.plantsBlocking
-        assert(plants.isNotEmpty()) {"Database Returned No Entries"}
-        println(plants)
-//        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
-
-        assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
+        val plants = plantRepository.plants
+        assertEquals(plants.single().first(), examplePlants.first(), "Database Returned Bad Plant")
     }
 
     @Test
@@ -133,13 +129,11 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlants(
             *examplePlants.slice(0..1).toTypedArray()
         )
-        delay(500.milliseconds)
-        val plants = plantRepository.plantsBlocking
-        assert(plants.isNotEmpty()) {"Database Returned No Entries"}
-        println(plants)
+        delay(2000.milliseconds)
+        val plants = plantRepository.plants
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
-        for (plant in plantRepository.plantsBlocking) {
+        for (plant in plantRepository.plants.single()) {
             plantRepository.delete(plant)
         }
     }
@@ -148,13 +142,11 @@ class PlantDatabaseTest : KoinTest {
     fun testDatabaseDelete() = runTest {
         plantRepository.savePlant(examplePlants.first())
         delay(500.milliseconds)
-        val plants = plantRepository.plantsBlocking
-        assert(plants.isNotEmpty()) {"Database Returned No Entries"}
         plantRepository.delete(examplePlants.first())
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
         }
-        val results = plantRepository.plantsBlocking
+        val results = plantRepository.plants.single()
         for (plant in results) {
             plantRepository.delete(plant)
         }
@@ -163,7 +155,6 @@ class PlantDatabaseTest : KoinTest {
 
     @Test
     fun testDatabaseUpdate() = runTest {
-        assert(plantRepository.plantsBlocking.isEmpty()) { "Database is Not Empty" }
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)

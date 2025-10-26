@@ -75,7 +75,7 @@ open class PlantRepository(
     suspend fun savePlants(vararg plants: Plant) {
         for (plant in plants) {
             savePlant(plant)
-            delay(debounceTime + 10.milliseconds)
+            delay(debounceTime + 50.milliseconds)
         }
     }
 
