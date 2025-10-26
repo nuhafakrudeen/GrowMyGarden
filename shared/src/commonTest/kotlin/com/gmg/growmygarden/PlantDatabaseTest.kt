@@ -15,6 +15,7 @@ import kotbase.ktx.select
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
@@ -109,7 +110,7 @@ class PlantDatabaseTest : KoinTest {
 
     @NativeCoroutinesIgnore
     suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, vararg against: Plant) {
-        plants.single().forEachIndexed { index, plant ->
+        plants.first().forEachIndexed { index, plant ->
                 assertEquals(plant, examplePlants[index], "Plants were not equal")
         }
     }
@@ -121,7 +122,7 @@ class PlantDatabaseTest : KoinTest {
         )
         delay(1500.milliseconds)
         val plants = plantRepository.plants
-        assertEquals(plants.single().first(), examplePlants.first(), "Database Returned Bad Plant")
+        assertEquals(plants.first().first(), examplePlants.first(), "Database Returned Bad Plant")
     }
 
     @Test
@@ -133,7 +134,7 @@ class PlantDatabaseTest : KoinTest {
         val plants = plantRepository.plants
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
-        for (plant in plantRepository.plants.single()) {
+        for (plant in plantRepository.plants.first()) {
             plantRepository.delete(plant)
         }
     }
@@ -146,7 +147,7 @@ class PlantDatabaseTest : KoinTest {
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
         }
-        val results = plantRepository.plants.single()
+        val results = plantRepository.plants.first()
         for (plant in results) {
             plantRepository.delete(plant)
         }
