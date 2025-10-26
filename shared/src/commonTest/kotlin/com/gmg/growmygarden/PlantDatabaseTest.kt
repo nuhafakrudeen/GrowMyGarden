@@ -114,13 +114,12 @@ class PlantDatabaseTest : KoinTest {
         }
     }
 
-    @OptIn(ExperimentalNativeApi::class)
     @Test
     fun testDatabaseInsert() = runTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        delay(500.milliseconds)
+        delay(1500.milliseconds)
         val plants = plantRepository.plantsBlocking
         assert(plants.isNotEmpty()) {"Database Returned No Entries"}
         println(plants)
@@ -137,6 +136,7 @@ class PlantDatabaseTest : KoinTest {
         delay(500.milliseconds)
         val plants = plantRepository.plantsBlocking
         assert(plants.isNotEmpty()) {"Database Returned No Entries"}
+        println(plants)
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
         for (plant in plantRepository.plantsBlocking) {
