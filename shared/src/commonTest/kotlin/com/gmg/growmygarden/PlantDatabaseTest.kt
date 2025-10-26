@@ -82,11 +82,16 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        val plants = plantRepository.plants
+        println("Saved Plant")
         delay(300.milliseconds)
-        val results = plants.toList().first()
-        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database | Plants: $results" }
-        assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
+        println("Get Plants")
+        val plants = plantRepository.plants
+        println("Contains")
+        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
+        println("Collect")
+        plants.collect { results ->
+            assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
+        }
     }
 
     @Test
@@ -95,11 +100,12 @@ class PlantDatabaseTest : KoinTest {
             *examplePlants.slice(0..1).toTypedArray()
         )
         delay(300.milliseconds)
-        val results = plantRepository.plants.toList().first()
-        assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database | Plants: $results" }
-        assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database | Plants: $results" }
-        for (plant in results) {
-            plantRepository.delete(plant)
+        assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
+        assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
+        plantRepository.plants.collect { results ->
+            for (plant in results) {
+                plantRepository.delete(plant)
+            }
         }
     }
 
