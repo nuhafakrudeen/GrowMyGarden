@@ -40,6 +40,7 @@ import org.koin.dsl.module
 import org.koin.core.module.dsl.singleOf
 
 class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
+    @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     val plantsBlocking: List<Plant>
         get() {
             val query = select(all()) from super.collection orderBy { "name".descending() }
@@ -67,10 +68,11 @@ class PlantDatabaseTest : KoinTest {
     @BeforeTest
     fun setup() {
         startKoin {
-            module {
-                modules(dataModule)
-                singleOf(::PlantDatabaseTest)
-            }
+            modules(
+                module {
+                    single { DatabaseProvider() }
+                    single { TestPlantRepository(get())}
+                })
         }
         assertNotNull(plantRepository)
     }
@@ -137,7 +139,7 @@ class PlantDatabaseTest : KoinTest {
 
     @Test
     fun testDatabaseUpdate() = runTest {
-        assert(plantRepository.plantsBlocking.isEmpty()) { "Database is Not Empty"}
+        assert(plantRepository.plantsBlocking.isEmpty()) { "Database is Not Empty" }
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
