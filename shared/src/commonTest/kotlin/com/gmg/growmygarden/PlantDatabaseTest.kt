@@ -122,7 +122,10 @@ class PlantDatabaseTest : KoinTest {
         )
         delay(300.milliseconds)
         val plants = plantRepository.plantsBlocking
-        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
+        assert(plants.isNotEmpty()) {"Database Returned No Entries"}
+        println(plants)
+//        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
+
         assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
     }
 
