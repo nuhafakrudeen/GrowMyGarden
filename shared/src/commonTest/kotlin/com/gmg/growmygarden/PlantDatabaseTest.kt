@@ -113,12 +113,17 @@ class PlantDatabaseTest : KoinTest {
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
         }
+        plantRepository.plants.collect {
+            for (plant in it) {
+                plantRepository.delete(plant)
+            }
+        }
     }
 
     @Test
     fun testDatabaseUpdate() = runTest {
         plantRepository.plants.collect {
-            assert(it.isEmpty()) { "Database is Not Empty"}
+            assert(it.isEmpty()) { "Database is Not Empty: $it"}
         }
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()

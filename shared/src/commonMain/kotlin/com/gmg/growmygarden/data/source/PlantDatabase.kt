@@ -79,11 +79,19 @@ class PlantRepository(
         }
     }
 
+    fun delete(plant: Plant) {
+        dbProvider.scope.launch {
+            val coll = collection
+            coll.getDocument(plant.uuid.toHexDashString())?.let {
+                coll.delete(it)
+            }
+        }
+    }
+
     operator fun contains(plant: Plant): Boolean {
         val query = select(all()) from collection where {
             "uuid" equalTo plant.uuid.toHexDashString()
         }
-        println((select(all()) from collection).execute().allResults())
         return query.execute().allResults().isNotEmpty()
     }
 
@@ -111,14 +119,6 @@ class PlantRepository(
             .launchIn(dbProvider.scope)
     }
 
-    fun delete(plant: Plant) {
-        dbProvider.scope.launch {
-            val coll = collection
-            coll.getDocument(plant.uuid.toHexDashString())?.let {
-                coll.delete(it)
-            }
-        }
-    }
 
     companion object {
         private const val PLANT_DOC_ID = "plant"
