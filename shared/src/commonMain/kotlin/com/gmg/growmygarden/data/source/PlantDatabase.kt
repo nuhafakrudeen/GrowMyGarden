@@ -115,6 +115,8 @@ open class PlantRepository(
                 )
                 val json = Json.encodeToString(updated)
                 val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
+                println("Saved a Plant :D | $plant")
+                println("Doc: ${mutableDoc.toString()}")
                 coll.save(mutableDoc)
             }
             .launchIn(dbProvider.scope)
