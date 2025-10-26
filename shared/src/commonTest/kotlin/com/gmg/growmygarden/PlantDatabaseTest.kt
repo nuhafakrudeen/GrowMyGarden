@@ -6,49 +6,29 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
-import di.dataModule
-import kotbase.ktx.all
-import kotbase.ktx.asObjectsFlow
-import kotbase.ktx.from
-import kotbase.ktx.orderBy
-import kotbase.ktx.select
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toCollection
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
 import org.koin.test.inject
-import kotlin.experimental.ExperimentalNativeApi
 import kotlin.test.Test
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 import org.koin.dsl.module
-import org.koin.core.module.dsl.singleOf
-import kotlin.time.Duration
-import kotlin.uuid.Uuid
+import kotlin.time.Duration.Companion.seconds
 
 class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
@@ -77,13 +57,15 @@ class PlantDatabaseTest : KoinTest {
 
     val plantRepository: TestPlantRepository by inject()
 
+    val dispatcher = StandardTestDispatcher()
+
     @BeforeTest
     fun setup() {
         startKoin {
 //            modules(dataModule)
             modules(
                 module {
-                    single { DatabaseProvider(dispatcher = StandardTestDispatcher()) }
+                    single { DatabaseProvider(dispatcher = dispatcher) }
                     single { TestPlantRepository(get()) }
                 })
         }
@@ -108,31 +90,32 @@ class PlantDatabaseTest : KoinTest {
     }
 
     @Test
-    fun testDatabaseInsert() = runTest {
+    fun testDatabaseInsert() = runTest(dispatcher){
         plantRepository.savePlant(
             examplePlants.first()
         )
-        advanceTimeBy(500.milliseconds)
-        val plants = plantRepository.plants
-        assertEquals(plants.first{ it.isNotEmpty() }.first(), examplePlants.first(), "Database Returned Bad Plant")
+
+        advanceTimeBy(300.milliseconds)
+        advanceUntilIdle()
+
+        val plants = plantRepository.plants.first {it.isNotEmpty()}
+        assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
         plantRepository.clearDatabase()
     }
 
     @Test
-    fun testDatabaseMultiInsert() = runTest {
+    fun testDatabaseMultiInsert() = runTest(dispatcher) {
         plantRepository.savePlant(examplePlants[0])
-        advanceTimeBy(500.milliseconds)
+        advanceTimeBy(1.seconds)
         plantRepository.savePlant(examplePlants[1])
-        advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        val plants = plantRepository.plants
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
         plantRepository.clearDatabase()
     }
 
     @Test
-    fun testDatabaseDelete() = runTest {
+    fun testDatabaseDelete() = runTest(dispatcher) {
         plantRepository.savePlant(examplePlants.first())
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
@@ -148,7 +131,7 @@ class PlantDatabaseTest : KoinTest {
 
 
     @Test
-    fun testDatabaseUpdate() = runTest {
+    fun testDatabaseUpdate() = runTest(dispatcher) {
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
