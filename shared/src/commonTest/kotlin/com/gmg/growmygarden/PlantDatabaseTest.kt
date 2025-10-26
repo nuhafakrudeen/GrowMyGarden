@@ -120,7 +120,7 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        delay(300.milliseconds)
+        delay(500.milliseconds)
         val plants = plantRepository.plantsBlocking
         assert(plants.isNotEmpty()) {"Database Returned No Entries"}
         println(plants)
@@ -134,7 +134,9 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlants(
             *examplePlants.slice(0..1).toTypedArray()
         )
-        delay(300.milliseconds)
+        delay(500.milliseconds)
+        val plants = plantRepository.plantsBlocking
+        assert(plants.isNotEmpty()) {"Database Returned No Entries"}
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
         for (plant in plantRepository.plantsBlocking) {
@@ -145,7 +147,9 @@ class PlantDatabaseTest : KoinTest {
     @Test
     fun testDatabaseDelete() = runTest {
         plantRepository.savePlant(examplePlants.first())
-        delay(300.milliseconds)
+        delay(500.milliseconds)
+        val plants = plantRepository.plantsBlocking
+        assert(plants.isNotEmpty()) {"Database Returned No Entries"}
         plantRepository.delete(examplePlants.first())
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
@@ -166,10 +170,10 @@ class PlantDatabaseTest : KoinTest {
         println(normalPlant)
         println(updatedPlant)
         plantRepository.savePlant(normalPlant)
-        delay(300.milliseconds)
+        delay(500.milliseconds)
         compareDatabaseContents(plantRepository.plants, normalPlant)
         plantRepository.savePlant(normalPlant)
-        delay(300.milliseconds)
+        delay(500.milliseconds)
         compareDatabaseContents(plantRepository.plants, updatedPlant)
     }
 
