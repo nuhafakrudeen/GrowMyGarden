@@ -2,16 +2,23 @@
 
 package com.gmg.growmygarden
 
+import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import di.dataModule
+import kotbase.ktx.all
+import kotbase.ktx.asObjectsFlow
+import kotbase.ktx.from
+import kotbase.ktx.orderBy
+import kotbase.ktx.select
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
@@ -29,7 +36,16 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
+import org.koin.dsl.module
+import org.koin.core.module.dsl.singleOf
 
+class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
+    val plantsBlocking: List<Plant>
+        get() {
+            val query = select(all()) from super.collection orderBy { "name".descending() }
+            return query.execute().allResults().map { Json.decodeFromString(it.toJSON()) }
+        }
+}
 
 class PlantDatabaseTest : KoinTest {
     val examplePlants: List<Plant> = listOf(
@@ -46,12 +62,15 @@ class PlantDatabaseTest : KoinTest {
         )
     )
 
-    val plantRepository: PlantRepository by inject()
+    val plantRepository: TestPlantRepository by inject()
 
     @BeforeTest
     fun setup() {
         startKoin {
-            modules(dataModule)
+            module {
+                modules(dataModule)
+                singleOf(::PlantDatabaseTest)
+            }
         }
         assertNotNull(plantRepository)
     }
@@ -82,16 +101,10 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        println("Saved Plant")
         delay(300.milliseconds)
-        println("Get Plants")
-        val plants = plantRepository.plants
-        println("Contains")
+        val plants = plantRepository.plantsBlocking
         assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database" }
-        println("Collect")
-        plants.collect { results ->
-            assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
-        }
+        assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
     }
 
     @Test
@@ -102,10 +115,8 @@ class PlantDatabaseTest : KoinTest {
         delay(300.milliseconds)
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
-        plantRepository.plants.collect { results ->
-            for (plant in results) {
-                plantRepository.delete(plant)
-            }
+        for (plant in plantRepository.plantsBlocking) {
+            plantRepository.delete(plant)
         }
     }
 
@@ -117,7 +128,7 @@ class PlantDatabaseTest : KoinTest {
         assertFalse("Database Failed to Delete Plant 1") {
             examplePlants.first() in plantRepository
         }
-        val results = plantRepository.plants.toList().first()
+        val results = plantRepository.plantsBlocking
         for (plant in results) {
             plantRepository.delete(plant)
         }
@@ -126,9 +137,7 @@ class PlantDatabaseTest : KoinTest {
 
     @Test
     fun testDatabaseUpdate() = runTest {
-        plantRepository.plants.collect {
-            assert(it.isEmpty()) { "Database is Not Empty: $it" }
-        }
+        assert(plantRepository.plantsBlocking.isEmpty()) { "Database is Not Empty"}
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)

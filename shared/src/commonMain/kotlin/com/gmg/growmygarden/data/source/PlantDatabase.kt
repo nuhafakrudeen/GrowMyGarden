@@ -46,11 +46,11 @@ data class Plant(
     )
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
-class PlantRepository(
+open class PlantRepository(
     private val dbProvider: DatabaseProvider
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
-    private val collection
+    internal val collection
         get() = dbProvider.database.createCollection(COLLECTION_NAME)
 
     @NativeCoroutines
