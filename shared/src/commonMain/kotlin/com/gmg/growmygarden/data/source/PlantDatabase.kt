@@ -89,10 +89,11 @@ class PlantRepository(
     }
 
     operator fun contains(plant: Plant): Boolean {
-        val query = select(all()) from collection where {
-            "uuid" equalTo plant.uuid.toHexDashString()
-        }
-        return query.execute().allResults().isNotEmpty()
+//        val query = select(all()) from collection where {
+//            "uuid" equalTo plant.uuid.toHexDashString()
+//        }
+//        return query.execute().allResults().isNotEmpty()
+        return collection.getDocument(plant.uuid.toHexDashString()) != null
     }
 
     init {

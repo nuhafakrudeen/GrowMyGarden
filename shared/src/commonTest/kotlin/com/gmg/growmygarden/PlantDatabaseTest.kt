@@ -82,15 +82,10 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(
             examplePlants.first()
         )
-        println('1')
         val plants = plantRepository.plants
-        println('2')
         delay(300.milliseconds)
-        println('3')
         val results = plants.toList().first()
-        println('4')
         assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database | Plants: $results" }
-        println('5')
         assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
     }
 
