@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -83,10 +84,9 @@ class PlantDatabaseTest : KoinTest {
         )
         val plants = plantRepository.plants
         delay(300.milliseconds)
-        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database | Plants: ${plantRepository.plants.collect{print(it)}}" }
-        plants.collect { results ->
-            assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
-        }
+        val results = plants.toList().first()
+        assert(examplePlants.first() in plantRepository) { "Plant Not Found in Database | Plants: $results" }
+        assertEquals(results.first(), examplePlants.first(), "Database Returned Bad Plant")
     }
 
     @Test
@@ -95,14 +95,12 @@ class PlantDatabaseTest : KoinTest {
             *examplePlants.slice(0..1).toTypedArray()
         )
         delay(300.milliseconds)
-        assert(examplePlants[0] in plantRepository) {"Plant 1 Not Found in Database | Plants: ${plantRepository.plants.collect{print(it)}}"}
-        assert(examplePlants[1] in plantRepository) {"Plant 2 Not Found in Database | Plants: ${plantRepository.plants.collect{print(it)}}"}
-        plantRepository.plants.collect {
-            for(plant in it) {
-                plantRepository.delete(plant)
-            }
+        val results = plantRepository.plants.toList().first()
+        assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database | Plants: $results" }
+        assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database | Plants: $results" }
+        for (plant in results) {
+            plantRepository.delete(plant)
         }
-
     }
 
     @Test
@@ -123,7 +121,7 @@ class PlantDatabaseTest : KoinTest {
     @Test
     fun testDatabaseUpdate() = runTest {
         plantRepository.plants.collect {
-            assert(it.isEmpty()) { "Database is Not Empty: $it"}
+            assert(it.isEmpty()) { "Database is Not Empty: $it" }
         }
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
