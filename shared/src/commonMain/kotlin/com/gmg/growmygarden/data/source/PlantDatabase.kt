@@ -106,10 +106,6 @@ open class PlantRepository(
         )
     }
 
-    operator fun contains(plant: Plant): Boolean {
-        println("All Document Indexes: ${collection.indexes()}")
-        return plant.uuid.toHexDashString() in collection.indexes
-    }
 
     init {
         @OptIn(FlowPreview::class) saveChannel.receiveAsFlow()

@@ -37,6 +37,11 @@ class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProv
             collection.purge(id)
         }
     }
+
+    operator fun contains(plant: Plant): Boolean {
+        println("All Document Indexes: ${collection.indexes()}")
+        return plant.uuid.toHexDashString() in collection.indexes
+    }
 }
 
 @ExperimentalCoroutinesApi
@@ -91,6 +96,7 @@ class PlantDatabaseTest : KoinTest {
 
     @Test
     fun testDatabaseInsert() = runTest(dispatcher){
+        println("Start Test 1")
         plantRepository.savePlant(
             examplePlants.first()
         )
@@ -101,10 +107,12 @@ class PlantDatabaseTest : KoinTest {
         val plants = plantRepository.plants.first {it.isNotEmpty()}
         assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
         plantRepository.clearDatabase()
+        println("Finish Test 1")
     }
 
     @Test
     fun testDatabaseMultiInsert() = runTest(dispatcher) {
+        println("Start Test 2")
         plantRepository.savePlant(examplePlants[0])
         advanceTimeBy(1.seconds)
         plantRepository.savePlant(examplePlants[1])
@@ -112,10 +120,12 @@ class PlantDatabaseTest : KoinTest {
         assert(examplePlants[0] in plantRepository) { "Plant 1 Not Found in Database" }
         assert(examplePlants[1] in plantRepository) { "Plant 2 Not Found in Database" }
         plantRepository.clearDatabase()
+        println("Finish Test 2")
     }
 
     @Test
     fun testDatabaseDelete() = runTest(dispatcher) {
+        println("Start Test 3")
         plantRepository.savePlant(examplePlants.first())
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
@@ -127,23 +137,28 @@ class PlantDatabaseTest : KoinTest {
         }
         val results = plantRepository.plants.first()
         plantRepository.clearDatabase()
+        println("Finish Test 3")
     }
 
 
     @Test
     fun testDatabaseUpdate() = runTest(dispatcher) {
+        println("Start Test 4")
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
         plantRepository.savePlant(normalPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        compareDatabaseContents(plantRepository.plants, normalPlant)
+        var plant = plantRepository.plants.first { it.isNotEmpty() }
+        assertEquals(plant.first(), normalPlant)
         plantRepository.savePlant(normalPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        compareDatabaseContents(plantRepository.plants, updatedPlant)
+        plant = plantRepository.plants.first { it.isNotEmpty() }
+        assertEquals(plant.first(), updatedPlant)
         plantRepository.clearDatabase()
+        println("Finish Test 4")
     }
 
 
