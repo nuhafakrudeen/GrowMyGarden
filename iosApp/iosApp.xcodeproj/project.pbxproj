@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		44EFE7182EABE71C00752B75 /* CouchbaseLiteSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 44EFE7172EABE71C00752B75 /* CouchbaseLiteSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		C1B14DD531C9249FD161466B /* growmygarden.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = growmygarden.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -41,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				44EFE7182EABE71C00752B75 /* CouchbaseLiteSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +90,7 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				44EFE7172EABE71C00752B75 /* CouchbaseLiteSwift */,
 			);
 			productName = iosApp;
 			productReference = C1B14DD531C9249FD161466B /* growmygarden.app */;
@@ -114,6 +120,9 @@
 			);
 			mainGroup = C85602A68AFF086A8B587ED2;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				44EFE7162EABE71C00752B75 /* XCRemoteSwiftPackageReference "couchbase-lite-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91BFDEAC9727C58436B9AA59 /* Products */;
 			projectDirPath = "";
@@ -368,6 +377,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		44EFE7162EABE71C00752B75 /* XCRemoteSwiftPackageReference "couchbase-lite-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/couchbase/couchbase-lite-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		44EFE7172EABE71C00752B75 /* CouchbaseLiteSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 44EFE7162EABE71C00752B75 /* XCRemoteSwiftPackageReference "couchbase-lite-ios" */;
+			productName = CouchbaseLiteSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BF76DD2A8B933A5025C4E4DB /* Project object */;
 }

@@ -31,4 +31,11 @@ jobs:
       - name: iOS set up
         uses: ./.github/actions/ios-setup
 
-      - run: xcodebuild build -project iosApp/iosApp.xcodeproj -configuration Debug -scheme iosApp -sdk iphoneos -destination name='iPhone 16' -verbose
+      - run: |
+          xcodebuild build \
+            -project iosApp/iosApp.xcodeproj \
+            -configuration Debug \
+            -scheme iosApp \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -verbose
