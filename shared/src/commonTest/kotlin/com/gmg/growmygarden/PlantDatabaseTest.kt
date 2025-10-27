@@ -148,16 +148,17 @@ class PlantDatabaseTest : KoinTest {
     fun testDatabaseUpdate() = runTest(dispatcher) {
         val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
-        val uuid = normalPlant.uuid
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
+        assertEquals(normalPlant.uuid, updatedPlant.uuid, "UUIDs not equal")
+        val uuid = normalPlant.uuid
         plantRepository.savePlant(normalPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        assertEquals(plantRepository.getPlant(uuid), normalPlant)
+        assertEquals(plantRepository.getPlant(uuid), normalPlant, "Plant failed to insert")
         plantRepository.savePlant(normalPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        assertEquals(plantRepository.getPlant(uuid), updatedPlant)
+        assertEquals(plantRepository.getPlant(uuid), updatedPlant, "Plant failed to update")
         plantRepository.clearDatabase()
     }
 
