@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class) @file:Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 
 package com.gmg.growmygarden
 
@@ -6,6 +6,9 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
+import kotbase.Meta
+import kotbase.ktx.select
+import kotbase.ktx.from
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -31,16 +34,21 @@ import org.koin.dsl.module
 import kotlin.time.Duration.Companion.seconds
 
 class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
-    @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     fun clearDatabase() {
-        for(id in collection.indexes) {
-            collection.purge(id)
+        (select(Meta.id) from this.collection).execute().use { results ->
+            results.allResults().forEach { result ->
+                val id = result.getString(0)
+                if (id != null) {
+                    collection.purge(id)
+                }
+
+
+            }
         }
     }
 
     operator fun contains(plant: Plant): Boolean {
-        println("All Document Indexes: ${collection.indexes()}")
-        return plant.uuid.toHexDashString() in collection.indexes
+        return this.collection.getDocument(plant.uuid.toHexDashString()) != null
     }
 }
 
@@ -90,12 +98,12 @@ class PlantDatabaseTest : KoinTest {
     @NativeCoroutinesIgnore
     suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, vararg against: Plant) {
         plants.first().forEachIndexed { index, plant ->
-                assertEquals(plant, examplePlants[index], "Plants were not equal")
+            assertEquals(plant, examplePlants[index], "Plants were not equal")
         }
     }
 
     @Test
-    fun testDatabaseInsert() = runTest(dispatcher){
+    fun testDatabaseInsert() = runTest(dispatcher) {
         println("Start Test 1")
         plantRepository.savePlant(
             examplePlants.first()
@@ -104,7 +112,7 @@ class PlantDatabaseTest : KoinTest {
         advanceTimeBy(300.milliseconds)
         advanceUntilIdle()
 
-        val plants = plantRepository.plants.first {it.isNotEmpty()}
+        val plants = plantRepository.plants.first { it.isNotEmpty() }
         assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
         plantRepository.clearDatabase()
         println("Finish Test 1")
