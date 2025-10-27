@@ -113,7 +113,7 @@ class PlantDatabaseTest : KoinTest {
         advanceUntilIdle()
 
         val plants = plantRepository.plants.first { it.isNotEmpty() }
-        assertEquals(plants.first(), examplePlants.first(), "Database Returned Bad Plant")
+        assertEquals(examplePlants.first(),plants.first(),  "Database Returned Bad Plant")
         plantRepository.clearDatabase()
     }
 
@@ -154,11 +154,11 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(normalPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        assertEquals(plantRepository.getPlant(uuid), normalPlant, "Plant failed to insert")
-        plantRepository.savePlant(normalPlant)
+        assertEquals(normalPlant, plantRepository.getPlant(uuid),  "Plant failed to insert")
+        plantRepository.savePlant(updatedPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        assertEquals(plantRepository.getPlant(uuid), updatedPlant, "Plant failed to update")
+        assertEquals(updatedPlant, plantRepository.getPlant(uuid),  "Plant failed to update")
         plantRepository.clearDatabase()
     }
 
