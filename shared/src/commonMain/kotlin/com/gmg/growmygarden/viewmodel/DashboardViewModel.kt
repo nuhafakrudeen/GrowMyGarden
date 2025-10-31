@@ -19,4 +19,12 @@ class DashboardViewModel(
         started = SharingStarted.WhileSubscribed(5000L),
         initialValue = listOf<Plant>(),
     )
+
+    fun savePlant(plant: Plant) {
+        plantRepository.savePlant(plant)
+    }
+
+    fun deletePlant(plant: Plant) {
+        plantRepository.delete(plant)
+    }
 }
