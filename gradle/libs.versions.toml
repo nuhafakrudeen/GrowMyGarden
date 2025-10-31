@@ -22,6 +22,7 @@ koin = "4.1.0"
 kotlinx-serialization-json = "1.9.0"
 observableviewmodel = "1.0.0-BETA-14"
 androidx-coroutine-test = "1.10.2"
+filekit = "0.12.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -42,6 +43,8 @@ koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin"
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin"}
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json"}
 kmp-observableviewmodel-core = {module = "com.rickclephas.kmp:kmp-observableviewmodel-core", version.ref = "observableviewmodel"}
+filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit"}
+filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit"}
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

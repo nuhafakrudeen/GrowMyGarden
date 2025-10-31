@@ -3,6 +3,8 @@
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
+import com.gmg.growmygarden.data.image.PlantImage
+import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotbase.MutableDocument
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +26,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.koin.core.component.KoinComponent
+import org.koin.ext.inject
 import kotlin.String
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
@@ -36,15 +40,16 @@ import kotlin.uuid.Uuid
  * how much and how often to water the plant
  * */
 @Serializable
-data class Plant(
+class Plant(
     val uuid: Uuid = Uuid.random(),
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
     val wateringFrequency: Duration = Duration.ZERO,
     val fertilizingFrequency: Duration = Duration.ZERO,
-
-    )
+    @Serializable(with = PlantImageSerializer::class)
+    val image: PlantImage? = null,
+)
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantRepository(

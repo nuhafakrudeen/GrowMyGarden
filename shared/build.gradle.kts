@@ -60,6 +60,9 @@ kotlin {
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.filekit.core)
+            implementation(libs.filekit.dialogs)
+
             api(libs.androidx.lifecycle.runtimeCompose)
         }
         commonTest.dependencies {
