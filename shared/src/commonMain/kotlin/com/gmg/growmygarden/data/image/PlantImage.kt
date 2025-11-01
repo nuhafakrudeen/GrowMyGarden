@@ -1,0 +1,39 @@
+package com.gmg.growmygarden.data.image
+
+import io.github.vinceglb.filekit.PlatformFile
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlin.uuid.Uuid
+
+class PlantImage(
+    val uuid: Uuid = Uuid.random(),
+) {
+    val hqPath: String
+        get() = "/img/$uuid.png"
+    val lqPath: String
+        get() = "/img/${uuid}_lq.png"
+
+    val lqFile: PlatformFile
+        get() = PlatformFile(this.lqPath)
+    val hqFile: PlatformFile
+        get() = PlatformFile(this.hqPath)
+}
+
+object PlantImageSerializer : KSerializer<PlantImage> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("org.gmg.growmygardner.PlantImage", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: PlantImage) {
+        encoder.encodeString(
+            value.uuid.toHexDashString(),
+        )
+    }
+
+    override fun deserialize(decoder: Decoder): PlantImage {
+        return PlantImage(Uuid.parse(decoder.decodeString()))
+    }
+}

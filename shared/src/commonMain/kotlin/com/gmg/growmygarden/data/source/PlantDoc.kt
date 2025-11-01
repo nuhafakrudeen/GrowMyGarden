@@ -17,7 +17,7 @@ data class PlantDoc(
     val scientificName: String = "",
     val species: String = "",
     val wateringFrequency: Duration = Duration.ZERO,
-    val fertilizingFrequency: Duration = Duration.ZERO
+    val fertilizingFrequency: Duration = Duration.ZERO,
 )
 
 fun decodeDocument(doc: Document?): PlantDoc? {
@@ -25,4 +25,3 @@ fun decodeDocument(doc: Document?): PlantDoc? {
         Json.decodeFromString<PlantDoc>(json)
     }
 }
-

@@ -9,6 +9,10 @@ plugins {
 }
 
 kotlin {
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 //    androidTarget {
 //        compilerOptions {
 //            jvmTarget.set(JvmTarget.JVM_11)
@@ -23,6 +27,7 @@ kotlin {
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                export(libs.androidx.lifecycle.viewmodel)
             }
 
             getTest("DEBUG").apply {
@@ -40,6 +45,7 @@ kotlin {
                 isStatic = true
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                export(libs.androidx.lifecycle.viewmodel)
             }
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
@@ -60,7 +66,12 @@ kotlin {
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.filekit.core)
+            implementation(libs.filekit.dialogs)
+
+            api(libs.androidx.lifecycle.viewmodel)
             api(libs.androidx.lifecycle.runtimeCompose)
+            api(libs.kmp.observableviewmodel.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -87,10 +98,13 @@ tasks.withType<AbstractTestTask> {
 
 spotless {
     kotlin {
+        target("src/**/*.kt")
+        targetExclude("build/**/*.kt")
+        targetExclude("src/androidMain/**/*.kt")
         // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
         ktlint(libs.versions.ktlint.asProvider().get()).editorConfigOverride(
             mapOf(
-                "indent_size" to 2,
+                "indent_size" to 4,
                 // intellij_idea is the default style we preset in Spotless, you can override it referring to https://pinterest.github.io/ktlint/latest/rules/code-styles.
                 "ktlint_code_style" to "intellij_idea",
             )
