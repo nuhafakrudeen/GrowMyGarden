@@ -9,6 +9,10 @@ plugins {
 }
 
 kotlin {
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 //    androidTarget {
 //        compilerOptions {
 //            jvmTarget.set(JvmTarget.JVM_11)
@@ -94,10 +98,12 @@ tasks.withType<AbstractTestTask> {
 
 spotless {
     kotlin {
+        target("src/**/*.kt")
+        targetExclude("build/**/*.kt")
         // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
         ktlint(libs.versions.ktlint.asProvider().get()).editorConfigOverride(
             mapOf(
-                "indent_size" to 2,
+                "indent_size" to 4,
                 // intellij_idea is the default style we preset in Spotless, you can override it referring to https://pinterest.github.io/ktlint/latest/rules/code-styles.
                 "ktlint_code_style" to "intellij_idea",
             )

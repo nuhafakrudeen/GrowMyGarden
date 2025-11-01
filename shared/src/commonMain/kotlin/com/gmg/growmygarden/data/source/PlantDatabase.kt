@@ -7,28 +7,25 @@ import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotbase.MutableDocument
-import kotlinx.coroutines.flow.Flow
-import kotlinx.serialization.Serializable
-import kotlin.time.Duration
-import kotbase.ktx.select
+import kotbase.ktx.all
+import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.from
 import kotbase.ktx.orderBy
-import kotbase.ktx.asObjectsFlow
-import kotbase.ktx.all
-import kotbase.ktx.where
+import kotbase.ktx.select
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.koin.core.component.KoinComponent
-import org.koin.ext.inject
 import kotlin.String
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -40,7 +37,7 @@ import kotlin.uuid.Uuid
  * how much and how often to water the plant
  * */
 @Serializable
-class Plant(
+data class Plant(
     val uuid: Uuid = Uuid.random(),
     val name: String = "",
     val scientificName: String = "",
@@ -48,12 +45,12 @@ class Plant(
     val wateringFrequency: Duration = Duration.ZERO,
     val fertilizingFrequency: Duration = Duration.ZERO,
     @Serializable(with = PlantImageSerializer::class)
-    val image: PlantImage? = null,
+    var image: PlantImage? = null,
 )
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantRepository(
-    private val dbProvider: DatabaseProvider
+    private val dbProvider: DatabaseProvider,
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection
@@ -67,7 +64,6 @@ open class PlantRepository(
                 Json.decodeFromString<Plant>(json)
             }
         }
-
 
     private val saveChannel = Channel<Plant>(Channel.CONFLATED)
     fun savePlant(plant: Plant) {
@@ -116,9 +112,9 @@ open class PlantRepository(
         )
     }
 
-
     init {
-        @OptIn(FlowPreview::class) saveChannel.receiveAsFlow()
+        @OptIn(FlowPreview::class)
+        saveChannel.receiveAsFlow()
             .debounce(debounceTime)
             .onEach { plant ->
                 val coll = collection
@@ -140,11 +136,9 @@ open class PlantRepository(
             .launchIn(dbProvider.scope)
     }
 
-
     companion object {
         private const val PLANT_DOC_ID = "plant"
         private const val COLLECTION_NAME = "plants"
         private val debounceTime = 250.milliseconds
     }
 }
-

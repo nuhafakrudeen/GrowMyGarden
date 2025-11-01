@@ -11,5 +11,5 @@ class PlantScopeProvider(
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
     val writeContext: CoroutineContext = CoroutineName("image-write") + dispatcher.limitedParallelism(1),
     val readContext: CoroutineContext = CoroutineName("image-read") + dispatcher,
-    val scope: CoroutineScope = CoroutineScope(writeContext)
-    )
+    val scope: CoroutineScope = CoroutineScope(writeContext),
+)

@@ -1,9 +1,7 @@
 package com.gmg.growmygarden.data.image
 
 import io.github.vinceglb.filekit.PlatformFile
-import kotlinx.io.files.Path
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -12,12 +10,17 @@ import kotlinx.serialization.encoding.Encoder
 import kotlin.uuid.Uuid
 
 class PlantImage(
-    val uuid: Uuid = Uuid.Companion.random()
+    val uuid: Uuid = Uuid.random(),
 ) {
-    val hqPath : String
+    val hqPath: String
         get() = "/img/$uuid.png"
-    val lqPath : String
+    val lqPath: String
         get() = "/img/${uuid}_lq.png"
+
+    val lqFile: PlatformFile
+        get() = PlatformFile(this.lqPath)
+    val hqFile: PlatformFile
+        get() = PlatformFile(this.hqPath)
 }
 
 object PlantImageSerializer : KSerializer<PlantImage> {
@@ -26,7 +29,7 @@ object PlantImageSerializer : KSerializer<PlantImage> {
 
     override fun serialize(encoder: Encoder, value: PlantImage) {
         encoder.encodeString(
-            value.uuid.toHexDashString()
+            value.uuid.toHexDashString(),
         )
     }
 
@@ -34,4 +37,3 @@ object PlantImageSerializer : KSerializer<PlantImage> {
         return PlantImage(Uuid.parse(decoder.decodeString()))
     }
 }
-

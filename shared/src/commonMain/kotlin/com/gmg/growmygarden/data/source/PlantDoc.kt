@@ -3,8 +3,9 @@
 
 package com.gmg.growmygarden.data.source
 
+import com.gmg.growmygarden.data.image.PlantImage
+import com.gmg.growmygarden.data.image.PlantImageSerializer
 import kotbase.Document
-import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
@@ -19,7 +20,8 @@ data class PlantDoc(
     val species: String = "",
     val wateringFrequency: Duration = Duration.ZERO,
     val fertilizingFrequency: Duration = Duration.ZERO,
-    val imagePath: String? = null,
+    @Serializable(with = PlantImageSerializer::class)
+    var image: PlantImage? = null,
 )
 
 fun decodeDocument(doc: Document?): PlantDoc? {
@@ -27,4 +29,3 @@ fun decodeDocument(doc: Document?): PlantDoc? {
         Json.decodeFromString<PlantDoc>(json)
     }
 }
-
