@@ -3,8 +3,6 @@
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
-import com.gmg.growmygarden.data.image.PlantImage
-import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotbase.MutableDocument
 import kotbase.ktx.all
@@ -44,8 +42,7 @@ data class Plant(
     val species: String = "",
     val wateringFrequency: Duration = Duration.ZERO,
     val fertilizingFrequency: Duration = Duration.ZERO,
-    @Serializable(with = PlantImageSerializer::class)
-    var image: PlantImage? = null,
+
 )
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")

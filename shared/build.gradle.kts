@@ -100,6 +100,7 @@ spotless {
     kotlin {
         target("src/**/*.kt")
         targetExclude("build/**/*.kt")
+        targetExclude("src/androidMain/**/*.kt")
         // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
         ktlint(libs.versions.ktlint.asProvider().get()).editorConfigOverride(
             mapOf(
