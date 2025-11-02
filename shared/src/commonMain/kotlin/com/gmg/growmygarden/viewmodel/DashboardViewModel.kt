@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlin.collections.listOf
 
 class DashboardViewModel(
-    private val plantRepository: PlantRepository
+    private val plantRepository: PlantRepository,
 ) : ViewModel() {
 
     @NativeCoroutinesState
