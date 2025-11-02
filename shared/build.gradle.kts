@@ -10,6 +10,8 @@ plugins {
 
 kotlin {
 
+    applyDefaultHierarchyTemplate()
+
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
