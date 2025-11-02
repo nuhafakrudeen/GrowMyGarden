@@ -25,6 +25,7 @@ kotlin {
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                export(libs.androidx.lifecycle.viewmodel)
             }
 
             getTest("DEBUG").apply {
@@ -42,6 +43,7 @@ kotlin {
                 isStatic = true
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                export(libs.androidx.lifecycle.viewmodel)
             }
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
@@ -49,7 +51,6 @@ kotlin {
             }
         }
     }
-
 
     sourceSets {
         all {
@@ -59,10 +60,14 @@ kotlin {
             languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
         commonMain.dependencies {
+            // put your Multiplatform dependencies here
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.kotlinx.serialization.json)
+            api(libs.androidx.lifecycle.viewmodel)
+            api(libs.androidx.lifecycle.runtimeCompose)
+            api(libs.kmp.observableviewmodel.core)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
@@ -70,7 +75,6 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.alarmee)
         }
         commonTest.dependencies {
@@ -78,7 +82,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.test)
             implementation(libs.androidx.coroutine.test)
-            implementation(libs.kotlin.test)
             implementation(libs.moko.permissions.test)
         }
         iosTest.dependencies {
@@ -104,10 +107,13 @@ tasks.withType<AbstractTestTask> {
 
 spotless {
     kotlin {
+        target("src/**/*.kt")
+        targetExclude("build/**/*.kt")
+        targetExclude("src/androidMain/**/*.kt")
         // version, editorConfigPath, editorConfigOverride and customRuleSets are all optional
         ktlint(libs.versions.ktlint.asProvider().get()).editorConfigOverride(
             mapOf(
-                "indent_size" to 2,
+                "indent_size" to 4,
                 // intellij_idea is the default style we preset in Spotless, you can override it referring to https://pinterest.github.io/ktlint/latest/rules/code-styles.
                 "ktlint_code_style" to "intellij_idea",
             )
@@ -118,8 +124,6 @@ spotless {
         )
     }
 }
-
-
 
 //android {
 //    namespace = "com.gmg.growmygarden.shared"

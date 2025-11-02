@@ -1,9 +1,5 @@
 package com.gmg.growmygarden
 
-import com.tweener.alarmee.AlarmeeService
-import com.tweener.alarmee.configuration.AlarmeeIosPlatformConfiguration
-import com.tweener.alarmee.configuration.AlarmeePlatformConfiguration
-import com.tweener.alarmee.rememberAlarmeeService
 import platform.UIKit.UIDevice
 
 class IOSPlatform : Platform {
@@ -11,9 +7,3 @@ class IOSPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
-
-
-
-
-
-

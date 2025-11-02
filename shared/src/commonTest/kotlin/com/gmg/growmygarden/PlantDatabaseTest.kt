@@ -1,4 +1,5 @@
-@file:OptIn(ExperimentalUuidApi::class) @file:Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
+@file:OptIn(ExperimentalUuidApi::class)
+@file:Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 
 package com.gmg.growmygarden
 
@@ -7,8 +8,8 @@ import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotbase.Meta
-import kotbase.ktx.select
 import kotbase.ktx.from
+import kotbase.ktx.select
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -18,20 +19,20 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.inject
-import kotlin.test.Test
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.uuid.ExperimentalUuidApi
-import org.koin.dsl.module
 import kotlin.time.Duration.Companion.seconds
+import kotlin.uuid.ExperimentalUuidApi
 
 class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
     fun clearDatabase() {
@@ -41,8 +42,6 @@ class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProv
                 if (id != null) {
                     collection.purge(id)
                 }
-
-
             }
         }
     }
@@ -57,16 +56,25 @@ class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProv
 class PlantDatabaseTest : KoinTest {
     val examplePlants: List<Plant> = listOf(
         Plant(
-            name = "Plant1", species = "Ivy", wateringFrequency = 1.days, fertilizingFrequency = 7.days + 5.hours
+            name = "Plant1",
+            species = "Ivy",
+            wateringFrequency = 1.days,
+            fertilizingFrequency = 7.days + 5.hours,
         ),
 
         Plant(
-            name = "Plant2", species = "Plant", wateringFrequency = 4.days, fertilizingFrequency = 3.5.days
+            name = "Plant2",
+            species = "Plant",
+            wateringFrequency = 4.days,
+            fertilizingFrequency = 3.5.days,
         ),
 
         Plant(
-            name = "Plant3", species = "Plant", wateringFrequency = 4.days, fertilizingFrequency = 3.5.days
-        )
+            name = "Plant3",
+            species = "Plant",
+            wateringFrequency = 4.days,
+            fertilizingFrequency = 3.5.days,
+        ),
     )
 
     val plantRepository: TestPlantRepository by inject()
@@ -81,7 +89,8 @@ class PlantDatabaseTest : KoinTest {
                 module {
                     single { DatabaseProvider(dispatcher = dispatcher) }
                     single { TestPlantRepository(get()) }
-                })
+                },
+            )
         }
         assertNotNull(plantRepository)
     }
@@ -106,14 +115,14 @@ class PlantDatabaseTest : KoinTest {
     @Test
     fun testDatabaseInsert() = runTest(dispatcher) {
         plantRepository.savePlant(
-            examplePlants.first()
+            examplePlants.first(),
         )
 
         advanceTimeBy(300.milliseconds)
         advanceUntilIdle()
 
         val plants = plantRepository.plants.first { it.isNotEmpty() }
-        assertEquals(examplePlants.first(),plants.first(),  "Database Returned Bad Plant")
+        assertEquals(examplePlants.first(), plants.first(), "Database Returned Bad Plant")
         plantRepository.clearDatabase()
     }
 
@@ -143,10 +152,8 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.clearDatabase()
     }
 
-
     @Test
     fun testDatabaseUpdate() = runTest(dispatcher) {
-        val SPECIES_UPDATED_VALUE = "Poison Oak"
         val normalPlant = examplePlants.first()
         val updatedPlant = normalPlant.copy(species = SPECIES_UPDATED_VALUE)
         assertEquals(normalPlant.uuid, updatedPlant.uuid, "UUIDs not equal")
@@ -154,17 +161,20 @@ class PlantDatabaseTest : KoinTest {
         plantRepository.savePlant(normalPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        assertEquals(normalPlant, plantRepository.getPlant(uuid),  "Plant failed to insert")
+        assertEquals(normalPlant, plantRepository.getPlant(uuid), "Plant failed to insert")
         plantRepository.savePlant(updatedPlant)
         advanceTimeBy(500.milliseconds)
         advanceUntilIdle()
-        assertEquals(updatedPlant, plantRepository.getPlant(uuid),  "Plant failed to update")
+        assertEquals(updatedPlant, plantRepository.getPlant(uuid), "Plant failed to update")
         plantRepository.clearDatabase()
     }
-
 
     @AfterTest
     fun cleanup() {
         stopKoin()
+    }
+
+    companion object {
+        const val SPECIES_UPDATED_VALUE = "Poison Oak"
     }
 }
