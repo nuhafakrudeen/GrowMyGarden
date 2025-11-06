@@ -133,6 +133,8 @@ kotlin {
 
 swiftPackageConfig {
     create("nativeBridge") {
+        minIos = "13.0"
+        minMacos = "10.15"
         dependency {
             remotePackageVersion(
                 url = uri("https://github.com/firebase/firebase-ios-sdk.git"),
