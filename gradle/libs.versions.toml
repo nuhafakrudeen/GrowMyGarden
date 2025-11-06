@@ -26,6 +26,8 @@ compose = "1.6.5"
 alarmee = "2.4.0"
 moko = "0.20.1"
 filekit = "0.12.0"
+gitlive-firebase = "2.4.0"
+spm4kmp = "1.0.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -54,6 +56,8 @@ moko-permissions-compose = {group = "dev.icerock.moko", name = "permissions-comp
 
 filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit"}
 filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit"}
+firebase-auth = {group = "dev.gitlive", name = "firebase-auth", version.ref = "gitlive-firebase"}
+firebase-app = {group = "dev.gitlive", name = "firebase-app", version.ref = "gitlive-firebase"}
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -65,3 +69,4 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kmp-nativecoroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "kmp-nativecoroutines"}
 kotlinx-serialization = {id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin"}
+spm4kmp = { id = "io.github.frankois944.spmForKmp", version.ref = "spm4kmp"}

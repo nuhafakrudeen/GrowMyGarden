@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.spm4kmp)
+
 }
 
 kotlin {
@@ -29,8 +31,13 @@ kotlin {
                 baseName = "Shared"
                 isStatic = true
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
+
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+
+                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
+
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
             }
@@ -38,6 +45,15 @@ kotlin {
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+
+                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
+            }
+
+            compilations {
+                val main by getting {
+                    cinterops.create("nativeBridge")
+                }
             }
         }
     }
@@ -48,14 +64,25 @@ kotlin {
                 baseName = "Shared"
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 isStatic = true
+
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+
+                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
             }
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
+            }
+            compilations {
+                val main by getting {
+                    cinterops.create("nativeBridge")
+                }
             }
         }
     }
@@ -76,6 +103,8 @@ kotlin {
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
 
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.app)
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.kmp.observableviewmodel.core)
             implementation(libs.alarmee)
@@ -99,6 +128,21 @@ kotlin {
 
         }
 
+    }
+}
+
+swiftPackageConfig {
+    create("nativeBridge") {
+        dependency {
+            remotePackageVersion(
+                url = uri("https://github.com/firebase/firebase-ios-sdk.git"),
+                products = {
+                    add("FirebaseCore")
+                    add("FirebaseAuth")
+                },
+                version = "12.5.0"
+            )
+        }
     }
 }
 
