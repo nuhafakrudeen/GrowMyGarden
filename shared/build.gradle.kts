@@ -140,7 +140,7 @@ swiftPackageConfig {
                     add("FirebaseCore")
                     add("FirebaseAuth")
                 },
-                version = "12.5.0"
+                version = "11.5.0"
             )
         }
     }
