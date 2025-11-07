@@ -27,7 +27,6 @@ alarmee = "2.4.0"
 moko = "0.20.1"
 filekit = "0.12.0"
 gitlive-firebase = "2.4.0"
-spm4kmp = "1.0.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -69,4 +68,3 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kmp-nativecoroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "kmp-nativecoroutines"}
 kotlinx-serialization = {id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin"}
-spm4kmp = { id = "io.github.frankois944.spmForKmp", version.ref = "spm4kmp"}
