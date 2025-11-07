@@ -6,8 +6,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
 
+enum class LoginStatus {
+    UNINITIALIZED,
+    FAILED,
+    AUTHENTICATED,
+}
 class LoginService(
-    scope: CoroutineScope,
+    val scope: CoroutineScope,
     authProvider: UserAuthProvider = UserAuthProvider(),
 ) {
 
@@ -29,10 +34,4 @@ class LoginService(
             loginStatusChannel.trySend(LoginStatus.FAILED)
         }
     }
-}
-
-enum class LoginStatus {
-    UNINITIALIZED,
-    FAILED,
-    AUTHENTICATED,
 }
