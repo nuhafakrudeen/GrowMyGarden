@@ -17,7 +17,7 @@ object NotificationHandler {
 
     private val localService = alarmeeService.local
 
-    fun setNotif(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Int) {
+    fun setNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Int) {
         localService.schedule(
             alarmee = Alarmee(
                 uuid = id,
@@ -35,12 +35,12 @@ object NotificationHandler {
         )
     }
 
-    fun cancelAlarms(id: String) {
-        if (id.isEmpty()) {
-            localService.cancelAll()
-        } else {
-            localService.cancel(uuid = id)
-        }
+    fun cancelNotification(id: String) {
+        localService.cancel(uuid = id)
+    }
+
+    fun cancelAllNotifications() {
+        localService.cancelAll()
     }
 }
 

@@ -68,13 +68,6 @@ kotlin {
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.androidx.lifecycle.runtimeCompose)
             api(libs.kmp.observableviewmodel.core)
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.alarmee)
         }
         commonTest.dependencies {
