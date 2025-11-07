@@ -16,7 +16,7 @@ class NotificationViewModel : ViewModel(){
 
     //Optional since this is just to view the state of the notifications
     @NativeCoroutinesState
-    private val commandLog = MutableStateFlow<String>("None")
+    val commandLog = MutableStateFlow<String>("None")
     val commandHistory: StateFlow<String> get() = commandLog
 
     fun createNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Int)
