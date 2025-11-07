@@ -35,7 +35,7 @@ kotlin {
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 
-                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                val spmPath = "${layout.buildDirectory.get().asFile.absolutePath}/spm/nativeBridge/build/Release-iphoneos"
                 linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
 
                 export(libs.androidx.lifecycle.viewmodel)
@@ -46,7 +46,7 @@ kotlin {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 
-                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                val spmPath = "${layout.buildDirectory.get().asFile.absolutePath}/spm/nativeBridge/build/Release-iphoneos"
                 linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
             }
 
@@ -68,7 +68,7 @@ kotlin {
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
 
-                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                val spmPath = "${layout.buildDirectory.get().asFile.absolutePath}/spm/nativeBridge/build/Release-iphonesimulator"
                 linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
@@ -76,7 +76,7 @@ kotlin {
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
-                val spmPath = "${layout.buildDirectory}/spm/nativeBridge/build/Release-iphoneos"
+                val spmPath = "${layout.buildDirectory.get().asFile.absolutePath}/spm/nativeBridge/build/Release-iphonesimulator"
                 linkerOpts("-F$spmPath", "-framework", "FirebaseCore", "-framework", "FirebaseAuth", "-rpath", spmPath)
             }
             compilations {
