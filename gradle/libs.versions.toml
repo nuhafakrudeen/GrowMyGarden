@@ -27,6 +27,7 @@ alarmee = "2.4.0"
 moko = "0.20.1"
 filekit = "0.12.0"
 gitlive-firebase = "2.4.0"
+kermit = "2.0.4"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -42,6 +43,7 @@ androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmode
 androidx-coroutine-test = {module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "androidx-coroutine-test"}
 ktlint-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "ktlint-rules" }
 kotbase-ktx = { module = "dev.kotbase:couchbase-lite-ktx", version.ref = "kotbase" }
+kotbase-kermit = {module = "dev.kotbase:couchbase-lite-kermit", version.ref = "kotbase"}
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin"}
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin"}
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json"}
@@ -57,6 +59,7 @@ filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.re
 filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit"}
 firebase-auth = {group = "dev.gitlive", name = "firebase-auth", version.ref = "gitlive-firebase"}
 firebase-app = {group = "dev.gitlive", name = "firebase-app", version.ref = "gitlive-firebase"}
+kermit = {module = "co.touchlab:kermit", version.ref = "kermit"}
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

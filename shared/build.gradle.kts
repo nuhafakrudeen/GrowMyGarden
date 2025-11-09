@@ -77,6 +77,7 @@ kotlin {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
             implementation(libs.kotbase.ktx)
+            implementation(libs.kotbase.kermit)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.kotlinx.serialization.json)
@@ -85,6 +86,7 @@ kotlin {
 
             implementation(libs.firebase.auth)
             implementation(libs.firebase.app)
+            implementation(libs.kermit)
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.kmp.observableviewmodel.core)
             implementation(libs.alarmee)
