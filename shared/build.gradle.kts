@@ -9,6 +9,12 @@ plugins {
 }
 
 kotlin {
+
+    applyDefaultHierarchyTemplate()
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 //    androidTarget {
 //        compilerOptions {
 //            jvmTarget.set(JvmTarget.JVM_11)
@@ -24,6 +30,7 @@ kotlin {
                 val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
                 export(libs.androidx.lifecycle.viewmodel)
+                export(libs.kmp.observableviewmodel.core)
             }
 
             getTest("DEBUG").apply {
@@ -42,6 +49,7 @@ kotlin {
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
                 export(libs.androidx.lifecycle.viewmodel)
+                export(libs.kmp.observableviewmodel.core)
             }
             getTest("DEBUG").apply {
                 val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
@@ -62,8 +70,10 @@ kotlin {
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.filekit.core)
+            implementation(libs.filekit.dialogs)
+
             api(libs.androidx.lifecycle.viewmodel)
-            api(libs.androidx.lifecycle.runtimeCompose)
             api(libs.kmp.observableviewmodel.core)
         }
         commonTest.dependencies {
@@ -71,6 +81,10 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.test)
             implementation(libs.androidx.coroutine.test)
+        }
+
+        iosMain.dependencies {
+            api(libs.kmp.observableviewmodel.core)
         }
         iosTest.dependencies {
 
