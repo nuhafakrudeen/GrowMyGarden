@@ -42,38 +42,23 @@ class DashboardViewModel(
         val title = "Reminder: Water ${plant.name}"
         val body = "It's time to water your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
         val delay: Long = plant.wateringFrequency.inWholeMilliseconds / 60000
-        var generatedNotificationID: String
 
-        while (true) {
-            generatedNotificationID = Uuid.random().toString()
-            if (!currentlyUsedNotificationIDs.contains(generatedNotificationID)) {
-                currentlyUsedNotificationIDs.add(generatedNotificationID)
-                plant.wateringNotificationID = generatedNotificationID
-                break
-            }
-        }
+        val generatedNotificationID: Uuid = Uuid.random()
+        plant.wateringNotificationID = generatedNotificationID
 
-        NotificationHandler.setNotification(generatedNotificationID, title, body, date, image, delay)
+        NotificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
         commandLog.update { "Setting water notification for ${plant.name}" }
     }
 
-    fun createFertilizerNotification(id: String, date: LocalDateTime, plant: Plant, image: String?) {
+    fun createFertilizerNotification(date: LocalDateTime, plant: Plant, image: String?) {
         val title = "Reminder: Fertilize ${plant.name}"
         val body = "It's time to give your ${plant.name} some fertilizer. Make sure to do so soon so that it can stay healthy and grow"
         val delay: Long = plant.fertilizingFrequency.inWholeMilliseconds / 60000
 
-        var generatedNotificationID: String
+        val generatedNotificationID: Uuid = Uuid.random()
+        plant.fertilizerNotificationID = generatedNotificationID
 
-        while (true) {
-            generatedNotificationID = Uuid.random().toString()
-            if (!currentlyUsedNotificationIDs.contains(generatedNotificationID)) {
-                currentlyUsedNotificationIDs.add(generatedNotificationID)
-                plant.fertilizerNotificationID = generatedNotificationID
-                break
-            }
-        }
-
-        NotificationHandler.setNotification(id, title, body, date, image, delay)
+        NotificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
         commandLog.update { "Setting fertilizer notification for ${plant.name}" }
     }
 

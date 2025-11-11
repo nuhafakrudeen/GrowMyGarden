@@ -41,9 +41,9 @@ data class Plant(
     val scientificName: String = "",
     val species: String = "",
     val wateringFrequency: Duration = Duration.ZERO,
-    var wateringNotificationID: String = "",
+    var wateringNotificationID: Uuid,
     val fertilizingFrequency: Duration = Duration.ZERO,
-    var fertilizerNotificationID: String = "",
+    var fertilizerNotificationID: Uuid,
 
 )
 
