@@ -15,7 +15,7 @@ class NotificationViewModel : ViewModel() {
     val commandLog = MutableStateFlow<String>("None")
     val commandHistory: StateFlow<String> get() = commandLog
 
-    fun createNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Int) {
+    fun createNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Long) {
         NotificationHandler.setNotification(id, title, body, date, image, delay)
         commandLog.update { "Created New Notif: $title" }
     }

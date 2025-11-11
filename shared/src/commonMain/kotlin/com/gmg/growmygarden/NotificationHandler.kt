@@ -17,7 +17,7 @@ object NotificationHandler {
 
     private val localService = alarmeeService.local
 
-    fun setNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Int) {
+    fun setNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Long) {
         localService.schedule(
             alarmee = Alarmee(
                 uuid = id,
