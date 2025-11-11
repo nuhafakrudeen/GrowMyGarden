@@ -2,11 +2,200 @@ import UserNotifications
 import Photos
 import PhotosUI
 import SwiftUI
+import FirebaseAuth
+import FirebaseCore
+import GoogleSignIn
+import UIKit
+import AuthenticationServices
+import CryptoKit
 
 //shared auth state for the app
-final class AuthManager: ObservableObject {
+final class AuthManager: NSObject, ObservableObject {
     @Published var isLoggedIn: Bool = false
+
+    private var authListenerHandle: AuthStateDidChangeListenerHandle?
+    fileprivate var currentNonce: String?
+    
+    override init() {
+        super.init()
+
+        authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            DispatchQueue.main.async {
+                self?.isLoggedIn = (user != nil)
+            }
+        }
+    }
+    
+    deinit {
+        if let handle = authListenerHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
+    
+    func signOut() {
+        do {
+            try Auth.auth().signOut()
+        } catch {
+            print("Error signing out: \(error)")
+        }
+        isLoggedIn = false
+    }
+    
 }
+
+extension AuthManager {
+    func signInWithGoogle() {
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            print("No Firebase clientID")
+            return
+        }
+
+        // Configure Google Sign-In
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+
+        guard
+            let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let rootVC = scene.windows.first?.rootViewController
+        else {
+            print("No root view controller for Google Sign-In")
+            return
+        }
+
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootVC) { result, error in
+            if let error = error {
+                print("Google Sign-In error:", error)
+                return
+            }
+
+            guard
+                let user = result?.user,
+                let idToken = user.idToken?.tokenString
+            else {
+                print("Google Sign-In: missing user or idToken")
+                return
+            }
+
+            let accessToken = user.accessToken.tokenString
+
+            let credential = GoogleAuthProvider.credential(
+                withIDToken: idToken,
+                accessToken: accessToken
+            )
+
+            Auth.auth().signIn(with: credential) { _, error in
+                if let error = error {
+                    print("Firebase Google auth failed:", error)
+                } else {
+                    print("Google Sign-In + Firebase auth success")
+                    
+                }
+            }
+        }
+    }
+}
+
+extension AuthManager {
+    func signInWithApple() {
+        print("Starting Apple sign-in")
+
+        let nonce = randomNonceString()
+        currentNonce = nonce
+
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
+
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        controller.performRequests()
+    }
+
+    // MARK: - Nonce helpers
+
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remainingLength = length
+
+        while remainingLength > 0 {
+            var random: UInt8 = 0
+            let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+            if status != errSecSuccess {
+                fatalError("Unable to generate nonce. SecRandomCopyBytes failed with status \(status)")
+            }
+
+            if random < charset.count {
+                result.append(charset[Int(random)])
+                remainingLength -= 1
+            }
+        }
+
+        return result
+    }
+
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashed = SHA256.hash(data: inputData)
+        return hashed.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+
+extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithAuthorization authorization: ASAuthorization) {
+        print("Apple authorization completed")
+
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            print("No AppleIDCredential")
+            return
+        }
+
+        guard let nonce = currentNonce else {
+            print("Missing currentNonce")
+            return
+        }
+
+        guard let appleIDTokenData = appleIDCredential.identityToken,
+              let idTokenString = String(data: appleIDTokenData, encoding: .utf8) else {
+            print("Unable to get identity token")
+            return
+        }
+
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: nonce,
+            fullName: appleIDCredential.fullName
+        )
+
+        print("Got Apple credential, signing in with Firebase...")
+
+        Auth.auth().signIn(with: credential) { _, error in
+            if let error = error {
+                print("Firebase Apple auth error:", error)
+            } else {
+                print("Firebase Apple auth success")
+                // listener will update isLoggedIn
+            }
+        }
+    }
+
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithError error: Error) {
+        print("Sign in with Apple failed:", error)
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
+    }
+}
+
 
 // ===============================================================
 // MARK: - AUTH ROOT (Chooses between login and main app)
@@ -19,8 +208,7 @@ struct AuthRootView: View {
             PlantsHomeView()
         } else {
             AuthView {
-                // Called when login/signup succeeds
-                auth.isLoggedIn = true
+                // Firebase listener in AuthManager will update isLoggedIN
             }
         }
     }
@@ -202,7 +390,7 @@ struct ProfileView: View {
 
                 // LOG OUT BUTTON
                 Button {
-                    auth.isLoggedIn = false
+                    auth.signOut()
                 } label: {
                     Text("Log Out")
                         .font(.system(size: 16, weight: .semibold))
@@ -1165,9 +1353,12 @@ struct AuthView: View {
 // ===============================================================
 
 struct SignInForm: View {
-    @State private var username: String = ""
+    @EnvironmentObject var auth: AuthManager
+    
+    @State private var username: String = ""   // email
     @State private var password: String = ""
     @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
     @State private var showForgotSheet: Bool = false
     @State private var forgotEmail: String = ""
 
@@ -1179,12 +1370,13 @@ struct SignInForm: View {
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundColor(Color("DarkGreen"))
 
-            // Username
+            // Email (was Username)
             VStack(alignment: .leading, spacing: 6) {
-                Text("Username")
+                Text("Email")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                TextField("Enter your username", text: $username)
+                TextField("you@example.com", text: $username)
+                    .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.none)
                     .autocorrectionDisabled()
                     .padding(10)
@@ -1211,6 +1403,7 @@ struct SignInForm: View {
             HStack {
                 Spacer()
                 Button("Forgot Password?") {
+                    forgotEmail = username
                     showForgotSheet = true
                 }
                 .font(.caption)
@@ -1219,12 +1412,7 @@ struct SignInForm: View {
 
             // Login button
             Button {
-                // super simple for now
-                if username.isEmpty || password.isEmpty {
-                    showError = true
-                } else {
-                    onLoginSuccess()
-                }
+                signIn()
             } label: {
                 Text("LOGIN")
                     .font(.system(size: 16, weight: .semibold))
@@ -1237,7 +1425,7 @@ struct SignInForm: View {
             .padding(.top, 4)
 
             if showError {
-                Text("Please enter both username and password.")
+                Text(errorMessage.isEmpty ? "Please enter email and password." : errorMessage)
                     .font(.caption)
                     .foregroundColor(.red)
             }
@@ -1254,6 +1442,7 @@ struct SignInForm: View {
 
             // Continue with Apple / Google
             Button {
+                auth.signInWithApple()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "applelogo")
@@ -1267,8 +1456,9 @@ struct SignInForm: View {
                         .stroke(Color("DarkGreen").opacity(0.3), lineWidth: 1)
                 )
             }
-            // Google login
+
             Button {
+                auth.signInWithGoogle()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "globe")
@@ -1285,10 +1475,34 @@ struct SignInForm: View {
 
         }
         .sheet(isPresented: $showForgotSheet) {
-                ForgotPasswordSheet(email: $forgotEmail)
+            ForgotPasswordSheet(email: $forgotEmail)
+        }
+    }
+
+    private func signIn() {
+        let email = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pwd = password.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !email.isEmpty, !pwd.isEmpty else {
+            showError = true
+            errorMessage = "Please enter email and password."
+            return
+        }
+
+        Auth.auth().signIn(withEmail: email, password: pwd) { _, error in
+            if let error = error {
+                showError = true
+                errorMessage = error.localizedDescription
+                print("Sign in failed:", error)
+            } else {
+                showError = false
+                errorMessage = ""
+                onLoginSuccess()
             }
+        }
     }
 }
+
 
 
 
@@ -1297,10 +1511,13 @@ struct SignInForm: View {
 // ===============================================================
 
 struct SignUpForm: View {
+    @EnvironmentObject var auth: AuthManager
+    
     @State private var username: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
 
     let onSignUpSuccess: () -> Void
     let onSwitchToLogin: () -> Void
@@ -1357,12 +1574,7 @@ struct SignUpForm: View {
 
             // Create account button
             Button {
-                // Simple check
-                if username.isEmpty || email.isEmpty || password.isEmpty {
-                    showError = true
-                } else {
-                    onSignUpSuccess()
-                }
+                signUp()
             } label: {
                 Text("CREATE ACCOUNT")
                     .font(.system(size: 16, weight: .semibold))
@@ -1375,7 +1587,7 @@ struct SignUpForm: View {
             .padding(.top, 4)
 
             if showError {
-                Text("Please fill in all fields.")
+                Text(errorMessage.isEmpty ? "Please fill in all fields." : errorMessage)
                     .font(.caption)
                     .foregroundColor(.red)
             }
@@ -1404,10 +1616,11 @@ struct SignUpForm: View {
 
             // Continue with
             Button {
+                auth.signInWithApple()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "applelogo")
-                    Text("Login with Apple")
+                    Text("Sign up with Apple")
                 }
                 .font(.system(size: 14, weight: .medium))
                 .frame(maxWidth: .infinity)
@@ -1417,12 +1630,13 @@ struct SignUpForm: View {
                         .stroke(Color("DarkGreen").opacity(0.3), lineWidth: 1)
                 )
             }
-            // Google
+
             Button {
+                auth.signInWithGoogle()
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "globe")
-                    Text("Login with Google")
+                    Text("Sign up with Google")
                 }
                 .font(.system(size: 14, weight: .medium))
                 .frame(maxWidth: .infinity)
@@ -1431,6 +1645,29 @@ struct SignUpForm: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color("DarkGreen").opacity(0.3), lineWidth: 1)
                 )
+            }
+        }
+    }
+
+    private func signUp() {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !username.isEmpty, !trimmedEmail.isEmpty, !trimmedPassword.isEmpty else {
+            showError = true
+            errorMessage = "Please fill in all fields."
+            return
+        }
+
+        Auth.auth().createUser(withEmail: trimmedEmail, password: trimmedPassword) { _, error in
+            if let error = error {
+                showError = true
+                errorMessage = error.localizedDescription
+                print("Sign up failed:", error)
+            } else {
+                showError = false
+                errorMessage = ""
+                onSignUpSuccess()
             }
         }
     }
@@ -1487,12 +1724,20 @@ struct ForgotPasswordSheet: View {
                     }
 
                     Button {
-                        if email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.isEmpty {
                             showError = true
                         } else {
-                            // call backend / Firebase to send reset email.
                             showError = false
-                            dismiss()
+                            Auth.auth().sendPasswordReset(withEmail: trimmed) { error in
+                                if let error = error {
+                                    showError = true
+                                    print("Password reset error:", error)
+                                } else {
+                                    // success: dismiss the sheet
+                                    dismiss()
+                                }
+                            }
                         }
                     } label: {
                         Text("Send Reset Link")
@@ -1504,7 +1749,6 @@ struct ForgotPasswordSheet: View {
                             .cornerRadius(12)
                     }
                     .padding(.top, 4)
-
                     Spacer()
                 }
                 .padding(20)
