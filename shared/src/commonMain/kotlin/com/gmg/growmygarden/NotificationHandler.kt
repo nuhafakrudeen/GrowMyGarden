@@ -10,7 +10,7 @@ import com.tweener.alarmee.model.RepeatInterval
 import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration.Companion.minutes
 
-object NotificationHandler {
+class NotificationHandler {
     private val alarmeeService = createAlarmeeService().apply {
         initialize(createAlarmeePlatformConfiguration())
     }

@@ -16,6 +16,7 @@ import kotlin.uuid.Uuid
 
 class DashboardViewModel(
     private val plantRepository: PlantRepository,
+    private val notificationHandler: NotificationHandler,
 ) : ViewModel() {
 
     @NativeCoroutinesState
@@ -25,10 +26,8 @@ class DashboardViewModel(
         initialValue = listOf<Plant>(),
     )
 
-    val commandLog = MutableStateFlow<String>("None")
+    private val commandLog = MutableStateFlow<String>("None")
     val commandHistory: StateFlow<String> get() = commandLog
-
-    val currentlyUsedNotificationIDs: MutableSet<String> = mutableSetOf()
 
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
@@ -46,7 +45,7 @@ class DashboardViewModel(
         val generatedNotificationID: Uuid = Uuid.random()
         plant.wateringNotificationID = generatedNotificationID
 
-        NotificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
+        notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
         commandLog.update { "Setting water notification for ${plant.name}" }
     }
 
@@ -58,14 +57,14 @@ class DashboardViewModel(
         val generatedNotificationID: Uuid = Uuid.random()
         plant.fertilizerNotificationID = generatedNotificationID
 
-        NotificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
+        notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
         commandLog.update { "Setting fertilizer notification for ${plant.name}" }
     }
 
     fun cancelWateringNotification(plant: Plant) {
-        if (!plant.wateringNotificationID.isEmpty()) {
-            NotificationHandler.cancelNotification(plant.wateringNotificationID)
-            currentlyUsedNotificationIDs.remove(plant.wateringNotificationID)
+        if (plant.wateringNotificationID != null) {
+            notificationHandler.cancelNotification(plant.wateringNotificationID.toString())
+            plant.wateringNotificationID = null
             commandLog.update { "Cancelling water notification for ${plant.name}" }
         } else {
             commandLog.update { "Failed to cancel water notification: No ID found" }
@@ -73,9 +72,9 @@ class DashboardViewModel(
     }
 
     fun cancelFertilizerNotification(plant: Plant) {
-        if (!plant.fertilizerNotificationID.isEmpty()) {
-            NotificationHandler.cancelNotification(plant.fertilizerNotificationID)
-            currentlyUsedNotificationIDs.remove(plant.fertilizerNotificationID)
+        if (plant.fertilizerNotificationID != null) {
+            notificationHandler.cancelNotification(plant.fertilizerNotificationID.toString())
+            plant.fertilizerNotificationID = null
             commandLog.update { "Cancelling fertilizer notification for ${plant.name}" }
         } else {
             commandLog.update { "Failed to cancel fertilizer notification: No ID found" }
