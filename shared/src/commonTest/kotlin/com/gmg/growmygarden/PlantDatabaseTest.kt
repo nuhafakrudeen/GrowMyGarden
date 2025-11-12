@@ -7,7 +7,6 @@ import com.gmg.growmygarden.auth.UserAuthProvider
 import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
-import com.gmg.growmygarden.di.userModule
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotbase.Meta
 import kotbase.ktx.from
@@ -24,6 +23,7 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.inject
+import org.koin.test.mock.declareMock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -88,7 +88,9 @@ class PlantDatabaseTest : KoinTest {
         startKoin {
 //            modules(dataModule)
             modules(
-                userModule,
+                module {
+                    declareMock<UserAuthProvider> { DummyUserAuthProvider() }
+                },
                 module {
                     single { DatabaseProvider(dispatcher = dispatcher) }
                     single { TestPlantRepository(get(), get()) }
