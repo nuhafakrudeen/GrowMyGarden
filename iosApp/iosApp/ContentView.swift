@@ -334,8 +334,6 @@ struct PlantsHomeView: View {
                     }
                 case .search:
                     Spacer(minLength: 0)
-                case .community:
-                    Spacer(minLength: 0)
                 case .plantbook:
                     Spacer(minLength: 0)
                 case .profile:
@@ -353,11 +351,31 @@ struct PlantsHomeView: View {
     }
 }
 
-// ===============================================================
+/// ===============================================================
 // MARK: - PROFILE VIEW
 // ===============================================================
 struct ProfileView: View {
     @EnvironmentObject var auth: AuthManager
+
+    // Firebase user shortcut
+    private var user: FirebaseAuth.User? {
+        Auth.auth().currentUser
+    }
+
+    // Editable state
+    @State private var editableName: String = ""
+    @State private var isSavingName = false
+    @State private var nameSaveError: String?
+
+    // Avatar storage
+    @AppStorage("gmg.profileImageData") private var profileImageData: Data?
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showPhotoPicker = false
+    @State private var showPhotoDeniedAlert = false
+
+    private var emailText: String {
+        user?.email ?? "No email on file"
+    }
 
     var body: some View {
         ZStack {
@@ -368,45 +386,199 @@ struct ProfileView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .foregroundColor(Color("DarkGreen"))
-                    .padding(.top, 60)
+            ScrollView {
+                VStack(spacing: 28) {
 
-                Text("Your Profile")
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .foregroundColor(Color("DarkGreen"))
+                    // ===============================
+                    // MARK: Avatar + Email
+                    // ===============================
+                    VStack(spacing: 14) {
+                        Button {
+                            checkPhotoPermissionAndOpen()
+                        } label: {
+                            ZStack {
+                                if let data = profileImageData,
+                                   let uiImage = UIImage(data: data) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else {
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .foregroundColor(Color("DarkGreen"))
+                                        .padding(16)
+                                }
+                            }
+                            .frame(width: 120, height: 120)
+                            .background(Color.white.opacity(0.9))
+                            .clipShape(Circle())
+                            .shadow(color: Color("DarkGreen").opacity(0.25), radius: 8, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 50)
 
-                Text("Manage your account, preferences, and settings here.")
-                    .font(.subheadline)
-                    .foregroundColor(Color("DarkGreen").opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
+                        Text(emailText)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
 
-                Spacer()
+                    // ===============================
+                    // MARK: Display Name Editor
+                    // ===============================
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Display Name")
+                            .font(.headline)
+                            .foregroundColor(Color("DarkGreen"))
 
-                // LOG OUT BUTTON
-                Button {
-                    auth.signOut()
-                } label: {
-                    Text("Log Out")
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.white)
-                        .foregroundColor(Color("DarkGreen"))
-                        .cornerRadius(12)
-                        .shadow(color: Color("DarkGreen").opacity(0.2), radius: 6, y: 3)
+                        TextField("Your name", text: $editableName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.white.opacity(0.95))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color("DarkGreen").opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+
+                        if let nameSaveError {
+                            Text(nameSaveError)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+
+                        Button {
+                            saveDisplayName()
+                        } label: {
+                            if isSavingName {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                            } else {
+                                Text("Save Display Name")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                            }
+                        }
+                        .background(Color("DarkGreen"))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .padding(.horizontal, 28)
+
+                    // ===============================
+                    // MARK: Log Out Button
+                    // ===============================
+                    Button {
+                        auth.signOut()
+                    } label: {
+                        Text("Log Out")
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.white)
+                            .foregroundColor(Color("DarkGreen"))
+                            .cornerRadius(14)
+                            .shadow(color: Color("DarkGreen").opacity(0.2), radius: 6, y: 3)
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.vertical, 32)
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+            }
+        }
+
+        // ===============================
+        // MARK: Photo Picker + Alerts
+        // ===============================
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $selectedPhotoItem,
+            matching: .images,
+            preferredItemEncoding: .compatible
+        )
+        .onChange(of: selectedPhotoItem, initial: false) { _, newItem in
+            Task {
+                if let data = await loadImageData(from: newItem) {
+                    profileImageData = data
+                }
+            }
+        }
+
+        .alert("Photo Access Needed", isPresented: $showPhotoDeniedAlert) {
+            Button("Open Settings") {
+                PhotoPermissionManager.openSettings()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Allow photo access to change your profile picture.")
+        }
+        .onAppear {
+            let fallback = user?.email ?? "Garden Lover"
+            editableName = (user?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap {
+                $0.isEmpty ? nil : $0
+            } ?? fallback
+        }
+    }
+
+    private func checkPhotoPermissionAndOpen() {
+        switch PhotoPermissionManager.status() {
+        case .authorized, .limited:
+            showPhotoPicker = true
+        case .notDetermined:
+            PhotoPermissionManager.requestReadWrite { granted in
+                if granted { showPhotoPicker = true }
+                else { showPhotoDeniedAlert = true }
+            }
+        case .denied, .restricted:
+            showPhotoDeniedAlert = true
+        @unknown default:
+            break
+        }
+    }
+
+    private func saveDisplayName() {
+        guard let user = Auth.auth().currentUser else { return }
+
+        let trimmed = editableName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            nameSaveError = "Display name cannot be empty."
+            return
+        }
+
+        isSavingName = true
+        nameSaveError = nil
+
+        let changeRequest = user.createProfileChangeRequest()
+        changeRequest.displayName = trimmed
+        changeRequest.commitChanges { error in
+            DispatchQueue.main.async {
+                self.isSavingName = false
+                if let error = error {
+                    self.nameSaveError = error.localizedDescription
+                    print("Failed to update displayName:", error)
+                } else {
+                    self.nameSaveError = nil
+                }
             }
         }
     }
 }
+
+private func loadImageData(from item: PhotosPickerItem?) async -> Data? {
+    guard let item = item else { return nil }
+    // Load raw Data (Transferable) and normalize to JPEG to avoid HEIC/iCloud quirks
+    if let raw = try? await item.loadTransferable(type: Data.self),
+       let ui = UIImage(data: raw),
+       let jpeg = ui.jpegData(compressionQuality: 0.9) {
+        return jpeg
+    }
+    return nil
+}
+
 
 // ===============================================================
 // MARK: - PLANT CARD
@@ -794,11 +966,12 @@ struct AddPlantSheet: View {
         .photosPicker(
             isPresented: $showPhotoPicker,
             selection: $selectedPhotoItem,
-            matching: .images
+            matching: .images,
+            preferredItemEncoding: .compatible
         )
-        .onChange(of: selectedPhotoItem) { item in
+        .onChange(of: selectedPhotoItem, initial: false) { _, newItem in
             Task {
-                if let data = try? await item?.loadTransferable(type: Data.self) {
+                if let data = await loadImageData(from: newItem) {
                     imageData = data
                 }
             }
@@ -1041,11 +1214,12 @@ struct EditPlantSheet: View {
         .photosPicker(
             isPresented: $showPhotoPicker,
             selection: $selectedPhotoItem,
-            matching: .images
+            matching: .images,
+            preferredItemEncoding: .compatible
         )
-        .onChange(of: selectedPhotoItem) { item in
+        .onChange(of: selectedPhotoItem, initial: false) { _, newItem in
             Task {
-                if let data = try? await item?.loadTransferable(type: Data.self) {
+                if let data = await loadImageData(from: newItem) {
                     newImageData = data
                 }
             }
@@ -1070,7 +1244,7 @@ struct EditPlantSheet: View {
 
 //MARK: - BOTTOM PAGES
 enum AppTab: Hashable{
-    case home, search, community, plantbook, profile
+    case home, search, plantbook, profile
 }
 
 // ===============================================================
@@ -1165,11 +1339,11 @@ struct RoundedBottomBar: View {
                 )
                 .shadow(color: Color("DarkGreen").opacity(0.35), radius: 10, y: 6)
                 .frame(height: 90)
-                .frame(width: 370)
+                .frame(width: 330)
                 .padding(.horizontal, 28)
                 .padding(.bottom, 6)
 
-            HStack(spacing: 11) {
+            HStack(spacing: 19) {
                 TabButton(
                     systemName: "house.fill",
                     isActive: selected == .home,
@@ -1183,13 +1357,6 @@ struct RoundedBottomBar: View {
                     label: "Search",
                     selected: $selected,
                     tab: .search
-                )
-                TabButton(
-                    systemName: "hand.raised.fill",
-                    isActive: selected == .community,
-                    label: "Community",
-                    selected: $selected,
-                    tab: .community
                 )
                 TabButton(
                     systemName: "book.fill",
@@ -1667,7 +1834,22 @@ struct SignUpForm: View {
             } else {
                 showError = false
                 errorMessage = ""
-                onSignUpSuccess()
+
+                // Set Firebase displayName = username
+                if let user = Auth.auth().currentUser {
+                    let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let changeRequest = user.createProfileChangeRequest()
+                    changeRequest.displayName = trimmedUsername.isEmpty ? trimmedEmail : trimmedUsername
+
+                    changeRequest.commitChanges { commitError in
+                        if let commitError = commitError {
+                            print("Failed to set displayName:", commitError)
+                        }
+                        onSignUpSuccess()
+                    }
+                } else {
+                    onSignUpSuccess()
+                }
             }
         }
     }
