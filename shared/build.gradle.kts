@@ -97,6 +97,11 @@ kotlin {
             implementation(libs.koin.test)
             implementation(libs.androidx.coroutine.test)
             implementation(libs.moko.permissions.test)
+
+            configurations.all {
+                exclude(group = "dev.gitlive", module = "firebase-auth")
+                exclude(group = "dev.gitlive", module = "firebase-app")
+            }
         }
 
         iosMain.dependencies {
