@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: 'correto'
+          distribution: 'corretto'
           java-version: $ {{env.JAVA_VERSION}}
 
       - uses: maxim-lobanov/setup-xcode@v1
