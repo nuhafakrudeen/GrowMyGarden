@@ -7,7 +7,7 @@ env:
   JAVA_VERSION: '21'
 jobs:
   build:
-    name: Build & Test
+    name: Build & Release
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v4
