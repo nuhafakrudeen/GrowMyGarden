@@ -2,11 +2,16 @@ package com.gmg.growmygarden.viewmodel
 
 import com.gmg.growmygarden.NotificationHandler
 import com.gmg.growmygarden.data.source.Plant
+import com.gmg.growmygarden.data.source.PlantImageStore
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
+import com.rickclephas.kmp.observableviewmodel.launch
 import com.rickclephas.kmp.observableviewmodel.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -16,6 +21,7 @@ import kotlin.uuid.Uuid
 
 class DashboardViewModel(
     private val plantRepository: PlantRepository,
+    private val imageStore: PlantImageStore,
     private val notificationHandler: NotificationHandler,
 ) : ViewModel() {
 
@@ -84,5 +90,16 @@ class DashboardViewModel(
     fun cancelAllPlantNotifications(plant: Plant) {
         cancelWateringNotification(plant)
         cancelFertilizerNotification(plant)
+    }
+
+    fun pickImage(plant: Plant) {
+        viewModelScope.launch {
+            val image = FileKit.openFilePicker(type = FileKitType.Image)
+            image?.let { image ->
+                val plantImage = imageStore.saveImage(image)
+                plant.image = plantImage
+                plantRepository.savePlant(plant)
+            }
+        }
     }
 }
