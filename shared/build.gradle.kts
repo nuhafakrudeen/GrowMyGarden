@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kmp.nativecoroutines)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
 }
 
 kotlin {
@@ -69,24 +71,31 @@ kotlin {
             // put your Multiplatform dependencies here
             implementation(libs.kotbase.ktx)
             implementation(libs.koin.core)
+            implementation(libs.koin.compose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
 
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.kmp.observableviewmodel.core)
+            implementation(libs.alarmee)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.koin.core)
             implementation(libs.koin.test)
             implementation(libs.androidx.coroutine.test)
+            implementation(libs.moko.permissions.test)
         }
 
         iosMain.dependencies {
             api(libs.kmp.observableviewmodel.core)
         }
         iosTest.dependencies {
+            implementation(libs.alarmee)
+            api(libs.moko.permissions)
+            implementation(libs.moko.permissions.notifications)
+            api(libs.moko.permissions.compose)
 
         }
 
