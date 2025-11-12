@@ -5,11 +5,13 @@ import kotlinx.datetime.Month
 import kotlin.test.AfterTest
 import kotlin.test.Test
 
-class NotificationTest {
+class NotificationTest(
+    private val notificationHandler: NotificationHandler
+) {
 
     @AfterTest
     fun cleanup() {
-        NotificationHandler.cancelAlarms("67")
+        notificationHandler.cancelNotification("67")
     }
 
     @Test
@@ -23,6 +25,6 @@ class NotificationTest {
             second = 59,
         )
 
-        NotificationHandler.setNotif("67", "Test", "Let us hope we get this", testTime, null, 1)
+        notificationHandler.setNotification("67", "Test", "Let us hope we get this", testTime, null, 1)
     }
 }
