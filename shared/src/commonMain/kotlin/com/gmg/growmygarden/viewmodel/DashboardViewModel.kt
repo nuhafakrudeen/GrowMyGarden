@@ -14,7 +14,6 @@ import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDateTime
 import kotlin.collections.listOf
 import kotlin.uuid.Uuid
@@ -31,9 +30,6 @@ class DashboardViewModel(
         started = SharingStarted.WhileSubscribed(5000L),
         initialValue = listOf<Plant>(),
     )
-
-    private val commandLog = MutableStateFlow<String>("None")
-    val commandHistory: StateFlow<String> get() = commandLog
 
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
@@ -52,7 +48,6 @@ class DashboardViewModel(
         plant.wateringNotificationID = generatedNotificationID
 
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
-        commandLog.update { "Setting water notification for ${plant.name}" }
     }
 
     fun createFertilizerNotification(date: LocalDateTime, plant: Plant, image: String?) {
@@ -64,16 +59,12 @@ class DashboardViewModel(
         plant.fertilizerNotificationID = generatedNotificationID
 
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
-        commandLog.update { "Setting fertilizer notification for ${plant.name}" }
     }
 
     fun cancelWateringNotification(plant: Plant) {
         if (plant.wateringNotificationID != null) {
             notificationHandler.cancelNotification(plant.wateringNotificationID.toString())
             plant.wateringNotificationID = null
-            commandLog.update { "Cancelling water notification for ${plant.name}" }
-        } else {
-            commandLog.update { "Failed to cancel water notification: No ID found" }
         }
     }
 
@@ -81,9 +72,6 @@ class DashboardViewModel(
         if (plant.fertilizerNotificationID != null) {
             notificationHandler.cancelNotification(plant.fertilizerNotificationID.toString())
             plant.fertilizerNotificationID = null
-            commandLog.update { "Cancelling fertilizer notification for ${plant.name}" }
-        } else {
-            commandLog.update { "Failed to cancel fertilizer notification: No ID found" }
         }
     }
 
