@@ -28,6 +28,10 @@
 		<data>
 		OVBAv50SlbYihO+6ShyT0j1fLCw=
 		</data>
+		<key>Headers/CBLClientCertificateAuthenticator.h</key>
+		<data>
+		uXpAUnH6adEf41EDE5Q309JA0Nk=
+		</data>
 		<key>Headers/CBLCollection.h</key>
 		<data>
 		sCkONvepYLUai/WPGXtGrsMMWvw=
@@ -42,7 +46,7 @@
 		</data>
 		<key>Headers/CBLCollectionConfiguration.h</key>
 		<data>
-		WsmoJ93oTdH/kRJcAPcxOl0LOYU=
+		CYxjjh0KK3FWW3PEl4wsPddolC8=
 		</data>
 		<key>Headers/CBLCollectionTypes.h</key>
 		<data>
@@ -60,29 +64,41 @@
 		<data>
 		B0KYldphkVQNeWSy8X+xgMWO1/Q=
 		</data>
-		<key>Headers/CBLConsoleLogger.h</key>
+		<key>Headers/CBLCoreMLPredictiveModel.h</key>
 		<data>
-		Y7f3J7cs+mLueqTAFmhZQZ09ZEY=
+		Q6ZEqbOjOGuMBFMMkZ5SqrA8Jm8=
 		</data>
 		<key>Headers/CBLCustomLogSink.h</key>
 		<data>
 		XXbV1wL6UY54m7tkucBAyaHVU6k=
 		</data>
+		<key>Headers/CBLDatabase+Encryption.h</key>
+		<data>
+		F5G80ATaBVREKKWdgTC+POAOhho=
+		</data>
+		<key>Headers/CBLDatabase+Prediction.h</key>
+		<data>
+		geAzkw+hrV42bShBHFAIQY9STnI=
+		</data>
 		<key>Headers/CBLDatabase.h</key>
 		<data>
-		Vvctb0/AQ+k8bPQkQCV1ijqcvlY=
+		vd7vhnMnQWc6KeSZh+5B/DVxN2w=
 		</data>
-		<key>Headers/CBLDatabaseChange.h</key>
+		<key>Headers/CBLDatabaseConfiguration+Encryption.h</key>
 		<data>
-		Z32JGUF64eGZo9Zq4FD8kXJc71I=
+		7303WyH7oBE/g521EcpZI8QXoyo=
 		</data>
 		<key>Headers/CBLDatabaseConfiguration.h</key>
 		<data>
-		tufdq032dvVXpzA58GMeOxCL470=
+		FJO5+iUQSeouam7Ys1H1dLWh/9E=
+		</data>
+		<key>Headers/CBLDatabaseEndpoint.h</key>
+		<data>
+		73fMJnRlJUY01EQUyjC9Oiwtn64=
 		</data>
 		<key>Headers/CBLDefaults.h</key>
 		<data>
-		bOASGfwOi7/uFZTzcCaRORkhzvo=
+		w3yA172NZUSaNPh2YAgqbispTOM=
 		</data>
 		<key>Headers/CBLDictionary.h</key>
 		<data>
@@ -94,11 +110,11 @@
 		</data>
 		<key>Headers/CBLDocument.h</key>
 		<data>
-		i1D+AQKOd4WK//1m9d9tPUEOrYY=
+		bh2dn5VNEogru8WPvNNvuJEUrcI=
 		</data>
 		<key>Headers/CBLDocumentChange.h</key>
 		<data>
-		CZ8PwQVdQ2soaDsPD6iYkUoK+G4=
+		dzElgBgmhMc3+OHuZO83c105tK4=
 		</data>
 		<key>Headers/CBLDocumentFlags.h</key>
 		<data>
@@ -114,7 +130,11 @@
 		</data>
 		<key>Headers/CBLEdition.h</key>
 		<data>
-		4PeeVe7AIgNLku3qBJkE3uwdQps=
+		NcqNmNyTtawf7ikNqV9hlhS0aOc=
+		</data>
+		<key>Headers/CBLEncryptionKey.h</key>
+		<data>
+		NGSsL3zWK88aSAX9delTFNzhKBQ=
 		</data>
 		<key>Headers/CBLEndpoint.h</key>
 		<data>
@@ -124,13 +144,13 @@
 		<data>
 		xbcDHFYgsNl29ewkMGf/nZk89h8=
 		</data>
+		<key>Headers/CBLExtension.h</key>
+		<data>
+		iWbQly4KEd24xLA0+Y17cb7U+Oo=
+		</data>
 		<key>Headers/CBLFileLogSink.h</key>
 		<data>
-		6dhkLX0C3AxaBVwreFCcCnrDzJs=
-		</data>
-		<key>Headers/CBLFileLogger.h</key>
-		<data>
-		LNlXSqh45sx+wTjuiKrsvMc8Ltk=
+		yoaZxYb4H5ebY6MSWf9sYOnw6LE=
 		</data>
 		<key>Headers/CBLFragment.h</key>
 		<data>
@@ -148,6 +168,10 @@
 		<data>
 		BZY4jSLjIHNenr1YnSIf2c/6Zx8=
 		</data>
+		<key>Headers/CBLIndexBuilder+Prediction.h</key>
+		<data>
+		LxBVYoSlWtD94svJn/Rmb0CWqJA=
+		</data>
 		<key>Headers/CBLIndexBuilder.h</key>
 		<data>
 		nMbQLMf72k5LuX1mnfCAO4EceP4=
@@ -156,21 +180,29 @@
 		<data>
 		TE8l8Nd+5nCdFIkauVF7vMi+n3s=
 		</data>
+		<key>Headers/CBLIndexUpdater.h</key>
+		<data>
+		cl2BpABVM/xhX7AlmXB3u6KZX3A=
+		</data>
 		<key>Headers/CBLIndexable.h</key>
 		<data>
 		3PemjQIPEGFFettFBB9IoYPbbXo=
 		</data>
+		<key>Headers/CBLListenerAuthenticator.h</key>
+		<data>
+		hY66gYjJdPCfAW077IC4Zu9XBDA=
+		</data>
+		<key>Headers/CBLListenerCertificateAuthenticator.h</key>
+		<data>
+		fm41J8tEZWms0Jni7+nd86ZGSLI=
+		</data>
+		<key>Headers/CBLListenerPasswordAuthenticator.h</key>
+		<data>
+		6HrR95JXhGPtBpx1W7j2VsEwDy8=
+		</data>
 		<key>Headers/CBLListenerToken.h</key>
 		<data>
 		XTktSeYQscSWWIH77Ax8B4QemP8=
-		</data>
-		<key>Headers/CBLLog.h</key>
-		<data>
-		fxrpK6IopAkaW85pVlcDEwTNBIs=
-		</data>
-		<key>Headers/CBLLogFileConfiguration.h</key>
-		<data>
-		pwB5cLpZhcnDQalEH9C/7WfeYxM=
 		</data>
 		<key>Headers/CBLLogSinks.h</key>
 		<data>
@@ -180,9 +212,45 @@
 		<data>
 		ym+GTk+OvV5Z7twrmEDac+12+eA=
 		</data>
-		<key>Headers/CBLLogger.h</key>
+		<key>Headers/CBLMessage.h</key>
 		<data>
-		V3sj/8AMa+5CsTrYFj9WfnMRN4E=
+		Wp9MY16DLnbPJU8tSvVo8n4/PLA=
+		</data>
+		<key>Headers/CBLMessageEndpoint.h</key>
+		<data>
+		qOpc/N5p/hUA0GkdO7pk7gZtz3I=
+		</data>
+		<key>Headers/CBLMessageEndpointConnection.h</key>
+		<data>
+		3Yd8JxdS2MhImACw7g4olZrtL9Y=
+		</data>
+		<key>Headers/CBLMessageEndpointListener.h</key>
+		<data>
+		c3Hn600v0Jy80r85WFuXadEys4M=
+		</data>
+		<key>Headers/CBLMessagingError.h</key>
+		<data>
+		RftMfOJXhfEV14QAmthYGPnZ03A=
+		</data>
+		<key>Headers/CBLMultipeerCertificateAuthenticator.h</key>
+		<data>
+		MfmqiDyiaQ9AIdG9IldyU4ud10E=
+		</data>
+		<key>Headers/CBLMultipeerCollectionConfiguration.h</key>
+		<data>
+		baW0zWCU8ZLo2F9P6z45LSiR0Ug=
+		</data>
+		<key>Headers/CBLMultipeerEventTypes.h</key>
+		<data>
+		nvJgzbad44GClgTl5REEbSVkLzk=
+		</data>
+		<key>Headers/CBLMultipeerReplicator.h</key>
+		<data>
+		FCQKSpqpUOpSKlXWspy4awZyLOU=
+		</data>
+		<key>Headers/CBLMultipeerReplicatorConfiguration.h</key>
+		<data>
+		os45aDBAXXNGaqKCdeYwqnDWapY=
 		</data>
 		<key>Headers/CBLMutableArray.h</key>
 		<data>
@@ -208,9 +276,29 @@
 		<data>
 		cejO7mpeXA1lK1FRMttj2t0VoXk=
 		</data>
+		<key>Headers/CBLPeerID.h</key>
+		<data>
+		TZpNYpn9sNSdc3G/XEQKzP2Epeo=
+		</data>
+		<key>Headers/CBLPeerInfo.h</key>
+		<data>
+		WctJd6pS9kKJJjtOyjieYcl05+E=
+		</data>
+		<key>Headers/CBLPrediction.h</key>
+		<data>
+		39uN5djEqV/Qh5OohTLL0/xqqXo=
+		</data>
+		<key>Headers/CBLPredictiveIndex.h</key>
+		<data>
+		fRGvSz0pSmao28XHKXNXbQXXF/s=
+		</data>
+		<key>Headers/CBLProtocolType.h</key>
+		<data>
+		LU42vu07kp/QpUJ92nptR4+sAZ4=
+		</data>
 		<key>Headers/CBLQuery.h</key>
 		<data>
-		gs7lXcqIOWI19rVrG1MqOClL5C0=
+		YYlyFxKs3bqYKZE2uRQkIiHnlWk=
 		</data>
 		<key>Headers/CBLQueryArrayExpression.h</key>
 		<data>
@@ -234,27 +322,31 @@
 		</data>
 		<key>Headers/CBLQueryDataSource.h</key>
 		<data>
-		njXRcg+5sh9XO2Pep4qYnD8omDk=
+		pgcmyhyNYGFnCpVndC70EumqbPs=
 		</data>
 		<key>Headers/CBLQueryExpression.h</key>
 		<data>
-		+J1XAU6ENiwC3aL4Oo0fjmOTdDw=
+		TS81BYtA8qB29MWQrQbiajzZWEI=
 		</data>
 		<key>Headers/CBLQueryFactory.h</key>
 		<data>
 		UncZ/n7IzWSQZOClhBsVi0XeYtM=
 		</data>
-		<key>Headers/CBLQueryFullTextExpression.h</key>
-		<data>
-		JCDKz2hiNPDQ7vBozRDNivQ+0xg=
-		</data>
 		<key>Headers/CBLQueryFullTextFunction.h</key>
 		<data>
-		SO0xO1NtngACHS6qKMbOl0gydiU=
+		DmMZd+AaD3JgZ3A4JZ4bdWT94rk=
 		</data>
 		<key>Headers/CBLQueryFullTextIndexExpressionProtocol.h</key>
 		<data>
 		+Pdjc8STCYekIJPenlFAapf0swc=
+		</data>
+		<key>Headers/CBLQueryFunction+Prediction.h</key>
+		<data>
+		uDBHBjRHFccbCaNL3gXBdjXdOxA=
+		</data>
+		<key>Headers/CBLQueryFunction+Vector.h</key>
+		<data>
+		GwnVyCQE56Lb+n0SXrFcoI4rbPQ=
 		</data>
 		<key>Headers/CBLQueryFunction.h</key>
 		<data>
@@ -302,15 +394,19 @@
 		</data>
 		<key>Headers/CBLReplicator.h</key>
 		<data>
-		VC5oyqqfNl8KcP9aPFZSMPhyLpY=
+		kCPZcMoGO04gL3eEFpm53Fbj/Yw=
 		</data>
 		<key>Headers/CBLReplicatorChange.h</key>
 		<data>
 		z/dr5wd6TvzeVKtHK+Mo3a4Obn0=
 		</data>
+		<key>Headers/CBLReplicatorConfiguration+ServerCert.h</key>
+		<data>
+		+EGEIydpOXyyA9KGRbRKMH2Jatc=
+		</data>
 		<key>Headers/CBLReplicatorConfiguration.h</key>
 		<data>
-		CQxL0z9zklQYgITPva/roCN+Sts=
+		A/nc5+49f1tFvHpK0aEGm6UZSkk=
 		</data>
 		<key>Headers/CBLReplicatorStatus.h</key>
 		<data>
@@ -328,9 +424,21 @@
 		<data>
 		uZJDAaI1T16m5Y9Fje5CT1zoLDM=
 		</data>
+		<key>Headers/CBLTLSIdentity.h</key>
+		<data>
+		24A2S0fvBKDx/g78ADzUMPWESAU=
+		</data>
 		<key>Headers/CBLURLEndpoint.h</key>
 		<data>
 		CN6DTJ5z4wIgem1wNXSV3MgdtVE=
+		</data>
+		<key>Headers/CBLURLEndpointListener.h</key>
+		<data>
+		gksGctRtAcyHyuNv55f0NZtX3wQ=
+		</data>
+		<key>Headers/CBLURLEndpointListenerConfiguration.h</key>
+		<data>
+		RO8nyD9Zfk6VND555Xq5Qd8+nHc=
 		</data>
 		<key>Headers/CBLValueIndex.h</key>
 		<data>
@@ -340,13 +448,25 @@
 		<data>
 		SRVI2ntP3zfZZAfYo6eFPJarB4s=
 		</data>
+		<key>Headers/CBLVectorEncoding.h</key>
+		<data>
+		Hv1f3myWUsN8a3/sfP70pmQFL+0=
+		</data>
+		<key>Headers/CBLVectorIndexConfiguration.h</key>
+		<data>
+		P+ZvQA1vnE2wBI82WDRlRLg2yrk=
+		</data>
+		<key>Headers/CBLVectorIndexTypes.h</key>
+		<data>
+		gQQRjXA0pNjxHTjyPCqm8CgAziE=
+		</data>
 		<key>Headers/CouchbaseLite.h</key>
 		<data>
-		dZvIDb2fL1oskv1oKlvacKq0DjU=
+		qnNzSu5ooso48xxLZXAPlWlnnY4=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		6Dr02BgE8+n8uBLSvzZ3H4BYFDQ=
+		eo1Wz0IGunZl43tfoMQrY7E8lzc=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -355,10 +475,6 @@
 		<key>PrivacyInfo.xcprivacy</key>
 		<data>
 		V06ZhOXKenn1RRa9TQ4pbo8OdVc=
-		</data>
-		<key>README.md</key>
-		<data>
-		qAWkcqHYn8Mlj1jbUUTg1Z6HA0Q=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -405,6 +521,13 @@
 			tJoxqs3k5Nt0KAz14nAesK8eT3Nl0K5V+W5cBqJcxhQ=
 			</data>
 		</dict>
+		<key>Headers/CBLClientCertificateAuthenticator.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			OhICRX5QimWk81lIhG8V6eKcZghb5pNJA071gtl+0Fo=
+			</data>
+		</dict>
 		<key>Headers/CBLCollection.h</key>
 		<dict>
 			<key>hash2</key>
@@ -430,7 +553,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			WzHAel5bs5094flf8bl8JcZaSxEby9JTMPjOjf5bMb0=
+			CFSE1oCJ84U/HRsnWn9YqKopLBRpV/N4MQ323Fzv0Rg=
 			</data>
 		</dict>
 		<key>Headers/CBLCollectionTypes.h</key>
@@ -461,11 +584,11 @@
 			4Fhf/6cYTcqCRz4KfTPfPy8FnSZUq6JmAz+9Ai2xkEE=
 			</data>
 		</dict>
-		<key>Headers/CBLConsoleLogger.h</key>
+		<key>Headers/CBLCoreMLPredictiveModel.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			W8HGF1bA8gCS50rgsY7GM3oiI/Xd3UXG14S0b8/faFg=
+			dX7JWkwD5IC5lMPXN/8iDsCYp2ueNS8YAnd9PSFBB+c=
 			</data>
 		</dict>
 		<key>Headers/CBLCustomLogSink.h</key>
@@ -475,32 +598,53 @@
 			PHD0WK8860qDXStmzBY+/M6POePV6AN5EDrZ4rLUhYU=
 			</data>
 		</dict>
+		<key>Headers/CBLDatabase+Encryption.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			88KBQFp/TOewPyp1zYtLVsCrvm4AqkG4gf5TOb93cEg=
+			</data>
+		</dict>
+		<key>Headers/CBLDatabase+Prediction.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			tufkQ8TtYtFkOzOrjpNqgraVSJRB1LPdK+IDUwjJ5N0=
+			</data>
+		</dict>
 		<key>Headers/CBLDatabase.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			MOciCGyHOwcwPwdcEQ16vLoj0mul+7c6DwCMsYp14zo=
+			ThmI/AYf14psRZGyzov/zD7RbKUa0IUpuLdh9mlBOxI=
 			</data>
 		</dict>
-		<key>Headers/CBLDatabaseChange.h</key>
+		<key>Headers/CBLDatabaseConfiguration+Encryption.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			rHSKY/uj+j7UkROK6z8YLjM9X5Fa2VlCBjCpbXWhgTU=
+			P9E5Q+7VsECfgtbHWD6D5Nt5VFeVvFS35jqDcAx9qiM=
 			</data>
 		</dict>
 		<key>Headers/CBLDatabaseConfiguration.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			etGZFktl9/qXPvpJTsk9raXWW+N+1PFrBqKhmCu0CNo=
+			SxDsM7HKmpBYsPsO2zo2rYxuwciN+Lo9rH8x0NniRk8=
+			</data>
+		</dict>
+		<key>Headers/CBLDatabaseEndpoint.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			arA60FXMu8/CF9uaIQwA+iFES6OMf6mXkpxRRhw8cc8=
 			</data>
 		</dict>
 		<key>Headers/CBLDefaults.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			fvAxaZ0C4jJ3+f8Ss8vgmfjOaF/MrXPZqXZrx73iClA=
+			+AF/S5x81/jDVa8o6LphbS45fICMJ17nW/pY7evKU1o=
 			</data>
 		</dict>
 		<key>Headers/CBLDictionary.h</key>
@@ -521,14 +665,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			YOJhu19h37GjPtyAkUSrrbsF80SlvecPvgTVFU/kec8=
+			TF4qREoCAPPbcOvu95wKgGASfbOqyj/L1VIAXimyp3I=
 			</data>
 		</dict>
 		<key>Headers/CBLDocumentChange.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			GSMc+9ta+5iEgTCMeCr+U3vX37a9Kw28ttzfSleMDYU=
+			sVJXiDgGc0tWhX6WzytdZcHIItnDYg/dqDvEGJXeCew=
 			</data>
 		</dict>
 		<key>Headers/CBLDocumentFlags.h</key>
@@ -556,7 +700,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			tSYnbTIA7paLrr5FP7beiZNCrneh4aK3Sr6H2sX63Vw=
+			kOjSeOk+JzFY3+e8oD7RVZpDv48G3rUDGm46mE04A/E=
+			</data>
+		</dict>
+		<key>Headers/CBLEncryptionKey.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			jJY9uN9w20/VkOzFdPS7njXqGcL+tyooYzZLFh1S+o4=
 			</data>
 		</dict>
 		<key>Headers/CBLEndpoint.h</key>
@@ -573,18 +724,18 @@
 			BdANdECq95n078QxcLB/isTcdfM0CD8w8jAXOcaR3rE=
 			</data>
 		</dict>
+		<key>Headers/CBLExtension.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			bHkKR36n/JvyJg1s/k94fYQiyXYMXrEib/0Grz1AA8I=
+			</data>
+		</dict>
 		<key>Headers/CBLFileLogSink.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			fKZ+QxpNRFqXPYdPb8oY/Qxw28P+4J28R/SI+KO39h4=
-			</data>
-		</dict>
-		<key>Headers/CBLFileLogger.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			LLXw+zyGd26xctpmXPJauojFZOLIdpfmFvvRnhGg5Fc=
+			XDlaHp2D/kfTS7zbOp29CXcd+OHGawjZ/Vte4tMk/8I=
 			</data>
 		</dict>
 		<key>Headers/CBLFragment.h</key>
@@ -615,6 +766,13 @@
 			JQ8ZFL36YZfm8BRwXus6mE64qlk1A0FOF9OdZgJstnc=
 			</data>
 		</dict>
+		<key>Headers/CBLIndexBuilder+Prediction.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hXkGB7Uy0rPPCfSY/1AtME6XG9IdFHEMnexPICc3UFk=
+			</data>
+		</dict>
 		<key>Headers/CBLIndexBuilder.h</key>
 		<dict>
 			<key>hash2</key>
@@ -629,6 +787,13 @@
 			297SYB9Yk46PhLnI7opMWit6ZUz/LS+94B3QtT1mxio=
 			</data>
 		</dict>
+		<key>Headers/CBLIndexUpdater.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			7WaPV3r87Y02ItP3X4Zak0Z8D6qP6C5dcXRpG8L8ruU=
+			</data>
+		</dict>
 		<key>Headers/CBLIndexable.h</key>
 		<dict>
 			<key>hash2</key>
@@ -636,25 +801,32 @@
 			FiB7jiA+geITwsppQINuD0xJuYGztaR2PnjsNGbiWIc=
 			</data>
 		</dict>
+		<key>Headers/CBLListenerAuthenticator.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			PriTDDQlKu3Xxp3FL5lH6KdQYR83j0GcW09xgeI9sk4=
+			</data>
+		</dict>
+		<key>Headers/CBLListenerCertificateAuthenticator.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			bxGJHnu/TMIrkAouaZBV8Xgivofj0r/S5TR8bqLyeyc=
+			</data>
+		</dict>
+		<key>Headers/CBLListenerPasswordAuthenticator.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			KvqEOhn/fr2m5XvNVPBiVIRk83kwGuiB712AUKGLLMw=
+			</data>
+		</dict>
 		<key>Headers/CBLListenerToken.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
 			iWsLeM7Ll2kY/b4mlPl3y5RE8ZmTB1zGy2huLv4sTTc=
-			</data>
-		</dict>
-		<key>Headers/CBLLog.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			NWJiXXWgBIUTTKW73oXksiEhl3ATAN5gUUe2EKRsq8U=
-			</data>
-		</dict>
-		<key>Headers/CBLLogFileConfiguration.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			hcgRs7QG6iWaIiquXIOg6WJ+Tvcg7QdB5PkA6wzML0w=
 			</data>
 		</dict>
 		<key>Headers/CBLLogSinks.h</key>
@@ -671,11 +843,74 @@
 			Ei9UEOtZleUiEZWP930YercHbhH2KiHFy6kAoDpb1yM=
 			</data>
 		</dict>
-		<key>Headers/CBLLogger.h</key>
+		<key>Headers/CBLMessage.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			oQ71luDrqKQ5dyJ20UM+CQTfWdHJPIHTbQL3W3ncd2A=
+			W7D7rHGrYRlVwWplE3py4yMPhoaz9LefDBV7PAmK+08=
+			</data>
+		</dict>
+		<key>Headers/CBLMessageEndpoint.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			8BXAf/61cH365Kk1DajvGFjQYUviy/PxK3r4juareXc=
+			</data>
+		</dict>
+		<key>Headers/CBLMessageEndpointConnection.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			gx7NZFMv3yzBYE0YoIfPxnvp/cUI0s83D4PTbE5PJk0=
+			</data>
+		</dict>
+		<key>Headers/CBLMessageEndpointListener.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			terqXiY4m1tmsBiwFdJ7/QMXeFOeHPC0L3lVG3RbV8E=
+			</data>
+		</dict>
+		<key>Headers/CBLMessagingError.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			pjQ36cw/JpxnblqqudDk5mJ/CQRBuMJzAnO/BBl4Ny4=
+			</data>
+		</dict>
+		<key>Headers/CBLMultipeerCertificateAuthenticator.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			dvxvCM2PZkkOTc7Lw1ccNgJsxrkSCtkd4LrPjtW0gO8=
+			</data>
+		</dict>
+		<key>Headers/CBLMultipeerCollectionConfiguration.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			m1soHqezWJLyVd/LSbW91++NMTdFJ60D0YgtE+BBbVE=
+			</data>
+		</dict>
+		<key>Headers/CBLMultipeerEventTypes.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			8iNgn8qyvYcE2gfCtKbcSPXiZl4FZ1r/1MKshF4sodU=
+			</data>
+		</dict>
+		<key>Headers/CBLMultipeerReplicator.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			DbIiNJviexn1/Aw+856qmWiC8H5M9Nr8uliwODKGZRU=
+			</data>
+		</dict>
+		<key>Headers/CBLMultipeerReplicatorConfiguration.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			g4dDZ0lk7HiSdn3J8VnGoZNfY6o/GAudyKlRjIo0tjM=
 			</data>
 		</dict>
 		<key>Headers/CBLMutableArray.h</key>
@@ -720,11 +955,46 @@
 			OjZ99kdZdRNwNvlp/UbkUt2G/ATPNJUezOQqUWRJ0og=
 			</data>
 		</dict>
+		<key>Headers/CBLPeerID.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NXKf+rzODm1YNWDciUZNhch2ASdXWhvbsWBZNKkpN4U=
+			</data>
+		</dict>
+		<key>Headers/CBLPeerInfo.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			29DoBHow8y+MrGOOnvVu4JDSPMJhD3oc8Y1/G8ooAiI=
+			</data>
+		</dict>
+		<key>Headers/CBLPrediction.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			vgYW6gEyuXlrhHXrqHSykmDWmSJ52EjhxOlE4CFiGjU=
+			</data>
+		</dict>
+		<key>Headers/CBLPredictiveIndex.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nrLdW9AXUJXhpNykyTGXiPRaNImVUv+cLb6ugCnm4LE=
+			</data>
+		</dict>
+		<key>Headers/CBLProtocolType.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			FrJETgIel1mqLufJkFyvj7lAcP6OopYBQfc7BYNAvyY=
+			</data>
+		</dict>
 		<key>Headers/CBLQuery.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			8yW6+bthVrdN9txSkyEJRuqSYUKi1cti1b/1+N0AZUc=
+			wYRbVSF67SWw8+NQVMEvJLPT5PoMOetdzhw+o5jt89U=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryArrayExpression.h</key>
@@ -766,14 +1036,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+3nkcbt47+w3zHLY6UTuO2zYv/u5ddraBj6fEHAIsSc=
+			iPHb8NeSvYHxLiqHz1t0B57bg6PtyAlvuSb5FQBe4JI=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryExpression.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			29p03OfSeSvHJBDnGE8LLe7JR4Edtpd51rrmU5/Fp6k=
+			oMQhTwvg2psjXMgXRcJ2cw+ze/IYH8ZSLsnz0MVFQr0=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryFactory.h</key>
@@ -783,18 +1053,11 @@
 			yEjBoteQjfYrgJ7lVoV91286wVYiyoLBMbNQ+nLn2aE=
 			</data>
 		</dict>
-		<key>Headers/CBLQueryFullTextExpression.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			tmahlap+7nA92t1LCcT+sxuXn8hPTp4iU4SFjNC1+4g=
-			</data>
-		</dict>
 		<key>Headers/CBLQueryFullTextFunction.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			uj7kQAULbBsDqo2rZ+W+vvhZJCW6raqs0y2LIqPOq7U=
+			yzET7wPwD7JFTqMlXvDHQXtS+3mmfCzVJbtzWqGIh48=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryFullTextIndexExpressionProtocol.h</key>
@@ -802,6 +1065,20 @@
 			<key>hash2</key>
 			<data>
 			/tQ5zc9b5yY8xYwbD5yxeER1IaPFEd6sYZXTYFUjW4I=
+			</data>
+		</dict>
+		<key>Headers/CBLQueryFunction+Prediction.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			n0NFJ18iK5IME9JC2Rusc4BqZagLaKMdNt8ON6/ZDWU=
+			</data>
+		</dict>
+		<key>Headers/CBLQueryFunction+Vector.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NRXPO94vFFHoOsqV/PbbC2T6TGzvmZCU1K4035zchpE=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryFunction.h</key>
@@ -885,7 +1162,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			E+pUsFGs5EilDRGluNqOeys9kh3bSW2tIMpjvFcyAaM=
+			fJW59DitrwF00xUtHoh8tB+tMqCbScuFaQMiufrLq14=
 			</data>
 		</dict>
 		<key>Headers/CBLReplicatorChange.h</key>
@@ -895,11 +1172,18 @@
 			Mhs15ltLB7RDEyO7/XCcPQefXWpdeH/akfUpN/Lz1+k=
 			</data>
 		</dict>
+		<key>Headers/CBLReplicatorConfiguration+ServerCert.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			AnVJBSOdQGNpPDfhrDEBqWotnl2gvUMPonWKhWxxgDY=
+			</data>
+		</dict>
 		<key>Headers/CBLReplicatorConfiguration.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			SbAnclSPDm3N3dddT68JbTtRnaHJGHYbNEAZrrgZzm4=
+			aw8KZKWzMY2Gu/Bq+7K+e0dyWItf2fPmYm0iGtAnYj4=
 			</data>
 		</dict>
 		<key>Headers/CBLReplicatorStatus.h</key>
@@ -930,11 +1214,32 @@
 			WQmCI6PynsolEy+K3R0NsbwjRrAqLZq3eS8wIji0Eo0=
 			</data>
 		</dict>
+		<key>Headers/CBLTLSIdentity.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			pnM3fAR1Cl74oFW6UaTC5GHFd4qDNX913Nm5aRcg99Q=
+			</data>
+		</dict>
 		<key>Headers/CBLURLEndpoint.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
 			USSqygJVJEYvuAwIrLgNDYR8ZNF5yXtYKzilDVuU06c=
+			</data>
+		</dict>
+		<key>Headers/CBLURLEndpointListener.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Sm7TsOMnoHMjr9OD8qZx2xtreWIdDKEYZYosQ4y+9bw=
+			</data>
+		</dict>
+		<key>Headers/CBLURLEndpointListenerConfiguration.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			jZA5faKpbXCZcwHoHzigDdUFNfeEqubJsroypjRaDFE=
 			</data>
 		</dict>
 		<key>Headers/CBLValueIndex.h</key>
@@ -951,11 +1256,32 @@
 			u+sEfXmIvKS5HSFal8Y3N7682gZMW3Q8Gs9oOTI1R1k=
 			</data>
 		</dict>
+		<key>Headers/CBLVectorEncoding.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Uafgv7YrUPATu9i1PEOp/5Sllwym6SloVD+eOZZOucE=
+			</data>
+		</dict>
+		<key>Headers/CBLVectorIndexConfiguration.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			1aUTDURVK/uqS44/QGeuactgrWpDWOZPwS2gVqh7f78=
+			</data>
+		</dict>
+		<key>Headers/CBLVectorIndexTypes.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			KtZwV5KvfGz7psqcQes/6qMJXEoFt+Jm1QVAS+hfK6U=
+			</data>
+		</dict>
 		<key>Headers/CouchbaseLite.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			5VMemQz5NN2DTlK0vUoeAsnxkKFqi3TA5YQUh7CnpMo=
+			tU1oHM8/moxXYBUVP6v9v/JMX8e0kjPCDkrOJDfJ550=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
@@ -970,13 +1296,6 @@
 			<key>hash2</key>
 			<data>
 			zyxr99oTfgQWdOO2tUzQLqCyglTC38GzMsr5ntZ+bqg=
-			</data>
-		</dict>
-		<key>README.md</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			5OIlbhXKQKQDnBomxpyou9SkYiqWYjSL8hzbZlGjWB4=
 			</data>
 		</dict>
 	</dict>
