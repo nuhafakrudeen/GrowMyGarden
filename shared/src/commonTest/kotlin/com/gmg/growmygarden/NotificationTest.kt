@@ -6,7 +6,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 
 class NotificationTest(
-    private val notificationHandler: NotificationHandler
+    private val notificationHandler: NotificationHandler,
 ) {
 
     @AfterTest
