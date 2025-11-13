@@ -17,7 +17,6 @@ runs:
       shell: bash
       run: |
         echo "$FIREBASE_PLIST" | base64 --decode > iosApp/GoogleService-Info.plist
-        # Validate the plist file
         if ! plutil -lint iosApp/GoogleService-Info.plist; then
           echo "Error: Invalid plist file generated"
           exit 1
