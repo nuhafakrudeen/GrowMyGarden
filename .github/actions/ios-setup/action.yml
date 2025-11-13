@@ -1,5 +1,9 @@
 name: iOS set up
 description: Sets up Kotlin Native and Cocoapods
+inputs:
+  firebase-plist:
+    description: 'Base64 encoded Firebase plist'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -8,8 +12,15 @@ runs:
         xcode-version: latest
     - shell: bash
       run: ./gradlew linkDebugFrameworkIosArm64 linkDebugFrameworkIosArm64
-#    - shell: bash
-#      name: Install Dependencies
-#      run: |
-#        cd iosApp
-#        pod install --verbose
+
+    - name: Create Firebase Plist
+      shell: bash
+      run: |
+        echo "$FIREBASE_PLIST" | base64 --decode > iosApp/GoogleService-Info.plist
+        if ! plutil -lint iosApp/GoogleService-Info.plist; then
+          echo "Error: Invalid plist file generated"
+          exit 1
+        fi
+        echo "GoogleService-Info.plist created successfully"
+      env:
+        FIREBASE_PLIST: ${{ inputs.firebase-plist }}
