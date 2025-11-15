@@ -46,5 +46,8 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '16.2'
+
+      - name: Pod Install
+        run: ./gradlew podInstall
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared
