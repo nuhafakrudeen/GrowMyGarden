@@ -25,7 +25,7 @@ kotlin {
         // This podspec is generated but you don't have to use it from iosApp
         summary = "Shared KMP module for GrowMyGarden"
         homepage = "https://example.com" // anything non-empty
-        ios.deploymentTarget = "18.6"
+        ios.deploymentTarget = "15.0"
         version = "0.0.0"
 
         framework {
@@ -33,7 +33,8 @@ kotlin {
             isStatic = true
         }
 
-        pod("FirebaseCore")
+//        pod("FirebaseCore")
+//        pod("FirebaseAuth")
 
     }
 

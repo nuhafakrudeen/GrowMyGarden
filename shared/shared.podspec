@@ -8,7 +8,8 @@ Pod::Spec.new do |spec|
     spec.summary                  = 'Shared KMP module for GrowMyGarden'
     spec.vendored_frameworks      = 'build/cocoapods/framework/Shared.framework'
     spec.libraries                = 'c++'
-    spec.ios.deployment_target    = '18.6'
+    spec.ios.deployment_target    = '15.0'
+    spec.dependency 'FirebaseAuth'
     spec.dependency 'FirebaseCore'
                 
     if !Dir.exist?('build/cocoapods/framework/Shared.framework') || Dir.empty?('build/cocoapods/framework/Shared.framework')
