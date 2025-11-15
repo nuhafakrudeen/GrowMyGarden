@@ -9,7 +9,7 @@ runs:
   steps:
     - uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '15.4'
+        xcode-version: '16.2'
     - shell: bash
       run: ./gradlew linkDebugFrameworkIosArm64 linkDebugFrameworkIosArm64
 
