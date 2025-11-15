@@ -33,8 +33,8 @@ kotlin {
             isStatic = true
         }
 
-//        pod("FirebaseCore")
-//        pod("FirebaseAuth")
+        pod("FirebaseCore")
+        pod("FirebaseAuth")
 
     }
 
