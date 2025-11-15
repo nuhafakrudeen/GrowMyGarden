@@ -333,28 +333,29 @@ kotlin {
                 linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
 
                 if (OperatingSystem.current().isMacOsX) {
-                val swiftRuntimeDir = providers.exec {
-                    commandLine("xcode-select", "-p")
-                }.standardOutput.asText.map { devPath ->
-                    File(devPath.trim())
-                        .resolve("Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator")
-                        .absolutePath
-                }
+                    val swiftRuntimeDir = providers.exec {
+                        commandLine("xcode-select", "-p")
+                    }.standardOutput.asText.map { devPath ->
+                        File(devPath.trim())
+                            .resolve("Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator")
+                            .absolutePath
+                    }
 
-                // Add -L<swiftRuntimeDir> and explicitly link compatibility libs
-                linkerOpts(
-                    "-L${swiftRuntimeDir.get()}",
-                    "-lswiftCompatibility56",
-                    "-lswiftCompatibilityPacks",
-                    "-lswift_Builtin_float",
-                    "-lswift_errno",
-                    "-lswift_math",
-                    "-lswift_signal",
-                    "-lswift_stdio",
-                    "-lswift_time",
-                    "-lswiftsys_time",
-                    "-lswiftunistd",
-                )}
+                    // Add -L<swiftRuntimeDir> and explicitly link compatibility libs
+//                    linkerOpts(
+//                        "-L${swiftRuntimeDir.get()}",
+//                        "-lswiftCompatibility56",
+//                        "-lswiftCompatibilityPacks",
+//                        "-lswift_Builtin_float",
+//                        "-lswift_errno",
+//                        "-lswift_math",
+//                        "-lswift_signal",
+//                        "-lswift_stdio",
+//                        "-lswift_time",
+//                        "-lswiftsys_time",
+//                        "-lswiftunistd",
+//                    )
+                }
             }
         }
     }

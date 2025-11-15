@@ -15,7 +15,6 @@ on:
         required: true
         type: string
 env:
-  XCODE_VERSION: 'latest-stable'
   JAVA_VERSION: '21'
 jobs:
   iOS:
@@ -44,5 +43,8 @@ jobs:
       - uses: ./.github/actions/job-setup
 #      - name: Select Xcode
 #        run: sudo xcode-select -s /Applications.Xcode_15.4.app
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2'
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared
