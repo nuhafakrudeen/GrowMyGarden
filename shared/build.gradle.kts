@@ -38,9 +38,6 @@ kotlin {
     }
 
     iosArm64 {
-        binaries.all {
-            linkerOpts("-mios-simulator-version-min=18.6")
-        }
 
         binaries {
             framework {
@@ -62,9 +59,6 @@ kotlin {
     }
 
     iosSimulatorArm64 {
-            binaries.all {
-        linkerOpts("-mios-simulator-version-min=18.6")
-        }
 
         binaries {
             framework {
