@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTests
+import org.jetbrains.kotlin.org.apache.commons.io.output.ByteArrayOutputStream
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.spotless)
@@ -176,7 +179,7 @@ kotlin {
         }
     }
 
-        iosSimulatorArm64 {
+    iosSimulatorArm64 {
             binaries {
                 framework {
                     baseName = "Shared"
@@ -258,6 +261,35 @@ kotlin {
                 }
             }
         }
+
+    abstract class IphoneSimulatorCompatibilityLinkagePath @Inject constructor(): ValueSource<List<String>, ValueSourceParameters.None> {
+        @get:Inject
+        abstract val execOperations: ExecOperations
+
+        override fun obtain(): List<String> {
+            val buffer = ByteArrayOutputStream()
+            execOperations.exec {
+                commandLine("xcode-select", "-p")
+                standardOutput = buffer
+            }.assertNormalExitValue()
+            val iphoneSimulatorCompatibilityLibrariesPath = File(buffer.toString("UTF-8").dropLast(1))
+                .resolve("Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator")
+            return listOf(
+                "-linker-option",
+                "-L${iphoneSimulatorCompatibilityLibrariesPath.path}",
+            )
+        }
+    }
+
+    targets.withType<KotlinNativeTargetWithSimulatorTests> {
+        testRuns.all {
+            executionSource.binary.linkTaskProvider.configure {
+                toolOptions.freeCompilerArgs.addAll(
+                    providers.of(IphoneSimulatorCompatibilityLinkagePath::class.java) {}
+                )
+            }
+        }
+    }
 
     sourceSets {
         all {
