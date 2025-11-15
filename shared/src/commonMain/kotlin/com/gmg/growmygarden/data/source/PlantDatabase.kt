@@ -6,6 +6,8 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import kotbase.FullTextIndexItem
+import kotbase.IndexBuilder
 import kotbase.MutableDocument
 import kotbase.ktx.all
 import kotbase.ktx.asObjectsFlow
@@ -58,6 +60,17 @@ open class PlantRepository(
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection
         get() = dbProvider.database.createCollection(COLLECTION_NAME)
+
+    init {
+        collection.createIndex(
+            "plantFTSIndex",
+            IndexBuilder.fullTextIndex(
+                FullTextIndexItem.property("name"),
+                FullTextIndexItem.property("scientificName"),
+                    FullTextIndexItem.property("species")
+                ).ignoreAccents(false)
+        )
+    }
 
     @NativeCoroutines
     val plants: Flow<List<Plant>>
