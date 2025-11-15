@@ -185,6 +185,8 @@ kotlin {
                 val couchbasePath = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 isStatic = true
 
+                linkerOpts("-mios-simulator-version-min=15.0")
+
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
                 linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
 
