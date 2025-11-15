@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/job-setup
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications.Xcode_15.4.app
+#      - name: Select Xcode
+#        run: sudo xcode-select -s /Applications.Xcode_15.4.app
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared
