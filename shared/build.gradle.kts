@@ -94,7 +94,7 @@ kotlin {
                 val recaptchaInteropPath = "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64"
                 linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
 
-                linkerOpts("-framework", "CoreAudioTypes")
+
 
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
@@ -171,7 +171,7 @@ kotlin {
                     "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
 
-                linkerOpts("-framework", "CoreAudioTypes")
+
             }
         }
     }
@@ -215,7 +215,7 @@ kotlin {
                     val recaptchaInteropPath = "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64_x86_64-simulator"
                     linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
 
-                    linkerOpts("-framework", "CoreAudioTypes")
+
 
                     export(libs.androidx.lifecycle.viewmodel)
                     export(libs.kmp.observableviewmodel.core)
@@ -254,7 +254,7 @@ kotlin {
                     val recaptchaInteropPath = "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64_x86_64-simulator"
                     linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
 
-                    linkerOpts("-framework", "CoreAudioTypes")
+
                 }
             }
         }
