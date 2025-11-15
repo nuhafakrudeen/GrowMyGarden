@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.spotless)
@@ -30,18 +28,22 @@ kotlin {
                 baseName = "Shared"
                 isStatic = true
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
-
-                val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
-                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                val couchbasePath = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
+                linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+                val firebaseRoot = "$rootDir/vendor/Firebase"
+                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64"
+                linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
 
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
             }
 
             getTest("DEBUG").apply {
-                val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
-
+                val couchbasePath = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+                val firebaseRoot = "$rootDir/vendor/Firebase"
+                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_g4-simulator"
+                linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
             }
 
         }
@@ -51,18 +53,23 @@ kotlin {
         binaries {
             framework {
                 baseName = "Shared"
+                val couchbasePath = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 isStatic = true
 
-                val path = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
-                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
-
+                linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+                val firebaseRoot = "$rootDir/vendor/Firebase"
+                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
             }
             getTest("DEBUG").apply {
-                val path = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$path", "-framework", "CouchbaseLite", "-rpath", path)
+                val couchbasePath = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+                val firebaseRoot = "$rootDir/vendor/Firebase"
+                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
             }
         }
     }
@@ -97,11 +104,6 @@ kotlin {
             implementation(libs.koin.test)
             implementation(libs.androidx.coroutine.test)
             implementation(libs.moko.permissions.test)
-
-            configurations.all {
-                exclude(group = "dev.gitlive", module = "firebase-auth")
-                exclude(group = "dev.gitlive", module = "firebase-app")
-            }
         }
 
         iosMain.dependencies {
