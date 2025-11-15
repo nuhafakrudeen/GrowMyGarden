@@ -33,12 +33,8 @@ kotlin {
             isStatic = true
         }
 
-        // Declare Firebase pods (names as in normal Podfile)
         pod("FirebaseCore")
-        pod("FirebaseAuth")
-        // Add others as needed, e.g.
-        // pod("FirebaseAnalytics")
-        // pod("FirebaseAppCheck")
+
     }
 
     iosArm64 {
