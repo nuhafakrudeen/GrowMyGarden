@@ -28,14 +28,74 @@ kotlin {
                 baseName = "Shared"
                 isStatic = true
                 binaryOption("bundleId", "com.gmg.growmygarden.shared")
+
                 val couchbasePath = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64"
                 linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+
                 val firebaseRoot = "$rootDir/vendor/Firebase"
+
                 val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64"
                 linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+
                 val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64"
                 linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
 
+
+                val firebaseAuthInteropPath = "$firebaseRoot/FirebaseAuth/FirebaseAuthInterop.xcframework/ios-arm64"
+                linkerOpts(
+                    "-F$firebaseAuthInteropPath",
+                    "-framework",
+                    "FirebaseAuthInterop",
+                    "-rpath",
+                    firebaseAuthInteropPath
+                )
+
+                val firebaseAppCheckInteropPath =
+                    "$firebaseRoot/FirebaseAppCheck/FirebaseAppCheckInterop.xcframework/ios-arm64"
+                linkerOpts(
+                    "-F$firebaseAppCheckInteropPath",
+                    "-framework",
+                    "FirebaseAppCheckInterop",
+                    "-rpath",
+                    firebaseAppCheckInteropPath
+                )
+
+                val firebaseCoreExtensionPath = "$firebaseRoot/FirebaseAuth/FirebaseCoreExtension.xcframework/ios-arm64"
+                linkerOpts(
+                    "-F$firebaseCoreExtensionPath",
+                    "-framework",
+                    "FirebaseCoreExtension",
+                    "-rpath",
+                    firebaseCoreExtensionPath
+                )
+
+                val firebaseCoreInternalPath =
+                    "$firebaseRoot/FirebaseAnalytics/FirebaseCoreInternal.xcframework/ios-arm64"
+                linkerOpts(
+                    "-F$firebaseCoreInternalPath",
+                    "-framework",
+                    "FirebaseCoreInternal",
+                    "-rpath",
+                    firebaseCoreInternalPath
+                )
+
+                val gtmSessionFetcherPath = "$firebaseRoot/FirebaseAuth/GTMSessionFetcher.xcframework/ios-arm64"
+                linkerOpts(
+                    "-F$gtmSessionFetcherPath",
+                    "-framework",
+                    "GTMSessionFetcher",
+                    "-rpath",
+                    gtmSessionFetcherPath
+                )
+
+                val googleUtilitiesPath = "$firebaseRoot/FirebaseAnalytics/GoogleUtilities.xcframework/ios-arm64"
+                linkerOpts("-F$googleUtilitiesPath", "-framework", "GoogleUtilities", "-rpath", googleUtilitiesPath)
+
+                val recaptchaInteropPath = "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64"
+                linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
+
+                linkerOpts("-framework", "CoreAudioTypes")
+
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
             }
@@ -43,44 +103,161 @@ kotlin {
             getTest("DEBUG").apply {
                 val couchbasePath = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+
                 val firebaseRoot = "$rootDir/vendor/Firebase"
-                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_g4-simulator"
+
+                val firebaseCorePath =
+                    "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+
                 val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
-            }
 
+                val firebaseAuthInteropPath =
+                    "$firebaseRoot/FirebaseAuth/FirebaseAuthInterop.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts(
+                    "-F$firebaseAuthInteropPath",
+                    "-framework",
+                    "FirebaseAuthInterop",
+                    "-rpath",
+                    firebaseAuthInteropPath
+                )
+
+                val firebaseAppCheckInteropPath =
+                    "$firebaseRoot/FirebaseAppCheck/FirebaseAppCheckInterop.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts(
+                    "-F$firebaseAppCheckInteropPath",
+                    "-framework",
+                    "FirebaseAppCheckInterop",
+                    "-rpath",
+                    firebaseAppCheckInteropPath
+                )
+
+                val firebaseCoreExtensionPath =
+                    "$firebaseRoot/FirebaseAuth/FirebaseCoreExtension.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts(
+                    "-F$firebaseCoreExtensionPath",
+                    "-framework",
+                    "FirebaseCoreExtension",
+                    "-rpath",
+                    firebaseCoreExtensionPath
+                )
+
+                val firebaseCoreInternalPath =
+                    "$firebaseRoot/FirebaseAnalytics/FirebaseCoreInternal.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts(
+                    "-F$firebaseCoreInternalPath",
+                    "-framework",
+                    "FirebaseCoreInternal",
+                    "-rpath",
+                    firebaseCoreInternalPath
+                )
+
+                val gtmSessionFetcherPath =
+                    "$firebaseRoot/FirebaseAuth/GTMSessionFetcher.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts(
+                    "-F$gtmSessionFetcherPath",
+                    "-framework",
+                    "GTMSessionFetcher",
+                    "-rpath",
+                    gtmSessionFetcherPath
+                )
+
+                val googleUtilitiesPath =
+                    "$firebaseRoot/FirebaseAnalytics/GoogleUtilities.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$googleUtilitiesPath", "-framework", "GoogleUtilities", "-rpath", googleUtilitiesPath)
+
+                val recaptchaInteropPath =
+                    "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
+
+                linkerOpts("-framework", "CoreAudioTypes")
+            }
         }
     }
 
-    iosSimulatorArm64 {
-        binaries {
-            framework {
-                baseName = "Shared"
-                val couchbasePath = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
-                isStatic = true
+        iosSimulatorArm64 {
+            binaries {
+                framework {
+                    baseName = "Shared"
+                    val couchbasePath = "$rootDir/vendor/CouchbaseLite/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
+                    isStatic = true
 
-                binaryOption("bundleId", "com.gmg.growmygarden.shared")
-                linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
-                val firebaseRoot = "$rootDir/vendor/Firebase"
-                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
-                val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
-                export(libs.androidx.lifecycle.viewmodel)
-                export(libs.kmp.observableviewmodel.core)
-            }
-            getTest("DEBUG").apply {
-                val couchbasePath = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
-                val firebaseRoot = "$rootDir/vendor/Firebase"
-                val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
-                val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
-                linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
+                    binaryOption("bundleId", "com.gmg.growmygarden.shared")
+                    linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+
+                    val firebaseRoot = "$rootDir/vendor/Firebase"
+
+                    val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+
+                    val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
+
+                    val firebaseAuthInteropPath = "$firebaseRoot/FirebaseAuth/FirebaseAuthInterop.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseAuthInteropPath", "-framework", "FirebaseAuthInterop", "-rpath", firebaseAuthInteropPath)
+
+                    val firebaseAppCheckInteropPath = "$firebaseRoot/FirebaseAppCheck/FirebaseAppCheckInterop.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseAppCheckInteropPath", "-framework", "FirebaseAppCheckInterop", "-rpath", firebaseAppCheckInteropPath)
+
+                    val firebaseCoreExtensionPath = "$firebaseRoot/FirebaseAuth/FirebaseCoreExtension.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseCoreExtensionPath", "-framework", "FirebaseCoreExtension", "-rpath", firebaseCoreExtensionPath)
+
+                    val firebaseCoreInternalPath = "$firebaseRoot/FirebaseAnalytics/FirebaseCoreInternal.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseCoreInternalPath", "-framework", "FirebaseCoreInternal", "-rpath", firebaseCoreInternalPath)
+
+                    val gtmSessionFetcherPath = "$firebaseRoot/FirebaseAuth/GTMSessionFetcher.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$gtmSessionFetcherPath", "-framework", "GTMSessionFetcher", "-rpath", gtmSessionFetcherPath)
+
+                    val googleUtilitiesPath = "$firebaseRoot/FirebaseAnalytics/GoogleUtilities.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$googleUtilitiesPath", "-framework", "GoogleUtilities", "-rpath", googleUtilitiesPath)
+
+                    val recaptchaInteropPath = "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
+
+                    linkerOpts("-framework", "CoreAudioTypes")
+
+                    export(libs.androidx.lifecycle.viewmodel)
+                    export(libs.kmp.observableviewmodel.core)
+                }
+
+                getTest("DEBUG").apply {
+                    val couchbasePath = "$rootDir/vendor/CouchbaseLite.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$couchbasePath", "-framework", "CouchbaseLite", "-rpath", couchbasePath)
+
+                    val firebaseRoot = "$rootDir/vendor/Firebase"
+
+                    val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+
+                    val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
+
+                    val firebaseAuthInteropPath = "$firebaseRoot/FirebaseAuth/FirebaseAuthInterop.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseAuthInteropPath", "-framework", "FirebaseAuthInterop", "-rpath", firebaseAuthInteropPath)
+
+                    val firebaseAppCheckInteropPath = "$firebaseRoot/FirebaseAppCheck/FirebaseAppCheckInterop.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseAppCheckInteropPath", "-framework", "FirebaseAppCheckInterop", "-rpath", firebaseAppCheckInteropPath)
+
+                    val firebaseCoreExtensionPath = "$firebaseRoot/FirebaseAuth/FirebaseCoreExtension.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseCoreExtensionPath", "-framework", "FirebaseCoreExtension", "-rpath", firebaseCoreExtensionPath)
+
+                    val firebaseCoreInternalPath = "$firebaseRoot/FirebaseAnalytics/FirebaseCoreInternal.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$firebaseCoreInternalPath", "-framework", "FirebaseCoreInternal", "-rpath", firebaseCoreInternalPath)
+
+                    val gtmSessionFetcherPath = "$firebaseRoot/FirebaseAuth/GTMSessionFetcher.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$gtmSessionFetcherPath", "-framework", "GTMSessionFetcher", "-rpath", gtmSessionFetcherPath)
+
+                    val googleUtilitiesPath = "$firebaseRoot/FirebaseAnalytics/GoogleUtilities.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$googleUtilitiesPath", "-framework", "GoogleUtilities", "-rpath", googleUtilitiesPath)
+
+                    val recaptchaInteropPath = "$firebaseRoot/FirebaseAuth/RecaptchaInterop.xcframework/ios-arm64_x86_64-simulator"
+                    linkerOpts("-F$recaptchaInteropPath", "-framework", "RecaptchaInterop", "-rpath", recaptchaInteropPath)
+
+                    linkerOpts("-framework", "CoreAudioTypes")
+                }
             }
         }
-    }
 
     sourceSets {
         all {
