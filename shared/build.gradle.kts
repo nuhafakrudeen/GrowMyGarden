@@ -334,27 +334,16 @@ kotlin {
 
                 if (OperatingSystem.current().isMacOsX) {
                     val swiftRuntimeDir = providers.exec {
-                        commandLine("xcode-select", "-p")
+                        commandLine("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
                     }.standardOutput.asText.map { devPath ->
                         File(devPath.trim())
-                            .resolve("Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator")
+                            .resolve("usr/lib/swift")
                             .absolutePath
                     }
 
-                    // Add -L<swiftRuntimeDir> and explicitly link compatibility libs
-//                    linkerOpts(
-//                        "-L${swiftRuntimeDir.get()}",
-//                        "-lswiftCompatibility56",
-//                        "-lswiftCompatibilityPacks",
-//                        "-lswift_Builtin_float",
-//                        "-lswift_errno",
-//                        "-lswift_math",
-//                        "-lswift_signal",
-//                        "-lswift_stdio",
-//                        "-lswift_time",
-//                        "-lswiftsys_time",
-//                        "-lswiftunistd",
-//                    )
+                    linkerOpts(
+                        "-L${swiftRuntimeDir.get()}",
+                    )
                 }
             }
         }
