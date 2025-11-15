@@ -33,6 +33,8 @@ kotlin {
                 val firebaseRoot = "$rootDir/vendor/Firebase"
                 val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64"
                 linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+                val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64"
+                linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
 
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
@@ -44,6 +46,8 @@ kotlin {
                 val firebaseRoot = "$rootDir/vendor/Firebase"
                 val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_g4-simulator"
                 linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+                val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
             }
 
         }
@@ -61,6 +65,8 @@ kotlin {
                 val firebaseRoot = "$rootDir/vendor/Firebase"
                 val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+                val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
                 export(libs.androidx.lifecycle.viewmodel)
                 export(libs.kmp.observableviewmodel.core)
             }
@@ -70,6 +76,8 @@ kotlin {
                 val firebaseRoot = "$rootDir/vendor/Firebase"
                 val firebaseCorePath = "$firebaseRoot/FirebaseAnalytics/FirebaseCore.xcframework/ios-arm64_x86_64-simulator"
                 linkerOpts("-F$firebaseCorePath", "-framework", "FirebaseCore", "-rpath", firebaseCorePath)
+                val firebaseAuthPath = "$firebaseRoot/FirebaseAuth/FirebaseAuth.xcframework/ios-arm64_x86_64-simulator"
+                linkerOpts("-F$firebaseAuthPath", "-framework", "FirebaseAuth", "-rpath", firebaseAuthPath)
             }
         }
     }
