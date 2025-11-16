@@ -65,7 +65,7 @@ jobs:
           cd iosApp
           
           xcrun xcodebuild \
-            -scheme "GrowMyGarden" \
+            -scheme "iosApp" \
             -configuration "Release" \
             -sdk "iphoneos" \
             -parallelizeTargets \
