@@ -72,7 +72,7 @@ jobs:
             -showBuildTimingSummary \
             -disableAutomaticPackageResolution \
             -derivedDataPath "${RUNNER_TEMP}/Build/DerivedData" \
-            -archivePath "${RUNNER_TEMP}/Build/Artifacts/GrowMyGarden.xcarchive" \
+            -archivePath "${RUNNER_TEMP}/Build/Archives/GrowMyGarden.xcarchive" \
             -resultBundlePath "${RUNNER_TEMP}/Build/Artifacts/GrowMyGarden.xcresults" \
             -destination "generic/platform=ios" \
             DEVELOPMENT_TEAM="${{ secrets.APPSTORE_TEAM_ID }}" \
