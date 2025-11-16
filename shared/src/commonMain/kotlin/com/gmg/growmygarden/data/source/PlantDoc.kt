@@ -3,9 +3,9 @@
 
 package com.gmg.growmygarden.data.source
 
+import com.gmg.growmygarden.auth.User
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
-import com.gmg.growmygarden.auth.User
 import kotbase.Document
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
