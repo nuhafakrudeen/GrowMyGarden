@@ -69,7 +69,7 @@ jobs:
             -configuration "Release" \
             -sdk "iphoneos" \
             -parallelizeTargets \
-            -showBuildTimingSummary \ 
+            -showBuildTimingSummary \
             -disableAutomaticPackageResolution \
             -derivedDataPath "${RUNNER_TEMP}/Build/DerivedData" \
             -archivePath "${RUNNER_TEMP}/Build/Artifacts/GrowMyGarden.xcarchive" \
@@ -77,7 +77,7 @@ jobs:
             -destination "generic/platform=ios" \
             DEVELOPMENT_TEAM="${{ secrets.APPSTORE_TEAM_ID }}" \
             PRODUCT_BUNDLE_IDENTIFIER="${{ secrets.BUNDLE_ID }}" \
-            CODE_SIGN_STYLE="Manual" \ 
+            CODE_SIGN_STYLE="Manual" \
             PROVISIONING_PROFILE_SPECIFIER="${{ secrets.DEV_PROVISIONING_PROFILE_NAME }}" \
             archive
 
