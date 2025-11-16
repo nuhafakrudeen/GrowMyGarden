@@ -2,6 +2,7 @@
 
 package com.gmg.growmygarden.data.source
 
+import com.gmg.growmygarden.auth.UserManager
 import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
@@ -12,6 +13,7 @@ import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.from
 import kotbase.ktx.orderBy
 import kotbase.ktx.select
+import kotbase.ktx.where
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -54,6 +56,7 @@ data class Plant(
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantRepository(
     private val dbProvider: DatabaseProvider,
+    private val userManager: UserManager,
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection
@@ -62,7 +65,12 @@ open class PlantRepository(
     @NativeCoroutines
     val plants: Flow<List<Plant>>
         get() {
-            val query = select(all()) from collection orderBy { "name".descending() }
+            val query = userManager.user?.let { user ->
+                select(all()) from collection where {
+                    "userId" equalTo user.id
+                } orderBy { "name".descending() }
+            } ?: run { select(all()) from collection orderBy { "name".descending() } }
+
             return query.asObjectsFlow { json: String ->
                 Json.decodeFromString<Plant>(json)
             }
@@ -118,26 +126,22 @@ open class PlantRepository(
 
     init {
         @OptIn(FlowPreview::class)
-        saveChannel.receiveAsFlow()
-            .debounce(debounceTime)
-            .onEach { plant ->
-                val coll = collection
-                val doc = coll.getDocument(plant.uuid.toHexDashString())
-                    ?.let(::decodeDocument)
-                    ?: PlantDoc()
-                val updated = doc.copy(
-                    uuid = plant.uuid,
-                    name = plant.name,
-                    scientificName = plant.scientificName,
-                    species = plant.species,
-                    wateringFrequency = plant.wateringFrequency,
-                    fertilizingFrequency = plant.fertilizingFrequency,
-                )
-                val json = Json.encodeToString(updated)
-                val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
-                coll.save(mutableDoc)
-            }
-            .launchIn(dbProvider.scope)
+        saveChannel.receiveAsFlow().debounce(debounceTime).onEach { plant ->
+            val coll = collection
+            val doc = coll.getDocument(plant.uuid.toHexDashString())?.let(::decodeDocument) ?: PlantDoc()
+            val updated = doc.copy(
+                uuid = plant.uuid,
+                userId = userManager.user?.id,
+                name = plant.name,
+                scientificName = plant.scientificName,
+                species = plant.species,
+                wateringFrequency = plant.wateringFrequency,
+                fertilizingFrequency = plant.fertilizingFrequency,
+            )
+            val json = Json.encodeToString(updated)
+            val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
+            coll.save(mutableDoc)
+        }.launchIn(dbProvider.scope)
     }
 
     companion object {
