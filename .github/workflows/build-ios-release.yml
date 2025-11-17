@@ -1,5 +1,5 @@
 name: Build IOS Release
-run-name: Deploy ${{ replace(replace(github.ref_name, 'release/', ''), '-ios', '') }}
+run-name: Deploy ${{ github.ref_name }}
 on:
   push:
     branches: 'release/*-ios'
