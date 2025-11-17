@@ -80,7 +80,7 @@ jobs:
             PRODUCT_BUNDLE_IDENTIFIER="${{ secrets.BUNDLE_ID }}" \
             CODE_SIGN_STYLE="Manual" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.DEV_PROVISIONING_PROFILE_NAME }}" \
+            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.DIST_PROVISIONING_PROFILE_NAME }}" \
             archive
 
       - name: "Generate ExportOptions.plist"
