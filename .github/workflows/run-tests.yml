@@ -31,6 +31,8 @@ jobs:
 
       - name: iOS set up
         uses: ./.github/actions/ios-setup
+        with:
+          firebase-plist: ${{ secrets.FIREBASE_PLIST }}
 
       - run: xcodebuild build test -project iosApp/iosApp.xcodeproj -configuration Debug -scheme iosApp -sdk iphoneos -destination name='iPhone 16' -verbose
 

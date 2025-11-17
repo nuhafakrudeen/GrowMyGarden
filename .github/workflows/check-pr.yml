@@ -44,6 +44,7 @@ jobs:
       shouldRunAndroid: ${{ needs.Setup.outputs.shouldRunAndroid }}
       shouldRunIos: ${{ needs.Setup.outputs.shouldRunIos }}
       shouldRunDesktop: ${{ needs.Setup.outputs.shouldRunDesktop }}
+    secrets: inherit
 
   Build:
 #    needs: [Setup, Lint]
@@ -54,6 +55,7 @@ jobs:
       shouldRunAndroid: ${{ needs.Setup.outputs.shouldRunAndroid }}
       shouldRunIos: ${{ needs.Setup.outputs.shouldRunIos }}
       shouldRunDesktop: ${{ needs.Setup.outputs.shouldRunDesktop }}
+    secrets: inherit
   AllowMerge:
     if: always()
     runs-on: ubuntu-latest
