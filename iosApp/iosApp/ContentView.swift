@@ -259,6 +259,109 @@ enum PhotoPermissionManager {
 }
 
 // ===============================================================
+// MARK: - PLANT IMAGE SERVICE (Backend placeholder)
+// ===============================================================
+
+enum PlantImageService {
+    // Fetches a UIImage for a given species name from backend.
+    static func fetchSpeciesImage(speciesName: String,
+                                  completion: @escaping (UIImage?) -> Void) {
+        // TODO: Replace with real backend call.
+        // Placeholder: currently returns nil so the UI shows the fallback.
+        completion(nil)
+    }
+}
+
+// ===============================================================
+// MARK: - SEARCH SERVICE (Backend placeholder)
+// ===============================================================
+
+struct SearchResult: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let detail: String
+}
+
+enum SearchService {
+    static func search(query: String, completion: @escaping ([SearchResult]) -> Void) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            completion([])
+            return
+        }
+
+        // 1. Build URL to your API
+        //    e.g. GET https://api.yourapp.com/plants/search?q=<query>
+        guard var components = URLComponents(string: "https://api.yourapp.com/plants/search") else {
+            completion([])
+            return
+        }
+        components.queryItems = [
+            URLQueryItem(name: "q", value: trimmed)
+        ]
+
+        guard let url = components.url else {
+            completion([])
+            return
+        }
+
+        // 2. Call backend
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            // Basic error handling
+            guard
+                let data = data,
+                error == nil
+            else {
+                DispatchQueue.main.async { completion([]) }
+                return
+            }
+
+            // 3. Decode whatever your backend returns
+            struct PlantSearchDTO: Decodable {
+                let name: String
+                let summary: String
+                let details: String
+            }
+
+            do {
+                let decoded = try JSONDecoder().decode([PlantSearchDTO].self, from: data)
+
+                let mapped = decoded.map { dto in
+                    SearchResult(
+                        title: dto.name,
+                        subtitle: dto.summary,
+                        detail: dto.details
+                    )
+                }
+
+                DispatchQueue.main.async {
+                    completion(mapped)
+                }
+            } catch {
+                DispatchQueue.main.async { completion([]) }
+            }
+        }.resume()
+    }
+}
+
+
+
+// Helper to normalize PhotosPicker images into JPEG Data
+private func loadImageData(from item: PhotosPickerItem?) async -> Data? {
+    guard let item = item else { return nil }
+
+    // Try to load the raw Data (Transferable)
+    if let rawData = try? await item.loadTransferable(type: Data.self),
+       let uiImage = UIImage(data: rawData),
+       let jpegData = uiImage.jpegData(compressionQuality: 0.9) {
+        return jpegData
+    }
+
+    return nil
+}
+
+// ===============================================================
 // MARK: - DATA MODELS
 // ===============================================================
 
@@ -272,10 +375,18 @@ struct PlantTask: Identifiable, Hashable {
 struct Plant: Identifiable, Hashable {
     let id = UUID()
     var name: String                    // Display name
+    var species: String                 // Plant species (required)
     var imageData: Data?                // Optional user-selected photo
     var notes: String                   // Notes entered by user
     var tasks: [PlantTask]              // List of task reminders for this plant
 }
+
+// Represents a unique species unlocked in the Plantbook
+struct PlantbookEntry: Identifiable, Hashable {
+    let id = UUID()
+    let speciesName: String
+}
+
 
 final class PlantStore: ObservableObject {
     @Published var plants: [Plant] = [] // All user-added plants
@@ -298,6 +409,22 @@ struct PlantsHomeView: View {
     @State private var isAddingPlant = false
     @State private var selectedTab: AppTab = .home
     
+    // All unique species from the user's plants
+    private var plantbookEntries: [PlantbookEntry] {
+            let groups = Dictionary(grouping: store.plants) { plant in
+                plant.species
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased()
+            }
+
+            return groups.values.compactMap { plantsForSpecies in
+                guard let first = plantsForSpecies.first else { return nil }
+                let display = first.species.trimmingCharacters(in: .whitespacesAndNewlines)
+                return PlantbookEntry(speciesName: display.isEmpty ? "Unknown Species" : display)
+            }
+            .sorted { $0.speciesName.localizedCaseInsensitiveCompare($1.speciesName) == .orderedAscending }
+    }
+    
     var body: some View {
         ZStack {
             // Gradient background
@@ -314,28 +441,48 @@ struct PlantsHomeView: View {
                     HomeHeader(count: store.plants.count) {
                         isAddingPlant = true
                     }
-                    
-                    ScrollView {
-                        LazyVStack(spacing: 18) {
-                            ForEach($store.plants) { $plant in
-                                PlantCard(
-                                    plant: $plant,
-                                    onDelete: { id in
-                                        store.plants.removeAll { $0.id == id }
-                                    }
-                                )
-                            }
+
+                    if store.plants.isEmpty {
+                        // EMPTY STATE
+                        VStack(spacing: 18) {
+                            Image(systemName: "leaf.circle")
+                                .font(.system(size: 60, weight: .regular))
+                                .foregroundColor(Color("DarkGreen").opacity(0.9))
+
+                            Text("No plants yet")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(Color("DarkGreen"))
+
+                            Text("Add a plant using the \"+\" on the top right to start your plant care journey!")
+                                .font(.subheadline)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(Color("DarkGreen").opacity(0.8))
+                                .padding(.horizontal, 40)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                    }
-                    .safeAreaInset(edge: .bottom) {
-                        Color.clear.frame(height: 120) // height = your bottom bar
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 18) {
+                                ForEach($store.plants) { $plant in
+                                    PlantCard(
+                                        plant: $plant,
+                                        onDelete: { id in
+                                            store.plants.removeAll { $0.id == id }
+                                        }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, 16)
+                        }
+                        .safeAreaInset(edge: .bottom) {
+                            Color.clear.frame(height: 120)
+                        }
                     }
                 case .search:
-                    Spacer(minLength: 0)
+                    SearchView()
                 case .plantbook:
-                    Spacer(minLength: 0)
+                    PlantbookView(entries: plantbookEntries)
                 case .profile:
                     ProfileView()
                 }
@@ -351,7 +498,144 @@ struct PlantsHomeView: View {
     }
 }
 
-/// ===============================================================
+// ===============================================================
+// MARK: - SEARCH VIEW
+// ===============================================================
+struct SearchView: View {
+    @State private var query: String = ""
+    @State private var results: [SearchResult] = []
+    @State private var isLoading: Bool = false
+    @State private var hasSearched: Bool = false
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color("LightGreen"), Color("SoftCream")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                // Search bar
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Color("DarkGreen").opacity(0.7))
+
+                    TextField("Search plants, care tips, species...", text: $query)
+                        .textInputAutocapitalization(.none)
+                        .autocorrectionDisabled()
+                        .submitLabel(.search)
+                        .onSubmit {
+                            performSearch()
+                        }
+
+                    if !query.isEmpty {
+                        Button {
+                            query = ""
+                            results = []
+                            hasSearched = false
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.white.opacity(0.95))
+                        .shadow(color: Color("DarkGreen").opacity(0.15), radius: 6, y: 3)
+                )
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+
+                // Content
+                if isLoading {
+                    Spacer()
+                    ProgressView("Searching…")
+                        .foregroundColor(Color("DarkGreen"))
+                    Spacer()
+                } else if results.isEmpty {
+                    Spacer()
+                    VStack(spacing: 10) {
+                        Image(systemName: hasSearched ? "leaf.circle" : "text.magnifyingglass")
+                            .font(.system(size: 40, weight: .regular))
+                            .foregroundColor(Color("DarkGreen").opacity(0.8))
+
+                        Text(hasSearched ? "No results found." : "Start by typing something to search.")
+                            .font(.subheadline)
+                            .foregroundColor(Color("DarkGreen").opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            ForEach(results) { result in
+                                SearchResultCard(result: result)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 24)
+                    }
+                }
+            }
+        }
+    }
+
+    private func performSearch() {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        isLoading = true
+        hasSearched = true
+        SearchService.search(query: trimmed) { newResults in
+            DispatchQueue.main.async {
+                self.results = newResults
+                self.isLoading = false
+            }
+        }
+    }
+}
+
+// A simple “info flows nicely” card for each search result
+private struct SearchResultCard: View {
+    let result: SearchResult
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(result.title)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundColor(Color("DarkGreen"))
+
+            if !result.subtitle.isEmpty {
+                Text(result.subtitle)
+                    .font(.footnote)
+                    .foregroundColor(Color("DarkGreen").opacity(0.75))
+            }
+
+            if !result.detail.isEmpty {
+                Text(result.detail)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.96))
+                .shadow(color: Color("DarkGreen").opacity(0.16), radius: 8, y: 4)
+        )
+    }
+}
+
+
+
+// ===============================================================
 // MARK: - PROFILE VIEW
 // ===============================================================
 struct ProfileView: View {
@@ -568,15 +852,161 @@ struct ProfileView: View {
     }
 }
 
-private func loadImageData(from item: PhotosPickerItem?) async -> Data? {
-    guard let item = item else { return nil }
-    // Load raw Data (Transferable) and normalize to JPEG to avoid HEIC/iCloud quirks
-    if let raw = try? await item.loadTransferable(type: Data.self),
-       let ui = UIImage(data: raw),
-       let jpeg = ui.jpegData(compressionQuality: 0.9) {
-        return jpeg
+// ===============================================================
+// MARK: - PLANTBOOK VIEW
+// ===============================================================
+struct PlantbookView: View {
+    let entries: [PlantbookEntry]
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color("LightGreen"), Color("SoftCream")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 6) {
+                        Text("Plantbook")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(Color("DarkGreen"))
+
+                        Text(entries.isEmpty
+                             ? "Add plants to unlock species in your Plantbook."
+                             : "Your discovered plant species.")
+                            .font(.subheadline)
+                            .foregroundColor(Color("DarkGreen").opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 30)
+                    }
+                    .padding(.top, 24)
+
+                    // Picture-book cards
+                    VStack(spacing: 22) {
+                        ForEach(entries) { entry in
+                            PlantbookCard(entry: entry)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                }
+            }
+        }
     }
-    return nil
+}
+
+// One big card per species, image from backend
+private struct PlantbookCard: View {
+    let entry: PlantbookEntry
+
+    @State private var loadedImage: UIImage?
+    @State private var isLoading = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                // Main visual
+                Group {
+                    if let uiImage = loadedImage {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                    } else if isLoading {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color("LightGreen").opacity(0.6),
+                                            Color("SoftCream").opacity(0.8)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            ProgressView()
+                        }
+                    } else {
+                        // Placeholder if backend has no image yet
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color("LightGreen").opacity(0.7),
+                                            Color("SoftCream").opacity(0.9)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+
+                            VStack(spacing: 8) {
+                                Image(systemName: "leaf.fill")
+                                    .font(.system(size: 40, weight: .bold))
+                                    .foregroundColor(Color("DarkGreen").opacity(0.9))
+
+                                Text("Image coming soon")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color("DarkGreen").opacity(0.15), lineWidth: 1.5)
+                )
+                .clipped()
+
+                // Subtle overlay icon for style
+                VStack {
+                    Spacer()
+                    HStack {
+                        Image(systemName: "book.pages.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.9))
+                            .shadow(radius: 4)
+                        Spacer()
+                    }
+                    .padding(14)
+                }
+            }
+
+            Text(entry.speciesName)
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .foregroundColor(Color("DarkGreen"))
+
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.96))
+                .shadow(color: Color("DarkGreen").opacity(0.18), radius: 10, y: 5)
+        )
+        .onAppear {
+            loadImageIfNeeded()
+        }
+    }
+
+    private func loadImageIfNeeded() {
+        guard !isLoading, loadedImage == nil else { return }
+        isLoading = true
+
+        PlantImageService.fetchSpeciesImage(speciesName: entry.speciesName) { image in
+            DispatchQueue.main.async {
+                self.loadedImage = image
+                self.isLoading = false
+            }
+        }
+    }
 }
 
 
@@ -847,6 +1277,7 @@ struct AddPlantSheet: View {
 
     // Form state
     @State private var name = ""
+    @State private var species = ""
     @State private var notes = ""
 
     // Photo state
@@ -855,7 +1286,10 @@ struct AddPlantSheet: View {
     @State private var showPhotoPicker = false
     @State private var showPhotoDeniedAlert = false
 
-    private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
+    private var canSave: Bool {
+            !name.trimmingCharacters(in: .whitespaces).isEmpty &&
+            !species.trimmingCharacters(in: .whitespaces).isEmpty
+        }
 
     var body: some View {
         NavigationStack {
@@ -921,6 +1355,9 @@ struct AddPlantSheet: View {
                         TextField("Plant name (required)", text: $name)
                             .textInputAutocapitalization(.words)
                             .autocorrectionDisabled()
+                        TextField("Plant species (required)", text: $species)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
                     }
 
                     // NOTES
@@ -951,6 +1388,7 @@ struct AddPlantSheet: View {
                         ]
                         let plant = Plant(
                             name: name.trimmingCharacters(in: .whitespaces),
+                            species: species.trimmingCharacters(in: .whitespaces),
                             imageData: imageData,
                             notes: notes,
                             tasks: defaultTasks
@@ -998,6 +1436,7 @@ struct EditPlantSheet: View {
     var onDelete: () -> Void
 
     @State private var newName: String = ""
+    @State private var newSpecies: String = ""
     @State private var newNotes: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newImageData: Data?
@@ -1035,6 +1474,9 @@ struct EditPlantSheet: View {
                     Button("Save") {
                         if !newName.trimmingCharacters(in: .whitespaces).isEmpty {
                             plant.name = newName.trimmingCharacters(in: .whitespaces)
+                        }
+                        if !newSpecies.trimmingCharacters(in: .whitespaces).isEmpty {
+                                plant.species = newSpecies.trimmingCharacters(in: .whitespaces)
                         }
                         if !newNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             plant.notes = newNotes
@@ -1118,6 +1560,25 @@ struct EditPlantSheet: View {
                                 .foregroundColor(Color("DarkGreen"))
 
                             TextField("Enter new name", text: $newName)
+                                .textInputAutocapitalization(.words)
+                                .autocorrectionDisabled()
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.white.opacity(0.85))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color("DarkGreen").opacity(0.2), lineWidth: 1)
+                                        )
+                                )
+                        }
+                        //species
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Plant Species")
+                                .font(.headline)
+                                .foregroundColor(Color("DarkGreen"))
+
+                            TextField("Enter species", text: $newSpecies)
                                 .textInputAutocapitalization(.words)
                                 .autocorrectionDisabled()
                                 .padding(10)
@@ -1236,6 +1697,7 @@ struct EditPlantSheet: View {
         }
         .onAppear {
             newName = plant.name
+            newSpecies = plant.species
             newNotes = plant.notes
         }
     }
@@ -1978,6 +2440,7 @@ struct BindingPreview<Value, Content: View>: View {
     BindingPreview(
         Plant(
             name: "Monstera",
+            species: "Monstera deliciosa",   // NEW
             imageData: nil,
             notes: "Keep near indirect sunlight.",
             tasks: [
