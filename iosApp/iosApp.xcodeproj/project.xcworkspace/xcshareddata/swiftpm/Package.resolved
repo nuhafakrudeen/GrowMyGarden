@@ -1,5 +1,5 @@
 {
-  "originHash" : "fb7cb284cb853d19bb54251885b8e0fe1d4b1b68ab8ec4abb08ca021c0c98eba",
+  "originHash" : "c9b2b587a49984415a65d3dd1293316e0087f42b4456bf0ac501a5817a7d1799",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -128,6 +128,24 @@
       }
     },
     {
+      "identity" : "kmp-nativecoroutines",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rickclephas/KMP-NativeCoroutines",
+      "state" : {
+        "branch" : "master",
+        "revision" : "c50f752099fe9a037cb6c7de1f4077bf257b5621"
+      }
+    },
+    {
+      "identity" : "kmp-observableviewmodel",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rickclephas/KMP-ObservableViewModel",
+      "state" : {
+        "branch" : "master",
+        "revision" : "f6f15e942f9e231aa0c650d6b82024984573046c"
+      }
+    },
+    {
       "identity" : "leveldb",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/leveldb.git",
@@ -152,6 +170,15 @@
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
+      }
+    },
+    {
+      "identity" : "rxswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ReactiveX/RxSwift.git",
+      "state" : {
+        "revision" : "5004a18539bd68905c5939aa893075f578f4f03d",
+        "version" : "6.9.1"
       }
     },
     {
