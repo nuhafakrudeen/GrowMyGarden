@@ -4,7 +4,7 @@ on:
   push:
     branches: 'release/*-ios'
 env:
-  XCODE_VERSION: 'latest-stable'
+  XCODE_VERSION: '16.2'
   JAVA_VERSION: '21'
 jobs:
   build:
@@ -76,11 +76,8 @@ jobs:
             -archivePath "${RUNNER_TEMP}/Build/Archives/GrowMyGarden.xcarchive" \
             -resultBundlePath "${RUNNER_TEMP}/Build/Artifacts/GrowMyGarden.xcresults" \
             -destination "generic/platform=ios" \
-            CODE_SIGNING_REQUIRED=Yes \
-            CODE_SINGING_ALLOWED=No \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.DIST_PROVISIONING_PROFILE_NAME }}" \
+            -allowProvisioningUpdates \
+            CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM="${{ secrets.APPSTORE_TEAM_ID }}" \
             PRODUCT_BUNDLE_IDENTIFIER="${{ secrets.BUNDLE_ID }}" \
             archive
