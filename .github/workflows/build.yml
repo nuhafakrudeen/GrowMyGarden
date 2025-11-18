@@ -30,7 +30,9 @@ jobs:
 
       - name: iOS set up
         uses: ./.github/actions/ios-setup
-
+        with:
+          firebase-plist: ${{ secrets.FIREBASE_PLIST }}
+          
       - run: |
           xcodebuild build \
             -project iosApp/iosApp.xcodeproj \
