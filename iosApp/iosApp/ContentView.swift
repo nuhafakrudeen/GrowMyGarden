@@ -8,6 +8,10 @@ import GoogleSignIn
 import UIKit
 import AuthenticationServices
 import CryptoKit
+import Shared
+import KMPNativeCoroutinesCombine
+import Combine
+
 
 //shared auth state for the app
 final class AuthManager: NSObject, ObservableObject {

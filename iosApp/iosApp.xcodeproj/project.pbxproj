@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		448AE5452ECC3AC8006890C7 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 448AE5442ECC3AC8006890C7 /* GoogleService-Info.plist */; };
 		44CEC6D42ECB9C3B00383F97 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = 44CEC6D32ECB9C3B00383F97 /* KMPNativeCoroutinesAsync */; };
 		44CEC6D62ECB9C3B00383F97 /* KMPNativeCoroutinesCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 44CEC6D52ECB9C3B00383F97 /* KMPNativeCoroutinesCombine */; };
 		44CEC6D82ECB9C3B00383F97 /* KMPNativeCoroutinesCore in Frameworks */ = {isa = PBXBuildFile; productRef = 44CEC6D72ECB9C3B00383F97 /* KMPNativeCoroutinesCore */; };
@@ -18,11 +19,10 @@
 		938F852E2EC2E11D0013D1D2 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 938F852D2EC2E11D0013D1D2 /* FirebaseCore */; };
 		938F85312EC2E9C80013D1D2 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 938F85302EC2E9C80013D1D2 /* GoogleSignIn */; };
 		938F85332EC2E9C80013D1D2 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 938F85322EC2E9C80013D1D2 /* GoogleSignInSwift */; };
-		93A1339C2EC51E9E00ABCF6A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 93A1339B2EC51E9E00ABCF6A /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		93A1339B2EC51E9E00ABCF6A /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		448AE5442ECC3AC8006890C7 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C1B14DD531C9249FD161466B /* growmygarden.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = growmygarden.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -88,7 +88,7 @@
 				FAD01DDF709AAE1336DC5C68 /* Configuration */,
 				4BA902A35E91EB0C923D8A52 /* iosApp */,
 				91BFDEAC9727C58436B9AA59 /* Products */,
-				93A1339B2EC51E9E00ABCF6A /* GoogleService-Info.plist */,
+				448AE5442ECC3AC8006890C7 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -175,7 +175,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				93A1339C2EC51E9E00ABCF6A /* GoogleService-Info.plist in Resources */,
+				448AE5452ECC3AC8006890C7 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

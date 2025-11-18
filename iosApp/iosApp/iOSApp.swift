@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import Shared
 
 @main
 struct iOSApp: App {
@@ -7,6 +8,8 @@ struct iOSApp: App {
     
     init() {
         FirebaseApp.configure()
+        // Call the wrapper that delegates to initKoin()
+        HelperKt.doInitKoin()
     }
 
     var body: some Scene {
