@@ -111,6 +111,8 @@ extension AuthManager {
         controller.presentationContextProvider = self
         controller.performRequests()
     }
+    
+    
 
     // MARK: - Nonce helpers
 
@@ -142,6 +144,23 @@ extension AuthManager {
         return hashed.map { String(format: "%02x", $0) }.joined()
     }
 }
+
+extension AuthManager {
+    func signInAsGuest() {
+        print("Starting guest sign-in")
+
+        Auth.auth().signInAnonymously { [weak self] result, error in
+            if let error = error {
+                print("Guest sign-in failed:", error)
+                return
+            }
+
+            // Firebase listener in AuthManager will update isLoggedIn
+            print("Guest sign-in success. User ID:", result?.user.uid ?? "nil")
+        }
+    }
+}
+
 
 
 extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
@@ -658,7 +677,14 @@ struct ProfileView: View {
     @State private var showPhotoDeniedAlert = false
 
     private var emailText: String {
-        user?.email ?? "No email on file"
+        if let user = user {
+            if user.isAnonymous {
+                return "Guest Mode (no email linked)"
+            } else {
+                return user.email ?? "No email on file"
+            }
+        }
+        return "Not signed in"
     }
 
     var body: some View {
@@ -2103,6 +2129,23 @@ struct SignInForm: View {
             }
 
         }
+        // Guest login
+        Button {
+            auth.signInAsGuest()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "person.fill.questionmark")
+                Text("Continue as Guest")
+            }
+            .font(.system(size: 14, weight: .medium))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color("DarkGreen").opacity(0.3), lineWidth: 1)
+            )
+        }
+        .padding(.top, 4)
         .sheet(isPresented: $showForgotSheet) {
             ForgotPasswordSheet(email: $forgotEmail)
         }
