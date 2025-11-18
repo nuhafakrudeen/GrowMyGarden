@@ -21,6 +21,7 @@ ksp = "2.2.20-2.0.2"
 koin = "4.1.0"import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 
+
 plugins {
 alias(libs.plugins.kotlinMultiplatform)
 alias(libs.plugins.spotless)
@@ -203,6 +204,8 @@ moko-permissions-compose = {group = "dev.icerock.moko", name = "permissions-comp
 
 filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit"}
 filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit"}
+
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

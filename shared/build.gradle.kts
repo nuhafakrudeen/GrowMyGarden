@@ -78,9 +78,8 @@ kotlin {
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.kmp.observableviewmodel.core)
             implementation(libs.alarmee)
-            implementation("io.ktor:ktor-client-core:2.3.5")
-            implementation("io.ktor:ktor-client-content-negotiation:2.3.5")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.5")
+
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -93,6 +92,7 @@ kotlin {
         iosMain.dependencies {
             api(libs.kmp.observableviewmodel.core)
             implementation("io.ktor:ktor-client-darwin:2.3.5")
+
         }
         iosTest.dependencies {
             implementation(libs.alarmee)
