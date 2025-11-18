@@ -13,22 +13,80 @@ import KMPNativeCoroutinesCombine
 import Combine
 
 // ===============================================================
+// MARK: - Backend (Kotlin) Plant Adapter
+// ===============================================================
+
+/// Wraps the Kotlin DashboardViewModel so SwiftUI can observe it.
+final class BackendPlantAdapter: ObservableObject {
+    @Published var backendPlants: [Shared.Plant] = []
+
+    private let vm: DashboardViewModel
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        print("👉 BackendPlantAdapter init - getting DashboardViewModel")
+        vm = HelperKt.getDashboardViewModel()
+        print("✅ Got DashboardViewModel from Kotlin:", vm)
+
+        // Observe Kotlin StateFlow<List<Plant>> via plantsStateFlow
+        let publisher: AnyPublisher<[Shared.Plant], Error> =
+            createPublisher(for: vm.plantsStateFlow)
+
+        publisher
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        print("❌ Error observing plantsStateFlow:", error)
+                    }
+                },
+                receiveValue: { [weak self] (plants: [Shared.Plant]) in
+                    print("🌱 Received \(plants.count) plants from Kotlin")
+                    self?.backendPlants = plants
+                }
+            )
+            .store(in: &cancellables)
+    }
+
+    /// Persist a SwiftUI Plant to the backend.
+    func save(uiPlant: Plant) {
+        let backend = HelperKt.createBackendPlant(
+            name: uiPlant.name,
+            species: uiPlant.species
+        )
+        vm.savePlant(plant: backend)
+    }
+
+    /// Delete the corresponding backend plant for a given SwiftUI Plant.
+    func delete(uiPlant: Plant) {
+        if let backend = backendPlants.first(where: {
+            $0.name == uiPlant.name && $0.species == uiPlant.species
+        }) {
+            vm.deletePlant(plant: backend)
+        }
+    }
+}
+
+/// Convert a backend Shared.Plant into your local SwiftUI Plant model.
+/// For now we sync only name & species; notes/image/tasks stay local-only.
+func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
+    Plant(
+        name: backend.name,
+        species: backend.species,
+        imageData: nil,
+        notes: "",
+        tasks: [
+            PlantTask(title: "water", reminderEnabled: false),
+            PlantTask(title: "fertilize", reminderEnabled: false)
+        ]
+    )
+}
+
+// ===============================================================
 // MARK: - BACKEND INTEGRATION PROBE (Kotlin DashboardViewModel)
 // ===============================================================
 
-final class BackendIntegrationProbe: ObservableObject {
-    private var viewModel: DashboardViewModel?
 
-    init() {
-        print("🔍 [BackendTest] Attempting to fetch DashboardViewModel from Kotlin via HelperKt.getDashboardViewModel()")
-
-        // This will crash (with a clear stacktrace) if Koin is not initialized correctly.
-        let vm = HelperKt.getDashboardViewModel()
-        self.viewModel = vm
-
-        print("✅ [BackendTest] Successfully received DashboardViewModel from Kotlin: \(vm)")
-    }
-}
 
 //shared auth state for the app
 final class AuthManager: NSObject, ObservableObject {
@@ -426,7 +484,7 @@ final class PlantStore: ObservableObject {
 
 struct PlantsHomeView: View {
     @StateObject private var store = PlantStore()
-    @StateObject private var backendProbe = BackendIntegrationProbe()  // 🔍 backend test
+    @StateObject private var backendAdapter = BackendPlantAdapter()
     @State private var isAddingPlant = false
     @State private var selectedTab: AppTab = .home
 
@@ -489,6 +547,9 @@ struct PlantsHomeView: View {
                                     PlantCard(
                                         plant: $plant,
                                         onDelete: { id in
+                                            if let uiPlant = store.plants.first(where: { $0.id == id }) {
+                                                backendAdapter.delete(uiPlant: uiPlant)
+                                            }
                                             store.plants.removeAll { $0.id == id }
                                         }
                                     )
@@ -514,9 +575,20 @@ struct PlantsHomeView: View {
         }
         .sheet(isPresented: $isAddingPlant) {
             AddPlantSheet(isPresented: $isAddingPlant) { newPlant in
+                // 1) Local UI update
                 store.add(newPlant)
+                // 2) Persist to Kotlin backend
+                backendAdapter.save(uiPlant: newPlant)
             }
         }
+        .onReceive(backendAdapter.$backendPlants) { backendPlants in
+            // Sync backend → UI store
+            let mapped = backendPlants.map { convertBackendPlant($0) }
+            if mapped != store.plants {
+                store.plants = mapped
+            }
+        }
+
     }
 }
 

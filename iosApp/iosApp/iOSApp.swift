@@ -8,12 +8,11 @@ struct iOSApp: App {
     
     init() {
         FirebaseApp.configure()
-
-        print("👉 Calling Kotlin initKoin")
+        // Initialize the shared Kotlin DI container (Koin).
+        print("👉 Calling Kotlin doInitKoin()")
         HelperKt.doInitKoin()
-        print("✅ Finished calling Kotlin initKoin")
+        print("✅ Returned from Kotlin doInitKoin()")
     }
-
 
     var body: some Scene {
         WindowGroup {
