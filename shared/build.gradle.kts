@@ -75,7 +75,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
-
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.kmp.observableviewmodel.core)
             implementation(libs.alarmee)
