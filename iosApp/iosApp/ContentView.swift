@@ -12,6 +12,23 @@ import Shared
 import KMPNativeCoroutinesCombine
 import Combine
 
+// ===============================================================
+// MARK: - BACKEND INTEGRATION PROBE (Kotlin DashboardViewModel)
+// ===============================================================
+
+final class BackendIntegrationProbe: ObservableObject {
+    private var viewModel: DashboardViewModel?
+
+    init() {
+        print("🔍 [BackendTest] Attempting to fetch DashboardViewModel from Kotlin via HelperKt.getDashboardViewModel()")
+
+        // This will crash (with a clear stacktrace) if Koin is not initialized correctly.
+        let vm = HelperKt.getDashboardViewModel()
+        self.viewModel = vm
+
+        print("✅ [BackendTest] Successfully received DashboardViewModel from Kotlin: \(vm)")
+    }
+}
 
 //shared auth state for the app
 final class AuthManager: NSObject, ObservableObject {
@@ -35,7 +52,6 @@ final class AuthManager: NSObject, ObservableObject {
             Auth.auth().removeStateDidChangeListener(handle)
         }
     }
-    
     func signOut() {
         do {
             try Auth.auth().signOut()
@@ -410,8 +426,10 @@ final class PlantStore: ObservableObject {
 
 struct PlantsHomeView: View {
     @StateObject private var store = PlantStore()
+    @StateObject private var backendProbe = BackendIntegrationProbe()  // 🔍 backend test
     @State private var isAddingPlant = false
     @State private var selectedTab: AppTab = .home
+
     
     // All unique species from the user's plants
     private var plantbookEntries: [PlantbookEntry] {

@@ -8,9 +8,12 @@ struct iOSApp: App {
     
     init() {
         FirebaseApp.configure()
-        // Call the wrapper that delegates to initKoin()
+
+        print("👉 Calling Kotlin initKoin")
         HelperKt.doInitKoin()
+        print("✅ Finished calling Kotlin initKoin")
     }
+
 
     var body: some Scene {
         WindowGroup {
