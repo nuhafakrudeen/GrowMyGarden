@@ -63,7 +63,7 @@ jobs:
 
       - name: Create ASC_KEY
         run: |
-          echo "${{secrets.APPSTORE_PRIVATE_KEY}}" > asc_key.p8
+          echo "${{secrets.APPSTORE_PRIVATE_KEY}}" > "${RUNNER_TEMP}/asc_key.p8"
 
       - name: Build Archive
         run: |
@@ -81,7 +81,7 @@ jobs:
             -resultBundlePath "${RUNNER_TEMP}/Build/Artifacts/GrowMyGarden.xcresults" \
             -destination "generic/platform=ios" \
             -allowProvisioningUpdates \
-            -authenticationKeyPath asc_key.p8 \
+            -authenticationKeyPath "${RUNNER_TEMP}/asc_key.p8" \
             -authenticationKeyID ${{ secrets.APPSTORE_ISSUER_ID }} \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM="${{ secrets.APPSTORE_TEAM_ID }}" \
