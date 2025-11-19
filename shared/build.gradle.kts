@@ -80,6 +80,7 @@ kotlin {
             implementation(libs.alarmee)
 
             implementation(libs.bundles.ktor)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -90,6 +91,7 @@ kotlin {
         }
 
         iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
             api(libs.kmp.observableviewmodel.core)
 
         }
