@@ -26,6 +26,7 @@ compose = "1.6.5"
 alarmee = "2.4.0"
 moko = "0.20.1"
 filekit = "0.12.0"
+ktor = "3.3.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -51,9 +52,16 @@ moko-permissions = {group = "dev.icerock.moko", name = "permissions", version.re
 moko-permissions-test = {group = "dev.icerock.moko", name = "permissions-test", version.ref = "moko"}
 moko-permissions-notifications = {group = "dev.icerock.moko", name = "permissions-notifications", version.ref = "moko"}
 moko-permissions-compose = {group = "dev.icerock.moko", name = "permissions-compose", version.ref = "moko"}
-
 filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit"}
 filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit"}
+
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 
 
 
@@ -67,3 +75,12 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kmp-nativecoroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "kmp-nativecoroutines"}
 kotlinx-serialization = {id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin"}
+
+[bundles]
+ktor = [
+    "ktor-client-core",
+    "ktor-client-content-negotiation",
+    "ktor-client-auth",
+    "ktor-client-logging",
+    "ktor-serialization-kotlinx-json",
+]

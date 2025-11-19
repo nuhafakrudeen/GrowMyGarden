@@ -11,9 +11,9 @@ import kotbase.Expression
 import kotbase.FullTextFunction
 import kotbase.FullTextIndexItem
 import kotbase.IndexBuilder
-import kotbase.QueryBuilder
 import kotbase.Meta
 import kotbase.MutableDocument
+import kotbase.QueryBuilder
 import kotbase.SelectResult
 import kotbase.ktx.all
 import kotbase.ktx.asObjectsFlow
@@ -160,29 +160,29 @@ open class PlantRepository(
             IndexBuilder.fullTextIndex(
                 FullTextIndexItem.property("name"),
                 FullTextIndexItem.property("scientificName"),
-                FullTextIndexItem.property("species")
-            ).ignoreAccents(false)
+                FullTextIndexItem.property("species"),
+            ).ignoreAccents(false),
         )
     }
 
-    suspend fun searchPlant(keyWords: String)
-    {
+    suspend fun searchPlant(keyWords: String) {
         val ftsQuery =
             QueryBuilder.select(
                 SelectResult.expression(Meta.id),
                 SelectResult.property("name"),
                 SelectResult.property("scientificName"),
-                SelectResult.property(("species"))
+                SelectResult.property(("species")),
             )
                 .from(DataSource.collection(collection))
-                .where(FullTextFunction.match(
-                    Expression.fullTextIndex("plantFTSIndex"), keyWords
-                    )
+                .where(
+                    FullTextFunction.match(
+                        Expression.fullTextIndex("plantFTSIndex"),
+                        keyWords,
+                    ),
                 )
 
         return ftsQuery.execute().use { rs ->
             rs.allResults()
         }
     }
-
 }
