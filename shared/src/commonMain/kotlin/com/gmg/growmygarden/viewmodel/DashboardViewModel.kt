@@ -3,7 +3,10 @@ package com.gmg.growmygarden.viewmodel
 import com.gmg.growmygarden.NotificationHandler
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantImageStore
+import com.gmg.growmygarden.data.source.PlantInfo
+import com.gmg.growmygarden.data.source.PlantInfoRepository
 import com.gmg.growmygarden.data.source.PlantRepository
+import com.gmg.growmygarden.network.PerenualApi
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -13,6 +16,7 @@ import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDateTime
 import kotlin.collections.listOf
 import kotlin.uuid.Uuid
@@ -21,6 +25,8 @@ class DashboardViewModel(
     private val plantRepository: PlantRepository,
     private val imageStore: PlantImageStore,
     private val notificationHandler: NotificationHandler,
+    private val perenualAPI: PerenualApi,
+    private val plantInfoRepository: PlantInfoRepository
 ) : ViewModel() {
 
     @NativeCoroutinesState
@@ -89,4 +95,45 @@ class DashboardViewModel(
             }
         }
     }
+
+    suspend fun fillPlantInfoDatabase()
+    {
+
+        val firstPlantInDatabase = plantInfoRepository.plantInfoList.first()
+        if(firstPlantInDatabase.isEmpty())
+        {
+            return
+        }
+
+        val popularPlantIDs = listOf(721, 3384, 7168)
+
+        //Ask the AI what map does and if it will accurately map to PlantInfo class
+        val popularPlantsList: List<PlantInfo> = popularPlantIDs.map { id ->
+            perenualAPI.searchPlantInTrefleAPI(id)
+        }
+
+        plantInfoRepository.saveMultiplePlantInfo(*popularPlantsList.toTypedArray())
+
+    }
+
+//    suspend fun seedDatabaseFromAPI(api: PerenualApi, repo: PlantInfoRepository) {
+//        // 1. Fetch top plants from API
+//        val topPlants = api.getTopPlants() // implement this function in your API class
+//
+//        // 2. Map API models to PlantInfo
+//        val plantInfos = topPlants.map { plant ->
+//            PlantInfo(
+//                id = plant.id,
+//                name = plant.commonName,
+//                scientificName = plant.scientificName,
+//                species = plant.species,
+//                waterFrequency = plant.water?.frequency,
+//                sunExposure = plant.sunlight,
+//                image = plant.image?.let { PlantImage() } // download if needed
+//            )
+//        }
+//
+//        // 3. Save them to the database
+//        repo.saveMultiplePlantInfo(*plantInfos.toTypedArray())
+//    }
 }

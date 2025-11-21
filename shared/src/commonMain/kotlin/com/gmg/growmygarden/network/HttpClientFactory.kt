@@ -2,10 +2,8 @@ package com.gmg.growmygarden.network
 
 import io.ktor.client.HttpClient
 
-expect class HttpClientFactory {
+expect fun createHttpClient(): HttpClient
 
-    fun createHttpClient(): HttpClient
 
-}
 
 

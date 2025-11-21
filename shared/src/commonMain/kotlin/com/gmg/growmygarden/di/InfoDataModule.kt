@@ -1,4 +1,4 @@
-package com.gmg.growmygarden.di
+package di
 
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
@@ -8,6 +8,6 @@ import org.koin.dsl.module
 
 
 val infoDataModule = module{
-    single { DatabaseProvider }
+    single { DatabaseProvider() }
     singleOf(::PlantInfoRepository)
 }

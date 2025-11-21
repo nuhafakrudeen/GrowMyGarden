@@ -6,10 +6,9 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-actual class HttpClientFactory {
-    actual fun createHttpClient(): HttpClient = HttpClient(Darwin.create()) {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
+
+actual fun createHttpClient(): HttpClient = HttpClient(Darwin.create()) {
+    install(ContentNegotiation) {
+        json(Json { ignoreUnknownKeys = true })
     }
 }
