@@ -37,7 +37,7 @@ data class PlantInfo(
 )
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
-open class plantInfoRepository(
+open class PlantInfoRepository(
     private val dbProvider: DatabaseProvider
 ) {
 
@@ -81,28 +81,28 @@ open class plantInfoRepository(
         )
     }
 
-//    init {
-//        @OptIn(FlowPreview::class)
-//        saveChannel.receiveAsFlow()
-//            .debounce(250.milliseconds)
-//            .onEach { plantInfo ->
-//                val coll = collection
-//                val doc = coll.getDocument(plantInfo.id.toString())
-//                    ?.let(::decodeDocument)
-//                    ?: PlantDoc()
-//                val updated = doc.copy(
-//                    id = plantInfo.id,
-//                    name = plantInfo.name,
-//                    scientificName = plantInfo.scientificName,
-//                    species = plant.species,
-//                    wateringFrequency = plant.wateringFrequency,
-//                    fertilizingFrequency = plant.fertilizingFrequency,
-//                )
-//                val json = Json.encodeToString(updated)
-//                val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
-//                coll.save(mutableDoc)
-//            }
-//            .launchIn(dbProvider.scope)
-//    }
+    init {
+        @OptIn(FlowPreview::class)
+        saveChannel.receiveAsFlow()
+            .debounce(250.milliseconds)
+            .onEach { plantInfo ->
+                val coll = collection
+                val doc = coll.getDocument(plantInfo.id.toString())
+                    ?.let(::decodePlantInfoDocument)
+                    ?: PlantInfoDoc()
+                val updated = doc.copy(
+                    id = plantInfo.id,
+                    name = plantInfo.name,
+                    scientificName = plantInfo.scientificName,
+                    waterFrequency = plantInfo.waterFrequency,
+                    sunExposure = plantInfo.sunExposure,
+                    image = plantInfo.image
+                )
+                val json = Json.encodeToString(updated)
+                val mutableDoc = MutableDocument(plantInfo.id.toString(), json)
+                coll.save(mutableDoc)
+            }
+            .launchIn(dbProvider.scope)
+    }
 
 }

@@ -9,11 +9,11 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class PlantInfoDoc (
     val id: Int = 0,
-    val name: String = "",
-    val scientificName: String = "",
-    val species: String = "",
-    val waterFrequency: String = "",
-    val sunExposure: String = "",
+    val name: String? = "",
+    val scientificName: String? = "",
+    val species: String? = "",
+    val waterFrequency: String? = "",
+    val sunExposure: String? = "",
 
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
