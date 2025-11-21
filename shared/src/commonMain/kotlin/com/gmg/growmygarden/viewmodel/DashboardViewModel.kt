@@ -26,7 +26,7 @@ class DashboardViewModel(
     private val imageStore: PlantImageStore,
     private val notificationHandler: NotificationHandler,
     private val perenualAPI: PerenualApi,
-    private val plantInfoRepository: PlantInfoRepository
+    private val plantInfoRepository: PlantInfoRepository,
 ) : ViewModel() {
 
     @NativeCoroutinesState
@@ -96,44 +96,20 @@ class DashboardViewModel(
         }
     }
 
-    suspend fun fillPlantInfoDatabase()
-    {
-
+    suspend fun fillPlantInfoDatabase() {
         val firstPlantInDatabase = plantInfoRepository.plantInfoList.first()
-        if(firstPlantInDatabase.isEmpty())
-        {
+        if (firstPlantInDatabase.isEmpty()) {
             return
         }
 
         val popularPlantIDs = listOf(721, 3384, 7168)
 
-        //Ask the AI what map does and if it will accurately map to PlantInfo class
         val popularPlantsList: List<PlantInfo> = popularPlantIDs.map { id ->
             perenualAPI.searchPlantInTrefleAPI(id)
         }
 
         plantInfoRepository.saveMultiplePlantInfo(*popularPlantsList.toTypedArray())
-
     }
 
-//    suspend fun seedDatabaseFromAPI(api: PerenualApi, repo: PlantInfoRepository) {
-//        // 1. Fetch top plants from API
-//        val topPlants = api.getTopPlants() // implement this function in your API class
-//
-//        // 2. Map API models to PlantInfo
-//        val plantInfos = topPlants.map { plant ->
-//            PlantInfo(
-//                id = plant.id,
-//                name = plant.commonName,
-//                scientificName = plant.scientificName,
-//                species = plant.species,
-//                waterFrequency = plant.water?.frequency,
-//                sunExposure = plant.sunlight,
-//                image = plant.image?.let { PlantImage() } // download if needed
-//            )
-//        }
-//
-//        // 3. Save them to the database
-//        repo.saveMultiplePlantInfo(*plantInfos.toTypedArray())
-//    }
+
 }

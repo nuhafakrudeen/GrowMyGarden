@@ -6,15 +6,7 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
-import kotbase.DataSource
-import kotbase.Expression
-import kotbase.FullTextFunction
-import kotbase.FullTextIndexItem
-import kotbase.IndexBuilder
-import kotbase.Meta
 import kotbase.MutableDocument
-import kotbase.QueryBuilder
-import kotbase.SelectResult
 import kotbase.ktx.all
 import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.from
@@ -152,37 +144,5 @@ open class PlantRepository(
         private const val PLANT_DOC_ID = "plant"
         private const val COLLECTION_NAME = "plants"
         private val debounceTime = 250.milliseconds
-    }
-
-    init {
-        collection.createIndex(
-            "plantFTSIndex",
-            IndexBuilder.fullTextIndex(
-                FullTextIndexItem.property("name"),
-                FullTextIndexItem.property("scientificName"),
-                FullTextIndexItem.property("species"),
-            ).ignoreAccents(false),
-        )
-    }
-
-    suspend fun searchPlant(keyWords: String) {
-        val ftsQuery =
-            QueryBuilder.select(
-                SelectResult.expression(Meta.id),
-                SelectResult.property("name"),
-                SelectResult.property("scientificName"),
-                SelectResult.property(("species")),
-            )
-                .from(DataSource.collection(collection))
-                .where(
-                    FullTextFunction.match(
-                        Expression.fullTextIndex("plantFTSIndex"),
-                        keyWords,
-                    ),
-                )
-
-        return ftsQuery.execute().use { rs ->
-            rs.allResults()
-        }
     }
 }

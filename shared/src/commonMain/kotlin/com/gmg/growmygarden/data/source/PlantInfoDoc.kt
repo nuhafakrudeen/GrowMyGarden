@@ -1,22 +1,27 @@
 package com.gmg.growmygarden.data.source
 
-import com.gmg.growmygarden.data.image.PlantImage
-import com.gmg.growmygarden.data.image.PlantImageSerializer
 import kotbase.Document
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.uuid.Uuid
 
 @Serializable
-data class PlantInfoDoc (
+data class PlantInfoDoc(
+    val docId: Uuid = Uuid.random(),
     val id: Int = 0,
+    @SerialName("common_name")
     val name: String? = "",
+    @SerialName("scientific_name")
     val scientificName: String? = "",
-    val species: String? = "",
-    val waterFrequency: String? = "",
-    val sunExposure: String? = "",
-
-    @Serializable(with = PlantImageSerializer::class)
-    var image: PlantImage? = null,
+    @SerialName("family")
+    val family: String? = "",
+    @SerialName("water")
+    val waterInfo: WaterInfo? = null,
+    @SerialName("sunlight")
+    val sunExposure: List<String>? = null,
+    @SerialName("default_image")
+    var image: PlantImageInfo? = null,
 )
 
 fun decodePlantInfoDocument(doc: Document?): PlantInfoDoc? {

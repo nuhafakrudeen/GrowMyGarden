@@ -1,10 +1,17 @@
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
-import com.gmg.growmygarden.data.image.PlantImage
-import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import kotbase.DataSource
+import kotbase.Expression
+import kotbase.FullTextFunction
+import kotbase.FullTextIndexItem
+import kotbase.IndexBuilder
+import kotbase.Meta
 import kotbase.MutableDocument
+import kotbase.QueryBuilder
+import kotbase.SelectResult
+import kotbase.get
 import kotbase.ktx.all
 import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.from
@@ -18,27 +25,34 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.Int
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.uuid.Uuid
 
 @Serializable
 data class PlantInfo(
+    val docId: Uuid = Uuid.random(),
     val id: Int,
+    @SerialName("common_name")
     val name: String? = null,
-    val scientificName: String? = null,
-    val species: String? = null,
-    val waterFrequency: String? = null,
-    val sunExposure: String? = null,
-
-    @Serializable(with = PlantImageSerializer::class)
-    var image: PlantImage? = null,
+    @SerialName("scientific_name")
+    val scientificName: List<String>? = null,
+    @SerialName("family")
+    val family: String? = null,
+    @SerialName("water")
+    val waterInfo: WaterInfo? = null,
+    @SerialName("sunlight")
+    val sunExposure: List<String>? = null,
+    @SerialName("default_image")
+    var image: PlantImageInfo? = null,
 )
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantInfoRepository(
-    private val dbProvider: DatabaseProvider
+    private val dbProvider: DatabaseProvider,
 ) {
 
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
@@ -56,8 +70,7 @@ open class PlantInfoRepository(
 
     private val saveChannel = Channel<PlantInfo>(Channel.CONFLATED)
 
-    fun savePlantInfo(plantInfo: PlantInfo)
-    {
+    fun savePlantInfo(plantInfo: PlantInfo) {
         saveChannel.trySend(plantInfo)
     }
 
@@ -69,13 +82,14 @@ open class PlantInfoRepository(
         }
     }
 
-    private fun docToPlantInfo(plantInfoDoc: PlantInfoDoc): PlantInfo{
+    private fun docToPlantInfo(plantInfoDoc: PlantInfoDoc): PlantInfo {
         return PlantInfo(
+            docId = plantInfoDoc.docId,
             id = plantInfoDoc.id,
             name = plantInfoDoc.name,
-            scientificName = plantInfoDoc.scientificName,
-            species = plantInfoDoc.species,
-            waterFrequency = plantInfoDoc.waterFrequency,
+            scientificName = plantInfoDoc.scientificName?.split(", ") ?: emptyList(),
+            family = plantInfoDoc.family,
+            waterInfo = plantInfoDoc.waterInfo,
             sunExposure = plantInfoDoc.sunExposure,
             image = plantInfoDoc.image,
         )
@@ -87,22 +101,61 @@ open class PlantInfoRepository(
             .debounce(250.milliseconds)
             .onEach { plantInfo ->
                 val coll = collection
-                val doc = coll.getDocument(plantInfo.id.toString())
+                val doc = coll.getDocument(plantInfo.docId.toHexDashString())
                     ?.let(::decodePlantInfoDocument)
                     ?: PlantInfoDoc()
                 val updated = doc.copy(
+                    docId = plantInfo.docId,
                     id = plantInfo.id,
                     name = plantInfo.name,
-                    scientificName = plantInfo.scientificName,
-                    waterFrequency = plantInfo.waterFrequency,
+                    scientificName = plantInfo.scientificName?.joinToString(", "),
+                    waterInfo = plantInfo.waterInfo,
                     sunExposure = plantInfo.sunExposure,
-                    image = plantInfo.image
+                    image = plantInfo.image,
                 )
                 val json = Json.encodeToString(updated)
-                val mutableDoc = MutableDocument(plantInfo.id.toString(), json)
+                val mutableDoc = MutableDocument(plantInfo.docId.toHexDashString(), json)
                 coll.save(mutableDoc)
             }
             .launchIn(dbProvider.scope)
     }
 
+    init {
+        collection.createIndex(
+            "plantInfoFTSIndex",
+            IndexBuilder.fullTextIndex(
+                FullTextIndexItem.property("name"),
+                FullTextIndexItem.property("scientificName"),
+                FullTextIndexItem.property("family"),
+            ).ignoreAccents(false),
+        )
+    }
+
+    suspend fun searchPlantInfo(keyWords: String): List<PlantInfo> {
+        val ftsQuery =
+            QueryBuilder.select(
+                SelectResult.expression(Meta.id),
+            )
+                .from(DataSource.collection(collection))
+                .where(
+                    FullTextFunction.match(
+                        Expression.fullTextIndex("plantInfoFTSIndex"),
+                        keyWords,
+                    ),
+                )
+
+        val ftsResults = ftsQuery.execute().use { rs ->
+            rs.allResults()
+        }
+
+        val plantInfoFileID = ftsResults.mapNotNull { result ->
+            result.getString("id")
+        }
+
+        return plantInfoFileID.mapNotNull { docId ->
+            collection.getDocument(docId)
+                ?.let(::decodePlantInfoDocument)
+                ?.let(::docToPlantInfo)
+        }
+    }
 }
