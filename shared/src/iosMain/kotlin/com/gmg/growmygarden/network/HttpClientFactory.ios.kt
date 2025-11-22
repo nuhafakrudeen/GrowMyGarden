@@ -14,7 +14,6 @@ actual fun createHttpClient(): HttpClient = HttpClient(Darwin.create()) {
         json(Json { ignoreUnknownKeys = true })
     }
 
-    // sk-pgtj691fe442b7c9f13588
     defaultRequest {
         url {
             protocol = URLProtocol.HTTPS
