@@ -18,3 +18,5 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 **/GoogleService-Info.plist
+/shared/src/commonMain/resources/koin.properties
+
