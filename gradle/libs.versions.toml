@@ -28,7 +28,6 @@ moko = "0.20.1"
 filekit = "0.12.0"
 ktor = "3.3.2"
 okhttp = "4.11.0"
-konfig = "0.17.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -75,7 +74,6 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kmp-nativecoroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "kmp-nativecoroutines"}
 kotlinx-serialization = {id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin"}
-buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "konfig" }
 
 [bundles]
 ktor = [

@@ -102,6 +102,12 @@ class DashboardViewModel(
         }
     }
 
+    init {
+        viewModelScope.launch {
+            fillPlantInfoDatabase()
+        }
+    }
+
     suspend fun fillPlantInfoDatabase() {
         val firstPlantInDatabase = plantInfoRepository.plantInfoList.first()
         if (firstPlantInDatabase.isEmpty()) {
