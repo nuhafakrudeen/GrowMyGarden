@@ -8,7 +8,8 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.buildKonfig)
+//    alias(libs.plugins.buildKonfig)
+//    id("com.codingfeline.buildkonfig") version "0.17.1"
 }
 
 kotlin {
@@ -135,6 +136,7 @@ spotless {
         )
     }
 }
+
 
 //android {
 //    namespace = "com.gmg.growmygarden.shared"
