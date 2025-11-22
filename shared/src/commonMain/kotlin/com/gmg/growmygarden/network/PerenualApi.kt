@@ -22,23 +22,20 @@ class PerenualApi(
     private val key: String,
 ) {
 
-    suspend fun searchTrefleAPI(query: String): List<PlantInfo> {
+    suspend fun searchPerenualAPI(query: String): List<PlantInfo> {
         val pulledPlantInfo: PerenualListResponse<PlantInfo> = client.get(
-            "https://perenual.com/api/species-list",
+            "species-list",
         ) {
-            parameter("q", query)
-            parameter("token", key)
+            url.parameters.append("q", query)
         }.body()
 
         return pulledPlantInfo.data
     }
 
-    suspend fun searchPlantInTrefleAPI(id: Int): PlantInfo {
+    suspend fun searchPlantInPerenualAPI(id: Int): PlantInfo {
         val pulledPlantInfo: PerenualSingleResponse<PlantInfo> = client.get(
-            "https://perenual.com/api/v2/species/details/$id",
-        ) {
-            parameter("token", key)
-        }.body()
+            "species/details/$id",
+        ).body()
 
         return pulledPlantInfo.data
     }

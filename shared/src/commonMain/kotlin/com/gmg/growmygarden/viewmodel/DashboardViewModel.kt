@@ -37,10 +37,10 @@ class DashboardViewModel(
         initialValue = listOf<Plant>(),
     )
 
-    private val searchResultsActual = MutableStateFlow<List<PlantInfo>>(emptyList())
+    private val _searchResults = MutableStateFlow<List<PlantInfo>>(emptyList())
 
     @NativeCoroutinesState
-    val searchResultsView: StateFlow<List<PlantInfo>> = searchResultsActual
+    val searchResults: StateFlow<List<PlantInfo>> = _searchResults
 
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
@@ -111,7 +111,7 @@ class DashboardViewModel(
         val popularPlantIDs = listOf(721, 3384, 7168)
 
         val popularPlantsList: List<PlantInfo> = popularPlantIDs.map { id ->
-            perenualAPI.searchPlantInTrefleAPI(id)
+            perenualAPI.searchPlantInPerenualAPI(id)
         }
 
         plantInfoRepository.saveMultiplePlantInfo(*popularPlantsList.toTypedArray())
@@ -119,6 +119,6 @@ class DashboardViewModel(
 
     suspend fun searchPlantInfoDatabase(query: String) {
         val results = plantInfoRepository.searchPlantInfo(query)
-        searchResultsActual.value = results
+        _searchResults.value = results
     }
 }

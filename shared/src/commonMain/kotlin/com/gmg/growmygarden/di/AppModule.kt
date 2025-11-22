@@ -9,6 +9,5 @@ fun appModule() = listOf(
     dataModule,
     notificationModule,
     viewModelModule,
-    infoDataModule,
     apiModule,
 )
