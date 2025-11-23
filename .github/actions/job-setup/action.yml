@@ -1,5 +1,9 @@
 name: Job set up
 description: Sets up the Java and Gradle
+inputs:
+  perenual_api_key:
+    required: true
+    description: "perenual api key"
 runs:
   using: "composite"
   steps:
@@ -13,3 +17,10 @@ runs:
     - name: Make gradlew executable
       run: chmod +x ./gradlew
       shell: bash
+    - name: Add Koin.Properties
+      shell: bash
+      run: |
+        mkdir shared/src/commonMain/resources
+        echo "perenualAPIKey=$PERENUAL_API_KEY" > shared/src/commonMain/resources/koin.properties
+      env:
+        PERENUAL_API_KEY: ${{ inputs.perenual_api_key }}

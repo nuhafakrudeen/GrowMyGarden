@@ -27,6 +27,8 @@ jobs:
 
       - name: Job set up
         uses: ./.github/actions/job-setup
+        with:
+          perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
 
       - name: iOS set up
         uses: ./.github/actions/ios-setup
