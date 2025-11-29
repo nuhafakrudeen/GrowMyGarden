@@ -37,6 +37,4 @@ class NotificationTest : KoinTest {
 
         notificationHandler.setNotification("67", "Test", "Let us hope we get this", testTime, null, 1)
     }
-
-
 }

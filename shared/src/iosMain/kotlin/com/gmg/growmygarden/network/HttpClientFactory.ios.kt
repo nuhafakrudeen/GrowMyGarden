@@ -14,6 +14,7 @@ actual fun createHttpClient(perenualKey: String): HttpClient = HttpClient(Darwin
         json(Json { ignoreUnknownKeys = true })
     }
 
+    assert(perenualKey.isNotEmpty()) { "Perenual Key Not Loaded" }
     defaultRequest {
         url {
             protocol = URLProtocol.HTTPS
