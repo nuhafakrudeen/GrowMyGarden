@@ -1,27 +1,17 @@
 package com.gmg.growmygarden
 
-import com.gmg.growmygarden.di.initKoin
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
-import org.koin.core.context.stopKoin
-import org.koin.test.KoinTest
-import org.koin.test.inject
 import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class NotificationTest : KoinTest {
-    private val notificationHandler: NotificationHandler by inject<NotificationHandler>()
-
-    @BeforeTest
-    fun startKoin() {
-        initKoin()
-    }
+class NotificationTest(
+    private val notificationHandler: NotificationHandler,
+) {
 
     @AfterTest
     fun cleanup() {
         notificationHandler.cancelNotification("67")
-        stopKoin()
     }
 
     @Test
