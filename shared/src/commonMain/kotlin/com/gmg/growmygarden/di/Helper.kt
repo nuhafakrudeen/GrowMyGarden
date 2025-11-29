@@ -4,7 +4,15 @@ import org.koin.core.context.startKoin
 
 fun initKoin() {
     startKoin {
-        properties(getPropertiesMap())
+        val props = try {
+            getPropertiesMap()
+        } catch (e: Exception) {
+            println("Failed to load Properties: $e")
+            println(e.stackTraceToString())
+            emptyMap()
+        }
+
+        properties(props)
         modules(appModule())
     }
 }
