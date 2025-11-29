@@ -107,6 +107,9 @@ kotlin {
     }
 }
 
+tasks.withType<KotlinNativeTest>().configureEach {
+    environment("KONAN_PRINT_BACKTRACE", "1")
+}
 
 spotless {
     kotlin {
