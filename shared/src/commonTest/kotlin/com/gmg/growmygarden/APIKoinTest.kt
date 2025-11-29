@@ -20,7 +20,7 @@ class APIKoinTest : KoinTest {
 
     @Test
     fun instantiationTest() {
-        assertNotNull(api)
+        assertNotNull(api, "API Client was Null")
     }
 
     @AfterTest
