@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -106,14 +107,16 @@ kotlin {
     }
 }
 
-tasks.withType<AbstractTestTask> {
-    testLogging {
-        events("passed", "skipped", "failed", "standardOut", "standardError")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showExceptions = true
-        showCauses = false
-        showStackTraces = false
-    }
+
+tasks.register<Copy>("copyIosTestResources") {
+    from("src/commonMain/resources")
+    into("$buildDir/bin/iosSimulatorArm64/debugTest/resources")
+    // Add other targets if needed:
+    into("$buildDir/bin/iosArm64/debugTest/resources")
+}
+
+tasks.withType<KotlinNativeTest>().configureEach {
+    dependsOn(tasks.named("copyIosTestResources"))
 }
 
 spotless {

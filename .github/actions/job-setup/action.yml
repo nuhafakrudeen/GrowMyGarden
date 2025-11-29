@@ -20,7 +20,9 @@ runs:
     - name: Add Koin.Properties
       shell: bash
       run: |
-        mkdir shared/src/commonMain/resources
-        echo "perenualAPIKey=$PERENUAL_API_KEY" > shared/src/commonMain/resources/koin.properties
+        mkdir -p shared/src/commonMain/resources
+        cat <<EOF > shared/src/commonMain/resources/koin.properties
+          perenualAPIKey=$PERENUAL_API_KEY
+          EOF
       env:
         PERENUAL_API_KEY: ${{ inputs.perenual_api_key }}

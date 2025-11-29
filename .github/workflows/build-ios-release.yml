@@ -49,8 +49,10 @@ jobs:
       - name: Add Koin.Properties
         shell: bash
         run: |
-          echo "perenualAPIKey=${{ secrets.PERENUAL_API_KEY}}" > shared/src/commonMain/resources/koin.properties
-
+          mkdir -p shared/src/commonMain/resources
+          cat <<EOF > shared/src/commonMain/resources/koin.properties
+          perenualAPIKey=$PERENUAL_API_KEY
+          EOF
       - name: Build Archive
         run: |
           cd iosApp
