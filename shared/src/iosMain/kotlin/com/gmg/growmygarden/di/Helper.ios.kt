@@ -9,7 +9,7 @@ actual fun getPropertiesMap(): Map<String, Any> {
     val fileName = "koin"
     val type = "properties"
     return (
-        NSBundle.mainBundle.pathForResource("resources/$fileName", ofType = type) ?: NSBundle.allBundles.map { it as NSBundle }
+        NSBundle.mainBundle.pathForResource(fileName, ofType = type) ?: NSBundle.allBundles.map { it as NSBundle }
             .firstNotNullOfOrNull { it.pathForResource(fileName, ofType = type) }
         )?.let { path ->
         NSString.stringWithContentsOfFile(path, encoding = NSUTF8StringEncoding, error = null)?.lines()?.map {

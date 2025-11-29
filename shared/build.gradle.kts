@@ -108,17 +108,6 @@ kotlin {
 }
 
 
-tasks.register<Copy>("copyIosTestResources") {
-    from("src/commonMain/resources")
-    into("$buildDir/bin/iosSimulatorArm64/debugTest/resources")
-    // Add other targets if needed:
-    into("$buildDir/bin/iosArm64/debugTest/resources")
-}
-
-tasks.withType<KotlinNativeTest>().configureEach {
-    dependsOn(tasks.named("copyIosTestResources"))
-}
-
 spotless {
     kotlin {
         target("src/**/*.kt")
