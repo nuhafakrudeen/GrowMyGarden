@@ -14,12 +14,15 @@ class APIKoinTest : KoinTest {
 
     @BeforeTest
     fun setupKoin() {
+        println("Starting Koin Init")
         initKoin()
+        println("Koin Init Completed")
     }
-    val api: PerenualApi by inject<PerenualApi>()
+    val api: PerenualApi by inject()
 
     @Test
     fun instantiationTest() {
+        println("Api: $api")
         assertNotNull(api, "API Client was Null")
     }
 

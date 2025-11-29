@@ -8,13 +8,15 @@ fun initKoin() {
             getPropertiesMap()
         } catch (e: Exception) {
             println("Failed to load Properties: $e")
-            println(e.stackTraceToString())
+            e.printStackTrace()
             emptyMap()
         }
 
+        println("Successfully Loaded Properties")
         properties(props)
         modules(appModule())
     }
+    println("Finished Loading Koin")
 }
 
 internal expect fun getPropertiesMap(): Map<String, Any>
