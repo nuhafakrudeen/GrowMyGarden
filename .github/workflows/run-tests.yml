@@ -46,5 +46,7 @@ jobs:
       - uses: ./.github/actions/job-setup
         with:
           perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
+        env:
+          PERENUAL_API_KEY: ${{ secrets.PERENUAL_API_KEY }}
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared

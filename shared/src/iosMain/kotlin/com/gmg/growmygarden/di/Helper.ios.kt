@@ -1,9 +1,11 @@
 package com.gmg.growmygarden.di
 
+import kotlinx.cinterop.toKString
 import platform.Foundation.NSBundle
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.stringWithContentsOfFile
+import platform.posix.getenv
 
 actual fun getPropertiesMap(): Map<String, Any> {
     val fileName = "koin"
@@ -11,15 +13,21 @@ actual fun getPropertiesMap(): Map<String, Any> {
     val path =
         NSBundle.mainBundle.pathForResource(fileName, ofType = type) ?: NSBundle.allBundles.map { it as NSBundle }
             .firstNotNullOfOrNull { it.pathForResource(fileName, ofType = type) }
-            ?: throw Exception("Failed to find Properties Path")
+            ?: return getPropertiesFromEnv()
 
     val contents = NSString.stringWithContentsOfFile(path, encoding = NSUTF8StringEncoding, error = null)
-        ?: throw Exception("Failed to Load Properties File")
+        ?: return getPropertiesFromEnv()
     return contents.lines().map {
         it.split("=", limit = 2)
     }.filter {
         it.size == 2
     }.associate { (key, value) ->
         key.trim() to value.trim()
+    }
+}
+
+private fun getPropertiesFromEnv(): Map<String, Any> {
+    return buildMap {
+        put("perenualAPIKey", getenv("PERENUAL_API_KEY")?.toKString() ?: "")
     }
 }
