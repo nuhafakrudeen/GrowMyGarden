@@ -1,5 +1,6 @@
 package com.gmg.growmygarden.network
 
+import com.gmg.growmygarden.util.getApiKey
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -19,7 +20,7 @@ actual fun createHttpClient(): HttpClient = HttpClient(Darwin.create()) {
             protocol = URLProtocol.HTTPS
             host = "perenual.com"
             appendPathSegments("api", "v2")
-            parameters.append("key", "KEY HERE")
+            parameters.append("key", getApiKey())
         }
     }
 }
