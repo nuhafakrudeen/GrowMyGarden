@@ -8,6 +8,6 @@ import org.koin.dsl.module
 
 val dataModule = module {
     single { DatabaseProvider() }
-    single { PlantRepository(get(), getProperty("SYNC_ENDPOINT")) }
+    singleOf(::PlantRepository)
     singleOf(::PlantInfoRepository)
 }
