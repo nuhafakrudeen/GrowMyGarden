@@ -1,7 +1,9 @@
 package com.gmg.growmygarden
 
-import com.gmg.growmygarden.di.initKoin
+import com.gmg.growmygarden.di.getPropertiesMap
 import com.gmg.growmygarden.network.PerenualApi
+import di.apiModule
+import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
 import org.koin.test.inject
@@ -14,9 +16,12 @@ class APIKoinTest : KoinTest {
 
     @BeforeTest
     fun setupKoin() {
-        println("Starting Koin Init")
-        initKoin()
-        println("Koin Init Completed")
+        startKoin {
+            properties(getPropertiesMap())
+            modules(
+                apiModule,
+            )
+        }
     }
     val api: PerenualApi by inject()
 
