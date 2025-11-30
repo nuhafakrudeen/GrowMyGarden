@@ -13,6 +13,6 @@ class SecretsTest {
         assertTrue(secrets.isNotEmpty(), "No Secrets Retrieved")
         val key = secrets["PERENUAL_API_KEY"]
         assertNotNull(key, "Secrets Did Not Contain Perenual API Key")
-        assert(((key as String?)?.length ?: -1) > 0) { "Perenual API Key was Empty" }
+        assertTrue((key as String?)?.isNotEmpty() ?: false, "Perenual API Key was Empty")
     }
 }
