@@ -6,6 +6,6 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val apiModule = module {
-    single { createHttpClient(getProperty("perenualAPIKey")) }
+    single { createHttpClient(getProperty("PERENUAL_API_KEY")) }
     singleOf(::PerenualApi)
 }

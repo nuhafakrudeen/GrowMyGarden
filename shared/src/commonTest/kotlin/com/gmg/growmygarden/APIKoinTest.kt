@@ -1,5 +1,6 @@
 package com.gmg.growmygarden
 
+import com.gmg.growmygarden.di.getPropertiesMap
 import com.gmg.growmygarden.network.PerenualApi
 import di.apiModule
 import org.koin.core.context.startKoin
@@ -16,11 +17,7 @@ class APIKoinTest : KoinTest {
     @BeforeTest
     fun setupKoin() {
         startKoin {
-            properties(
-                mapOf(
-                    "perenualAPIKey" to "FAKE_KEY",
-                ),
-            )
+            properties(getPropertiesMap())
             modules(
                 apiModule,
             )
