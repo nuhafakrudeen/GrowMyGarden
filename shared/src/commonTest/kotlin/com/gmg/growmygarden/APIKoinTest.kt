@@ -23,10 +23,10 @@ class APIKoinTest : KoinTest {
             )
         }
     }
-    val api: PerenualApi by inject()
 
     @Test
     fun instantiationTest() {
+        val api: PerenualApi by inject()
         println("Api: $api")
         assertNotNull(api, "API Client was Null")
     }
