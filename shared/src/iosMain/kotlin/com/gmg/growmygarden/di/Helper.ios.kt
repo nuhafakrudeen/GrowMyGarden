@@ -19,18 +19,17 @@ actual fun getPropertiesMap(): Map<String, Any> {
             }
         } ?: run {
             println("Failed to load Contents of File")
-            loadSecretsFromFileSystem()
+            emptyMap()
         }
     } ?: run {
         println("Failed to Find Secrets File")
-        loadSecretsFromFileSystem()
+        emptyMap()
     }
 }
 
 @TestOnly
 actual fun loadSecretsFromFileSystem(): Map<String, Any> {
     val cwd = NSFileManager.defaultManager.currentDirectoryPath
-    println(cwd)
     val path = "$cwd/shared/Secrets.plist"
 
     val contents = NSDictionary.dictionaryWithContentsOfFile(path)
@@ -43,6 +42,6 @@ actual fun loadSecretsFromFileSystem(): Map<String, Any> {
         }
     } ?: run {
         println("Failed to load Contents of File (cwd)")
-        emptyMap()
+        getPropertiesMap()
     }
 }

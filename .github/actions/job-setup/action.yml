@@ -22,7 +22,7 @@ runs:
       run: |
         mkdir -p shared/src/commonMain/resources
         cat <<EOF > shared/src/commonMain/resources/koin.properties
-          perenualAPIKey=$PERENUAL_API_KEY
+          PERENUAL_API_KEY=$PERENUAL_API_KEY
           EOF
       env:
         PERENUAL_API_KEY: ${{ inputs.perenual_api_key }}

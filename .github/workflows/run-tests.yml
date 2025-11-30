@@ -61,6 +61,6 @@ jobs:
             </dict>
             </plist>
           EOF
-          cp iosApp/iosApp/Secrets.plist shared/Secrets.plist
+          mkdir -p shared/src/iosMain/resources && cp iosApp/iosApp/Secrets.plist shared/src/iosMain/resources/Secrets.plist
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared
