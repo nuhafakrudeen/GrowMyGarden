@@ -30,6 +30,7 @@ actual fun getPropertiesMap(): Map<String, Any> {
 @TestOnly
 actual fun loadSecretsFromFileSystem(): Map<String, Any> {
     val cwd = NSFileManager.defaultManager.currentDirectoryPath
+    println(cwd)
     val path = "$cwd/shared/Secrets.plist"
 
     val contents = NSDictionary.dictionaryWithContentsOfFile(path)
