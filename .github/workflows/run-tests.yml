@@ -50,17 +50,10 @@ jobs:
       - name: Add Secrets
         shell: bash
         run: |
-          cat <<EOF > iosApp/iosApp/Secrets.plist
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-             "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>PERENUAL_API_KEY</key>
-                <string>${{secrets.PERENUAL_API_KEY}}</string>
-            </dict>
-            </plist>
+          cat <<EOF > shared/src/commonTest/kotlin/com/gmg/growmygarden/Secrets.kt
+          package com.gmg.growmygarden
+          
+          internal const val PERENUAL_API_KEY = "${{secrets.PERENUAL_API_KEY}}"
           EOF
-          mkdir -p shared/src/iosMain/resources && cp iosApp/iosApp/Secrets.plist shared/src/iosMain/resources/Secrets.plist
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared

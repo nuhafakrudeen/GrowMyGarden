@@ -1,6 +1,5 @@
 package com.gmg.growmygarden
 
-import com.gmg.growmygarden.di.loadSecretsFromFileSystem
 import com.gmg.growmygarden.network.PerenualApi
 import di.apiModule
 import org.koin.core.context.startKoin
@@ -17,7 +16,7 @@ class APIKoinTest : KoinTest {
     @BeforeTest
     fun setupKoin() {
         startKoin {
-            properties(loadSecretsFromFileSystem())
+            properties(mapOf("PERENUAL_API_KEY" to PERENUAL_API_KEY))
             modules(
                 apiModule,
             )

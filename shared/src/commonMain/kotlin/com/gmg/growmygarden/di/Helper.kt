@@ -1,6 +1,5 @@
 package com.gmg.growmygarden.di
 
-import androidx.compose.runtime.TestOnly
 import org.koin.core.context.startKoin
 
 fun initKoin() {
@@ -12,6 +11,3 @@ fun initKoin() {
 }
 
 internal expect fun getPropertiesMap(): Map<String, Any>
-
-@TestOnly
-internal expect fun loadSecretsFromFileSystem(): Map<String, Any>
