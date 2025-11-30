@@ -108,8 +108,14 @@ kotlin {
 }
 
 tasks.withType<KotlinNativeTest>().configureEach {
+    if (name == "iosSimulatorArm64Test") {
+        // Forward PERENUAL_API_KEY from the Gradle JVM to the native test process
+        val value = System.getenv("PERENUAL_API_KEY") ?: ""
+        println("Gradle: PERENUAL_API_KEY length for $name = ${value.length}")
+        environment("PERENUAL_API_KEY", value)
+    }
+
     environment("KONAN_PRINT_BACKTRACE", "1")
-    environment("PERENUAL_API_KEY", System.getenv("PERENUAL_API_KEY") ?: "")
     testLogging {
         showStandardStreams = true
         showStackTraces = true
