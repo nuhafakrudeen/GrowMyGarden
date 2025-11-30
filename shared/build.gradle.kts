@@ -109,6 +109,11 @@ kotlin {
 
 tasks.withType<KotlinNativeTest>().configureEach {
     environment("KONAN_PRINT_BACKTRACE", "1")
+    testLogging {
+        showStandardStreams = true
+        showStackTraces = true
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+    }
 }
 
 spotless {
