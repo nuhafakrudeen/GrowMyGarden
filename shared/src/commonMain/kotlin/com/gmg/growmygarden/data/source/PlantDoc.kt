@@ -3,6 +3,7 @@
 
 package com.gmg.growmygarden.data.source
 
+import com.gmg.growmygarden.auth.User
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
 import kotbase.Document
@@ -15,9 +16,11 @@ import kotlin.uuid.Uuid
 @Serializable
 data class PlantDoc(
     val uuid: Uuid = Uuid.random(),
+    val userId: String? = null,
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
+    val user: User? = null,
     val wateringFrequency: Duration = Duration.ZERO,
     val fertilizingFrequency: Duration = Duration.ZERO,
     @Serializable(with = PlantImageSerializer::class)
