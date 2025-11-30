@@ -27,7 +27,11 @@ actual fun getPropertiesMap(): Map<String, Any> {
 }
 
 private fun getPropertiesFromEnv(): Map<String, Any> {
+    val key = getenv("PERENUAL_API_KEY")
+    if(key == null) {
+        println("Could Not Get Key from Environment Variable")
+    }
     return buildMap {
-        put("perenualAPIKey", getenv("PERENUAL_API_KEY")?.toKString() ?: "")
+        put("perenualAPIKey", key?.toKString() ?: "")
     }
 }
