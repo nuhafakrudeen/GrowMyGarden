@@ -28,6 +28,8 @@ jobs:
 
       - name: Job set up
         uses: ./.github/actions/job-setup
+        with:
+          perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
 
       - name: iOS set up
         uses: ./.github/actions/ios-setup
@@ -42,5 +44,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/job-setup
+        with:
+          perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
+
+      - name: Add Secrets
+        shell: bash
+        run: |
+          cat <<EOF > shared/src/commonTest/kotlin/com/gmg/growmygarden/Secrets.kt
+          package com.gmg.growmygarden
+          
+          internal const val PERENUAL_API_KEY = "${{secrets.PERENUAL_API_KEY}}"
+          EOF
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared

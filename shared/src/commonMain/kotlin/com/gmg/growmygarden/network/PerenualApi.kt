@@ -18,7 +18,6 @@ data class PerenualSingleResponse<T>(
 
 class PerenualApi(
     private val client: HttpClient,
-    private val key: String,
 ) {
 
     suspend fun searchPerenualAPI(query: String): List<PlantInfo> {

@@ -46,11 +46,20 @@ jobs:
           issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
           api-key-id : ${{ secrets.APPSTORE_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}
-      - name: Add Koin.Properties
+      - name: Add Secrets
         shell: bash
         run: |
-          echo "perenualAPIKey=${{ secrets.PERENUAL_API_KEY}}" > shared/src/commonMain/resources/koin.properties
-
+          cat <<EOF > iosApp/iosApp/Secrets.plist
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+             "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>PERENUAL_API_KEY</key>
+                <string>${{secrets.PERENUAL_API_KEY}}</string>
+            </dict>
+            </plist>
+          EOF
       - name: Build Archive
         run: |
           cd iosApp
