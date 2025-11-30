@@ -1,6 +1,6 @@
 package com.gmg.growmygarden
 
-import com.gmg.growmygarden.di.getPropertiesMap
+import com.gmg.growmygarden.di.loadSecretsFromFileSystem
 import com.gmg.growmygarden.network.PerenualApi
 import di.apiModule
 import org.koin.core.context.startKoin
@@ -17,7 +17,7 @@ class APIKoinTest : KoinTest {
     @BeforeTest
     fun setupKoin() {
         startKoin {
-            properties(getPropertiesMap())
+            properties(loadSecretsFromFileSystem())
             modules(
                 apiModule,
             )
