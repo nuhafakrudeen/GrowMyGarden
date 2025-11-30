@@ -13,9 +13,6 @@ actual fun createHttpClient(perenualKey: String): HttpClient = HttpClient(Darwin
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
     }
-    if (perenualKey.isEmpty()) {
-        println("API Key is Empty")
-    }
     defaultRequest {
         url {
             protocol = URLProtocol.HTTPS
