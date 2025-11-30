@@ -109,6 +109,7 @@ kotlin {
 
 tasks.withType<KotlinNativeTest>().configureEach {
     environment("KONAN_PRINT_BACKTRACE", "1")
+    environment("PERENUAL_API_KEY", System.getenv("PERENUAL_API_KEY") ?: "")
     testLogging {
         showStandardStreams = true
         showStackTraces = true

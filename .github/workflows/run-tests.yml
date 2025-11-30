@@ -47,13 +47,6 @@ jobs:
         with:
           perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
 
-      - name: Debug env
-        run: |
-          echo "PERENUAL_API_KEY length: ${#PERENUAL_API_KEY}"
-          env | sort | grep PERENUAL_API_KEY || echo "PERENUAL_API_KEY not set"
-        env:
-          PERENUAL_API_KEY: ${{ secrets.PERENUAL_API_KEY }}
-
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared
         env:
