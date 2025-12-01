@@ -46,13 +46,23 @@ jobs:
       - uses: ./.github/actions/job-setup
         with:
           perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
-      - name: Install Capella CA cert
+      - name: Debug TLS to SYNC_ENDPOINT (wss via openssl)
+        shell: bash
         run: |
-          cat <<'EOF' > capella.pem
-          ${{ secrets.ENDPOINT_CERT }}
-          EOF
-          openssl x509 -in capella.pem -outform der -out capella.cer
-          sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain capella.cer
+          set -x
+          echo "SYNC_ENDPOINT=${SYNC_ENDPOINT}"
+
+          # Extract host:port from wss://host:port/path
+          hostport=$(echo "${SYNC_ENDPOINT}" | sed -E 's#^wss?://##' | cut -d/ -f1)
+          host=${hostport%%:*}
+
+          echo "Connecting to ${hostport} (SNI: ${host})"
+
+          # Show the certificate chain and key TLS info
+          echo | openssl s_client -showcerts -connect "${hostport}" -servername "${host}" 2>/dev/null \
+            | openssl x509 -noout -subject -issuer -dates -ext subjectAltName || echo "openssl failed"
+        env:
+          SYNC_ENDPOINT: ${{ secrets.SYNC_ENDPOINT }}
       - name: Add Secrets
         shell: bash
         run: |
@@ -62,6 +72,7 @@ jobs:
           internal const val PERENUAL_API_KEY = "${{secrets.PERENUAL_API_KEY}}"
           internal const val SYNC_ENDPOINT = "${{secrets.SYNC_ENDPOINT}}"
           internal const val TEST_USER_ID = "${{secrets.TEST_USER_ID}}"
+          internal const val ENDPOINT_CERT = """${{ secrets.ENDPOINT_CERT }}"""
           EOF
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared

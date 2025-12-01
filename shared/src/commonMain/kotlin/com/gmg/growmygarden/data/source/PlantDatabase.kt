@@ -64,6 +64,7 @@ open class PlantRepository(
     private val dbProvider: DatabaseProvider,
     private val userManager: UserManager,
     private val syncEndpoint: String,
+    replicatorConfig: ReplicatorConfiguration? = null,
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection
@@ -129,10 +130,8 @@ open class PlantRepository(
         )
     }
 
-    internal val replicator: Replicator = Replicator(
-        ReplicatorConfiguration(
-            URLEndpoint(syncEndpoint),
-        ).addCollection(
+    internal open val replicator: Replicator = Replicator(
+        (replicatorConfig ?: defaultReplicatorConfig(syncEndpoint, collection, userManager)).addCollection(
             collection,
             CollectionConfiguration(
                 pushFilter = { document: Document, flags: Set<DocumentFlag> ->
@@ -151,11 +150,7 @@ open class PlantRepository(
                 },
 
             ),
-        ).apply {
-            isContinuous = true
-            type = ReplicatorType.PUSH_AND_PULL
-            isAutoPurgeEnabled = false
-        },
+        ),
     )
 
     init {
@@ -181,7 +176,15 @@ open class PlantRepository(
     }
 
     companion object {
-        private const val PLANT_DOC_ID = "plant"
+        private fun defaultReplicatorConfig(syncEndpoint: String, collection: kotbase.Collection, userManager: UserManager): ReplicatorConfiguration =
+            ReplicatorConfiguration(
+                URLEndpoint(syncEndpoint),
+            ).apply {
+                isContinuous = true
+                type = ReplicatorType.PUSH_AND_PULL
+                isAutoPurgeEnabled = false
+            }
+        private const val PLANT_DOC_ID = "w"
         private const val COLLECTION_NAME = "plants"
         private val debounceTime = 250.milliseconds
     }

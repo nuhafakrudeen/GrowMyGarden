@@ -12,6 +12,9 @@ import com.gmg.growmygarden.viewmodel.LoginViewModel
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotbase.Meta
 import kotbase.ReplicatorActivityLevel
+import kotbase.ReplicatorConfiguration
+import kotbase.ReplicatorType
+import kotbase.URLEndpoint
 import kotbase.ktx.from
 import kotbase.ktx.select
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +30,7 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.inject
+import kotlin.io.encoding.Base64
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -40,8 +44,26 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 
+fun decodeCapellaCerts(): ByteArray = ENDPOINT_CERT.lineSequence().filterNot {
+    it.startsWith("-----") || it.isBlank()
+}.joinToString("").let {
+    Base64.decode(it)
+}
+
 class TestPlantRepository(dbProvider: DatabaseProvider, userManager: UserManager, syncEndpoint: String) :
-    PlantRepository(dbProvider, userManager, syncEndpoint) {
+    PlantRepository(
+        dbProvider,
+        userManager,
+        syncEndpoint,
+        ReplicatorConfiguration(
+            URLEndpoint(syncEndpoint),
+        ).apply {
+            pinnedServerCertificate = decodeCapellaCerts()
+            isContinuous = true
+            type = ReplicatorType.PUSH_AND_PULL
+            isAutoPurgeEnabled = false
+        },
+    ) {
     fun clearDatabase() {
         (select(Meta.id) from this.collection).execute().use { results ->
             results.allResults().forEach { result ->
