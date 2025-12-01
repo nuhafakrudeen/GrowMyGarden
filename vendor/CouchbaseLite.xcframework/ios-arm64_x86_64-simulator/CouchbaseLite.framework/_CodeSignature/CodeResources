@@ -42,7 +42,7 @@
 		</data>
 		<key>Headers/CBLCollectionConfiguration.h</key>
 		<data>
-		CYxjjh0KK3FWW3PEl4wsPddolC8=
+		z4WaBNxvprbc7kbK7I96UNJqfP8=
 		</data>
 		<key>Headers/CBLCollectionTypes.h</key>
 		<data>
@@ -60,21 +60,29 @@
 		<data>
 		B0KYldphkVQNeWSy8X+xgMWO1/Q=
 		</data>
+		<key>Headers/CBLConsoleLogger.h</key>
+		<data>
+		Y7f3J7cs+mLueqTAFmhZQZ09ZEY=
+		</data>
 		<key>Headers/CBLCustomLogSink.h</key>
 		<data>
 		XXbV1wL6UY54m7tkucBAyaHVU6k=
 		</data>
 		<key>Headers/CBLDatabase.h</key>
 		<data>
-		vd7vhnMnQWc6KeSZh+5B/DVxN2w=
+		Vvctb0/AQ+k8bPQkQCV1ijqcvlY=
+		</data>
+		<key>Headers/CBLDatabaseChange.h</key>
+		<data>
+		Z32JGUF64eGZo9Zq4FD8kXJc71I=
 		</data>
 		<key>Headers/CBLDatabaseConfiguration.h</key>
 		<data>
-		FJO5+iUQSeouam7Ys1H1dLWh/9E=
+		tufdq032dvVXpzA58GMeOxCL470=
 		</data>
 		<key>Headers/CBLDefaults.h</key>
 		<data>
-		w3yA172NZUSaNPh2YAgqbispTOM=
+		bOASGfwOi7/uFZTzcCaRORkhzvo=
 		</data>
 		<key>Headers/CBLDictionary.h</key>
 		<data>
@@ -86,11 +94,11 @@
 		</data>
 		<key>Headers/CBLDocument.h</key>
 		<data>
-		bh2dn5VNEogru8WPvNNvuJEUrcI=
+		C2RENnACcFz3D75+WfCMwL8+BQ0=
 		</data>
 		<key>Headers/CBLDocumentChange.h</key>
 		<data>
-		dzElgBgmhMc3+OHuZO83c105tK4=
+		CZ8PwQVdQ2soaDsPD6iYkUoK+G4=
 		</data>
 		<key>Headers/CBLDocumentFlags.h</key>
 		<data>
@@ -118,7 +126,11 @@
 		</data>
 		<key>Headers/CBLFileLogSink.h</key>
 		<data>
-		yoaZxYb4H5ebY6MSWf9sYOnw6LE=
+		6dhkLX0C3AxaBVwreFCcCnrDzJs=
+		</data>
+		<key>Headers/CBLFileLogger.h</key>
+		<data>
+		LNlXSqh45sx+wTjuiKrsvMc8Ltk=
 		</data>
 		<key>Headers/CBLFragment.h</key>
 		<data>
@@ -146,11 +158,19 @@
 		</data>
 		<key>Headers/CBLIndexable.h</key>
 		<data>
-		3PemjQIPEGFFettFBB9IoYPbbXo=
+		QGm/7K/ci2SCIw/geQi89rbnTZ0=
 		</data>
 		<key>Headers/CBLListenerToken.h</key>
 		<data>
 		XTktSeYQscSWWIH77Ax8B4QemP8=
+		</data>
+		<key>Headers/CBLLog.h</key>
+		<data>
+		fxrpK6IopAkaW85pVlcDEwTNBIs=
+		</data>
+		<key>Headers/CBLLogFileConfiguration.h</key>
+		<data>
+		pwB5cLpZhcnDQalEH9C/7WfeYxM=
 		</data>
 		<key>Headers/CBLLogSinks.h</key>
 		<data>
@@ -158,7 +178,11 @@
 		</data>
 		<key>Headers/CBLLogTypes.h</key>
 		<data>
-		ym+GTk+OvV5Z7twrmEDac+12+eA=
+		x8o5cQCIImAqkZKtsBbn0m/Fw0c=
+		</data>
+		<key>Headers/CBLLogger.h</key>
+		<data>
+		V3sj/8AMa+5CsTrYFj9WfnMRN4E=
 		</data>
 		<key>Headers/CBLMutableArray.h</key>
 		<data>
@@ -186,7 +210,7 @@
 		</data>
 		<key>Headers/CBLQuery.h</key>
 		<data>
-		YYlyFxKs3bqYKZE2uRQkIiHnlWk=
+		rqnuyTUAJFOx0tEdtMpttzPIKMI=
 		</data>
 		<key>Headers/CBLQueryArrayExpression.h</key>
 		<data>
@@ -210,19 +234,23 @@
 		</data>
 		<key>Headers/CBLQueryDataSource.h</key>
 		<data>
-		pgcmyhyNYGFnCpVndC70EumqbPs=
+		njXRcg+5sh9XO2Pep4qYnD8omDk=
 		</data>
 		<key>Headers/CBLQueryExpression.h</key>
 		<data>
-		TS81BYtA8qB29MWQrQbiajzZWEI=
+		+J1XAU6ENiwC3aL4Oo0fjmOTdDw=
 		</data>
 		<key>Headers/CBLQueryFactory.h</key>
 		<data>
 		UncZ/n7IzWSQZOClhBsVi0XeYtM=
 		</data>
+		<key>Headers/CBLQueryFullTextExpression.h</key>
+		<data>
+		JCDKz2hiNPDQ7vBozRDNivQ+0xg=
+		</data>
 		<key>Headers/CBLQueryFullTextFunction.h</key>
 		<data>
-		DmMZd+AaD3JgZ3A4JZ4bdWT94rk=
+		SO0xO1NtngACHS6qKMbOl0gydiU=
 		</data>
 		<key>Headers/CBLQueryFullTextIndexExpressionProtocol.h</key>
 		<data>
@@ -274,7 +302,7 @@
 		</data>
 		<key>Headers/CBLReplicator.h</key>
 		<data>
-		kCPZcMoGO04gL3eEFpm53Fbj/Yw=
+		WeZeB+2pPbY7e2vjSFk80UIMMzM=
 		</data>
 		<key>Headers/CBLReplicatorChange.h</key>
 		<data>
@@ -282,11 +310,7 @@
 		</data>
 		<key>Headers/CBLReplicatorConfiguration.h</key>
 		<data>
-		A/nc5+49f1tFvHpK0aEGm6UZSkk=
-		</data>
-		<key>Headers/CBLReplicatorStatus.h</key>
-		<data>
-		9idib4OhecSpnOXh0D/icyqdmcE=
+		9v+NcnbQOiiPDFUOFLiPYqEbvkI=
 		</data>
 		<key>Headers/CBLReplicatorTypes.h</key>
 		<data>
@@ -314,11 +338,11 @@
 		</data>
 		<key>Headers/CouchbaseLite.h</key>
 		<data>
-		qnNzSu5ooso48xxLZXAPlWlnnY4=
+		Pqrwbgh/eI/tETECGDa9gSHNTxg=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		Fp7zUriCnPViWFAsYUMEdTGo0wA=
+		Pl8eDmKdcrkjszygC2zX9PETxkY=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -402,7 +426,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			CFSE1oCJ84U/HRsnWn9YqKopLBRpV/N4MQ323Fzv0Rg=
+			KbbBfsZ/6D5T7ocaCt1NXTGkkfzI1iDHjS6ehI9zFa4=
 			</data>
 		</dict>
 		<key>Headers/CBLCollectionTypes.h</key>
@@ -433,6 +457,13 @@
 			4Fhf/6cYTcqCRz4KfTPfPy8FnSZUq6JmAz+9Ai2xkEE=
 			</data>
 		</dict>
+		<key>Headers/CBLConsoleLogger.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			W8HGF1bA8gCS50rgsY7GM3oiI/Xd3UXG14S0b8/faFg=
+			</data>
+		</dict>
 		<key>Headers/CBLCustomLogSink.h</key>
 		<dict>
 			<key>hash2</key>
@@ -444,21 +475,28 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			ThmI/AYf14psRZGyzov/zD7RbKUa0IUpuLdh9mlBOxI=
+			MOciCGyHOwcwPwdcEQ16vLoj0mul+7c6DwCMsYp14zo=
+			</data>
+		</dict>
+		<key>Headers/CBLDatabaseChange.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			rHSKY/uj+j7UkROK6z8YLjM9X5Fa2VlCBjCpbXWhgTU=
 			</data>
 		</dict>
 		<key>Headers/CBLDatabaseConfiguration.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			SxDsM7HKmpBYsPsO2zo2rYxuwciN+Lo9rH8x0NniRk8=
+			etGZFktl9/qXPvpJTsk9raXWW+N+1PFrBqKhmCu0CNo=
 			</data>
 		</dict>
 		<key>Headers/CBLDefaults.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			+AF/S5x81/jDVa8o6LphbS45fICMJ17nW/pY7evKU1o=
+			fvAxaZ0C4jJ3+f8Ss8vgmfjOaF/MrXPZqXZrx73iClA=
 			</data>
 		</dict>
 		<key>Headers/CBLDictionary.h</key>
@@ -479,14 +517,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			TF4qREoCAPPbcOvu95wKgGASfbOqyj/L1VIAXimyp3I=
+			TwqHYEZlnzO1Lh9BHYvQrR35tejTLL40x2Pre4OFAfA=
 			</data>
 		</dict>
 		<key>Headers/CBLDocumentChange.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			sVJXiDgGc0tWhX6WzytdZcHIItnDYg/dqDvEGJXeCew=
+			GSMc+9ta+5iEgTCMeCr+U3vX37a9Kw28ttzfSleMDYU=
 			</data>
 		</dict>
 		<key>Headers/CBLDocumentFlags.h</key>
@@ -535,7 +573,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			XDlaHp2D/kfTS7zbOp29CXcd+OHGawjZ/Vte4tMk/8I=
+			fKZ+QxpNRFqXPYdPb8oY/Qxw28P+4J28R/SI+KO39h4=
+			</data>
+		</dict>
+		<key>Headers/CBLFileLogger.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			LLXw+zyGd26xctpmXPJauojFZOLIdpfmFvvRnhGg5Fc=
 			</data>
 		</dict>
 		<key>Headers/CBLFragment.h</key>
@@ -584,7 +629,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			FiB7jiA+geITwsppQINuD0xJuYGztaR2PnjsNGbiWIc=
+			Wc6F0hRfJ5olg60jh3DXA9JrQWHaJwmVaR1+xySJF/s=
 			</data>
 		</dict>
 		<key>Headers/CBLListenerToken.h</key>
@@ -592,6 +637,20 @@
 			<key>hash2</key>
 			<data>
 			iWsLeM7Ll2kY/b4mlPl3y5RE8ZmTB1zGy2huLv4sTTc=
+			</data>
+		</dict>
+		<key>Headers/CBLLog.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NWJiXXWgBIUTTKW73oXksiEhl3ATAN5gUUe2EKRsq8U=
+			</data>
+		</dict>
+		<key>Headers/CBLLogFileConfiguration.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hcgRs7QG6iWaIiquXIOg6WJ+Tvcg7QdB5PkA6wzML0w=
 			</data>
 		</dict>
 		<key>Headers/CBLLogSinks.h</key>
@@ -605,7 +664,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			Ei9UEOtZleUiEZWP930YercHbhH2KiHFy6kAoDpb1yM=
+			8OcBvoB8eBIb/Cb2+m6yqRNWBos60m7EEwhI8XUd91k=
+			</data>
+		</dict>
+		<key>Headers/CBLLogger.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			oQ71luDrqKQ5dyJ20UM+CQTfWdHJPIHTbQL3W3ncd2A=
 			</data>
 		</dict>
 		<key>Headers/CBLMutableArray.h</key>
@@ -654,7 +720,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			wYRbVSF67SWw8+NQVMEvJLPT5PoMOetdzhw+o5jt89U=
+			4TE882yGzJQMDLhjfeOp3N5EQx5NakfTh1397raQH1I=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryArrayExpression.h</key>
@@ -696,14 +762,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			iPHb8NeSvYHxLiqHz1t0B57bg6PtyAlvuSb5FQBe4JI=
+			+3nkcbt47+w3zHLY6UTuO2zYv/u5ddraBj6fEHAIsSc=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryExpression.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			oMQhTwvg2psjXMgXRcJ2cw+ze/IYH8ZSLsnz0MVFQr0=
+			29p03OfSeSvHJBDnGE8LLe7JR4Edtpd51rrmU5/Fp6k=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryFactory.h</key>
@@ -713,11 +779,18 @@
 			yEjBoteQjfYrgJ7lVoV91286wVYiyoLBMbNQ+nLn2aE=
 			</data>
 		</dict>
+		<key>Headers/CBLQueryFullTextExpression.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			tmahlap+7nA92t1LCcT+sxuXn8hPTp4iU4SFjNC1+4g=
+			</data>
+		</dict>
 		<key>Headers/CBLQueryFullTextFunction.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			yzET7wPwD7JFTqMlXvDHQXtS+3mmfCzVJbtzWqGIh48=
+			uj7kQAULbBsDqo2rZ+W+vvhZJCW6raqs0y2LIqPOq7U=
 			</data>
 		</dict>
 		<key>Headers/CBLQueryFullTextIndexExpressionProtocol.h</key>
@@ -808,7 +881,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			fJW59DitrwF00xUtHoh8tB+tMqCbScuFaQMiufrLq14=
+			rS8W4LsDdo+XmDmo1Kz1jcsAndnowvpwQeu78UXT1rg=
 			</data>
 		</dict>
 		<key>Headers/CBLReplicatorChange.h</key>
@@ -822,14 +895,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			aw8KZKWzMY2Gu/Bq+7K+e0dyWItf2fPmYm0iGtAnYj4=
-			</data>
-		</dict>
-		<key>Headers/CBLReplicatorStatus.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			m3T7GTd3uVPHKfGL1Ir6+UCg5KgMDwmKQuRboAHbpTc=
+			9kgKJ6uTrumGoWG3fsDaIPnIFm+oYQrEEOexV5LUTL8=
 			</data>
 		</dict>
 		<key>Headers/CBLReplicatorTypes.h</key>
@@ -878,7 +944,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			tU1oHM8/moxXYBUVP6v9v/JMX8e0kjPCDkrOJDfJ550=
+			/pCPAATZ4OBCWANPJpPac4M+2lK0+6oiIHW+/kTD8GM=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
