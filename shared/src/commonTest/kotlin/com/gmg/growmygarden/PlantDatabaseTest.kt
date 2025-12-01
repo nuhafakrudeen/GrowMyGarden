@@ -11,9 +11,11 @@ import com.gmg.growmygarden.di.userModule
 import com.gmg.growmygarden.viewmodel.LoginViewModel
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotbase.Meta
+import kotbase.ReplicatorActivityLevel
 import kotbase.ktx.from
 import kotbase.ktx.select
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -31,6 +33,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
@@ -54,6 +57,9 @@ class TestPlantRepository(dbProvider: DatabaseProvider, userManager: UserManager
     suspend operator fun contains(plant: Plant): Boolean {
         return this.getPlant(plant.uuid) != null
     }
+
+    val isPending: Boolean
+        get() = replicator.getPendingDocumentIds(collection).isNotEmpty()
 }
 
 @ExperimentalCoroutinesApi
@@ -162,7 +168,10 @@ class PlantDatabaseTest : KoinTest {
     @Test
     fun testDatabaseInsertLoggedIn() = runTest(dispatcher) {
         val loginViewModel: LoginViewModel by inject()
+        val userManger: UserManager by inject()
         loginViewModel.login(TEST_USER_ID)
+
+        assertNotNull(userManger.user, "No User After Login")
 
         plantRepository.savePlant(
             examplePlants.first(),
@@ -170,6 +179,28 @@ class PlantDatabaseTest : KoinTest {
 
         advanceTimeBy(300.milliseconds)
         advanceUntilIdle()
+
+        delay(250.milliseconds)
+
+        assertTrue(
+            plantRepository.replicator.status.let {
+                val activity = it.activityLevel
+                activity != ReplicatorActivityLevel.OFFLINE && activity != ReplicatorActivityLevel.STOPPED
+            },
+            "Bad Replicator Activity",
+        )
+
+        while (plantRepository.isPending || plantRepository.replicator.status.activityLevel == ReplicatorActivityLevel.BUSY) {
+            delay(50.milliseconds)
+        }
+
+        assertTrue(
+            plantRepository.replicator.status.let {
+                val activity = it.activityLevel
+                activity == ReplicatorActivityLevel.IDLE
+            },
+            "Bad Replicator Activity",
+        )
     }
 
     @AfterTest

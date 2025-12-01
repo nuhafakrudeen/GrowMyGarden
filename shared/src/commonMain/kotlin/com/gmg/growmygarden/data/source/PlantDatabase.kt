@@ -129,7 +129,34 @@ open class PlantRepository(
         )
     }
 
-    private var replicator: Replicator
+    internal val replicator: Replicator = Replicator(
+        ReplicatorConfiguration(
+            URLEndpoint(syncEndpoint),
+        ).addCollection(
+            collection,
+            CollectionConfiguration(
+                pushFilter = { document: Document, flags: Set<DocumentFlag> ->
+                    if (userManager.user == null) return@CollectionConfiguration false
+
+                    val plant = decodeDocument(document)!!
+                    if (plant.userId == null) return@CollectionConfiguration false
+                    plant.userId == userManager.user?.id
+                },
+                pullFilter = { document: Document, flags: Set<DocumentFlag> ->
+                    if (userManager.user == null) return@CollectionConfiguration false
+
+                    val plant = decodeDocument(document)!!
+                    if (plant.userId == null) return@CollectionConfiguration false
+                    plant.userId == userManager.user?.id
+                },
+
+            ),
+        ).apply {
+            isContinuous = true
+            type = ReplicatorType.PUSH_AND_PULL
+            isAutoPurgeEnabled = false
+        },
+    )
 
     init {
         @OptIn(FlowPreview::class)
@@ -150,33 +177,6 @@ open class PlantRepository(
             coll.save(mutableDoc)
         }.launchIn(dbProvider.scope)
 
-        replicator = Replicator(
-            ReplicatorConfiguration(
-                URLEndpoint(syncEndpoint),
-            ).addCollection(
-                collection,
-                CollectionConfiguration(
-                    pushFilter = { document: Document, flags: Set<DocumentFlag> ->
-                        if (userManager.user == null) false
-
-                        val plant = decodeDocument(document)!!
-                        if (plant.userId == null) false
-                        plant.userId == userManager.user?.id
-                    }, pullFilter = { document: Document, flags: Set<DocumentFlag> ->
-                        if (userManager.user == null) false
-
-                        val plant = decodeDocument(document)!!
-                        if (plant.userId == null) false
-                        plant.userId == userManager.user?.id
-                    },
-
-                ),
-            ).apply {
-                isContinuous = true
-                type = ReplicatorType.PUSH_AND_PULL
-                isAutoPurgeEnabled = false
-            },
-        )
         replicator.start(false)
     }
 
