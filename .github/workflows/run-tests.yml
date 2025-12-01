@@ -54,6 +54,8 @@ jobs:
           package com.gmg.growmygarden
           
           internal const val PERENUAL_API_KEY = "${{secrets.PERENUAL_API_KEY}}"
+          internal const val SYNC_ENDPOINT = "${{secrets.SYNC_ENDPOINT}}"
+          internal const val TEST_USER_ID = "${{secrets.TEST_USER_ID}}"
           EOF
       - name: Run Tests
         run: ./gradlew clean iosSimulatorArm64Test -p shared

@@ -8,12 +8,12 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.gmg.growmygarden.di.userModule
+import com.gmg.growmygarden.viewmodel.LoginViewModel
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotbase.Meta
 import kotbase.ktx.from
 import kotbase.ktx.select
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.inject
@@ -36,7 +37,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 
-class TestPlantRepository(dbProvider: DatabaseProvider, userManager: UserManager) : PlantRepository(dbProvider, userManager) {
+class TestPlantRepository(dbProvider: DatabaseProvider, userManager: UserManager, syncEndpoint: String) :
+    PlantRepository(dbProvider, userManager, syncEndpoint) {
     fun clearDatabase() {
         (select(Meta.id) from this.collection).execute().use { results ->
             results.allResults().forEach { result ->
@@ -89,30 +91,15 @@ class PlantDatabaseTest : KoinTest {
 //            modules(dataModule)
             modules(
                 module {
+                    properties(mapOf("SYNC_ENDPOINT" to SYNC_ENDPOINT))
                     includes(userModule)
                     single { DatabaseProvider(dispatcher = dispatcher) }
-                    single { TestPlantRepository(get(), get()) }
+                    single { TestPlantRepository(get(), get(), getProperty("SYNC_ENDPOINT")) }
+                    factoryOf(::LoginViewModel)
                 },
             )
         }
         assertNotNull(plantRepository)
-    }
-
-    @NativeCoroutinesIgnore
-    suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, against: List<Plant>) {
-        plants.collect { results ->
-            assertNotNull(results, "Database Read Returned Null")
-            for (index in results.indices) {
-                assertEquals(results[index], examplePlants[index], "Plants were not equal")
-            }
-        }
-    }
-
-    @NativeCoroutinesIgnore
-    suspend fun compareDatabaseContents(plants: Flow<List<Plant>>, vararg against: Plant) {
-        plants.first().forEachIndexed { index, plant ->
-            assertEquals(plant, examplePlants[index], "Plants were not equal")
-        }
     }
 
     @Test
@@ -170,6 +157,19 @@ class PlantDatabaseTest : KoinTest {
         advanceUntilIdle()
         assertEquals(updatedPlant, plantRepository.getPlant(uuid), "Plant failed to update")
         plantRepository.clearDatabase()
+    }
+
+    @Test
+    fun testDatabaseInsertLoggedIn() = runTest(dispatcher) {
+        val loginViewModel: LoginViewModel by inject()
+        loginViewModel.login(TEST_USER_ID)
+
+        plantRepository.savePlant(
+            examplePlants.first(),
+        )
+
+        advanceTimeBy(300.milliseconds)
+        advanceUntilIdle()
     }
 
     @AfterTest

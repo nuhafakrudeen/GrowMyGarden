@@ -7,7 +7,14 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import kotbase.CollectionConfiguration
+import kotbase.Document
+import kotbase.DocumentFlag
 import kotbase.MutableDocument
+import kotbase.Replicator
+import kotbase.ReplicatorConfiguration
+import kotbase.ReplicatorType
+import kotbase.URLEndpoint
 import kotbase.ktx.all
 import kotbase.ktx.asObjectsFlow
 import kotbase.ktx.from
@@ -49,14 +56,14 @@ data class Plant(
     val fertilizingFrequency: Duration = Duration.ZERO,
     var fertilizerNotificationID: Uuid? = null,
 
-    @Serializable(with = PlantImageSerializer::class)
-    var image: PlantImage? = null,
+    @Serializable(with = PlantImageSerializer::class) var image: PlantImage? = null,
 )
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantRepository(
     private val dbProvider: DatabaseProvider,
     private val userManager: UserManager,
+    private val syncEndpoint: String,
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection
@@ -101,9 +108,7 @@ open class PlantRepository(
     @NativeCoroutines
     suspend fun getPlant(id: String): Plant? {
         return withContext(dbProvider.readContext) {
-            collection.getDocument(id)
-                ?.let(::decodeDocument)
-                ?.let(::docToPlant)
+            collection.getDocument(id)?.let(::decodeDocument)?.let(::docToPlant)
         }
     }
 
@@ -124,6 +129,8 @@ open class PlantRepository(
         )
     }
 
+    private var replicator: Replicator
+
     init {
         @OptIn(FlowPreview::class)
         saveChannel.receiveAsFlow().debounce(debounceTime).onEach { plant ->
@@ -142,6 +149,35 @@ open class PlantRepository(
             val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
             coll.save(mutableDoc)
         }.launchIn(dbProvider.scope)
+
+        replicator = Replicator(
+            ReplicatorConfiguration(
+                URLEndpoint(syncEndpoint),
+            ).addCollection(
+                collection,
+                CollectionConfiguration(
+                    pushFilter = { document: Document, flags: Set<DocumentFlag> ->
+                        if (userManager.user == null) false
+
+                        val plant = decodeDocument(document)!!
+                        if (plant.userId == null) false
+                        plant.userId == userManager.user?.id
+                    }, pullFilter = { document: Document, flags: Set<DocumentFlag> ->
+                        if (userManager.user == null) false
+
+                        val plant = decodeDocument(document)!!
+                        if (plant.userId == null) false
+                        plant.userId == userManager.user?.id
+                    },
+
+                ),
+            ).apply {
+                isContinuous = true
+                type = ReplicatorType.PUSH_AND_PULL
+                isAutoPurgeEnabled = false
+            },
+        )
+        replicator.start(false)
     }
 
     companion object {
