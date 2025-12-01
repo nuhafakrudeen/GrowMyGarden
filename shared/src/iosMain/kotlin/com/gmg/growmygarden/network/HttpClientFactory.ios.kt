@@ -9,17 +9,16 @@ import io.ktor.http.appendPathSegments
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-actual fun createHttpClient(): HttpClient = HttpClient(Darwin.create()) {
+actual fun createHttpClient(perenualKey: String): HttpClient = HttpClient(Darwin.create()) {
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
     }
-
     defaultRequest {
         url {
             protocol = URLProtocol.HTTPS
             host = "perenual.com"
             appendPathSegments("api", "v2")
-            parameters.append("key", "KEY HERE")
+            parameters.append("key", perenualKey)
         }
     }
 }

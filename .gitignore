@@ -20,3 +20,4 @@ node_modules/
 **/GoogleService-Info.plist
 /shared/src/commonMain/resources/koin.properties
 
+shared/src/commonTest/kotlin/com/gmg/growmygarden/Secrets.kt
