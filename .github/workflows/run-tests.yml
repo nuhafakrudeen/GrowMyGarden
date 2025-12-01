@@ -46,7 +46,13 @@ jobs:
       - uses: ./.github/actions/job-setup
         with:
           perenual_api_key: ${{ secrets.PERENUAL_API_KEY }}
-
+      - name: Install Capella CA cert
+        run: |
+          cat <<'EOF' > capella.pem
+          ${{ secrets.ENDPOINT_CERT }}
+          EOF
+          openssl x509 -in capella.pem -outform der -out capella.cer
+          sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain capella.cer
       - name: Add Secrets
         shell: bash
         run: |

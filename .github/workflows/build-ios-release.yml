@@ -57,7 +57,7 @@ jobs:
             <dict>
                 <key>PERENUAL_API_KEY</key>
                 <string>${{secrets.PERENUAL_API_KEY}}</string>
-                <key>SYNC_ENDPOINT></key>
+                <key>SYNC_ENDPOINT</key>
                 <string>${{secrets.SYNC_ENDPOINT}}</string>
             </dict>
             </plist>
