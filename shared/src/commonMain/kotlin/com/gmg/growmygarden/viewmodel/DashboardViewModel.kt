@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDateTime
 import kotlin.collections.listOf
+import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 class DashboardViewModel(
@@ -50,9 +51,10 @@ class DashboardViewModel(
         plantRepository.delete(plant)
     }
 
-    fun createWaterNotification(date: LocalDateTime, plant: Plant, image: String?) {
+    fun createWaterNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Water ${plant.name}"
         val body = "It's time to water your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
+        plant.wateringFrequency = notifcationDelay
         val delay: Long = plant.wateringFrequency.inWholeMilliseconds / 60000
 
         val generatedNotificationID: Uuid = Uuid.random()
@@ -61,9 +63,10 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
-    fun createFertilizerNotification(date: LocalDateTime, plant: Plant, image: String?) {
+    fun createFertilizerNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Fertilize ${plant.name}"
         val body = "It's time to give your ${plant.name} some fertilizer. Make sure to do so soon so that it can stay healthy and grow"
+        plant.fertilizingFrequency = notifcationDelay
         val delay: Long = plant.fertilizingFrequency.inWholeMilliseconds / 60000
 
         val generatedNotificationID: Uuid = Uuid.random()
@@ -114,7 +117,7 @@ class DashboardViewModel(
             return
         }
 
-        val popularPlantIDs = listOf(721, 3384, 7168)
+        val popularPlantIDs = listOf(721)
 
         val popularPlantsList: List<PlantInfo> = popularPlantIDs.map { id ->
             perenualAPI.searchPlantInPerenualAPI(id)
