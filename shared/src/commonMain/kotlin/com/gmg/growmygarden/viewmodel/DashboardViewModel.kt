@@ -7,6 +7,7 @@ import com.gmg.growmygarden.data.source.PlantInfo
 import com.gmg.growmygarden.data.source.PlantInfoRepository
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.gmg.growmygarden.network.PerenualApi
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -14,6 +15,7 @@ import com.rickclephas.kmp.observableviewmodel.stateIn
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -105,6 +107,10 @@ class DashboardViewModel(
         }
     }
 
+    @NativeCoroutines
+    suspend fun getPlantImage(plant: Plant): ByteArray? {
+        return plant.image?.hqFile?.readBytes()
+    }
     init {
         viewModelScope.launch {
             fillPlantInfoDatabase()
