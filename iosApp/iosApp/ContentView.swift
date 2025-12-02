@@ -8,6 +8,77 @@ import GoogleSignIn
 import UIKit
 import AuthenticationServices
 import CryptoKit
+import Shared
+import KMPNativeCoroutinesCombine
+import Combine
+
+
+// ===============================================================
+// MARK: - Backend (Kotlin) Plant Adapter
+// ===============================================================
+
+/// Wraps the Kotlin DashboardViewModel so SwiftUI can observe it.
+final class BackendPlantAdapter: ObservableObject {
+    @Published var backendPlants: [Shared.Plant] = []
+
+    private let vm: DashboardViewModel
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        print("👉 BackendPlantAdapter init - getting DashboardViewModel")
+        vm = HelperKt.getDashboardViewModel()
+        print("✅ Got DashboardViewModel from Kotlin:", vm)
+
+        // Observe Kotlin StateFlow<List<Plant>> via plantsStateFlow
+        let publisher: AnyPublisher<[Shared.Plant], Error> =
+            createPublisher(for: vm.plantsStateFlow)
+
+        publisher
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        print("❌ Error observing plantsStateFlow:", error)
+                    }
+                },
+                receiveValue: { [weak self] (plants: [Shared.Plant]) in
+                    print("🌱 Received \(plants.count) plants from Kotlin")
+                    self?.backendPlants = plants
+                }
+            )
+            .store(in: &cancellables)
+    }
+
+    /// Persist a SwiftUI Plant to the backend.
+    func save(uiPlant: Plant) {
+        let backend = HelperKt.createBackendPlant(
+            name: uiPlant.name,
+            species: uiPlant.species
+        )
+        vm.savePlant(plant: backend)
+    }
+
+    /// Delete the corresponding backend plant for a given SwiftUI Plant.
+    func delete(uiPlant: Plant) {
+        if let backend = backendPlants.first(where: {
+            $0.name == uiPlant.name && $0.species == uiPlant.species
+        }) {
+            vm.deletePlant(plant: backend)
+        }
+    }
+}
+
+/// Convert a backend Shared.Plant into your local SwiftUI Plant model.
+/// For now we sync only name & species; notes/image/tasks stay local-only.
+func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
+    Plant(
+        name: backend.name,
+        species: backend.species,
+        imageData: nil,
+        notes: "",
+        tasks: []
+    )
+}
 
 //shared auth state for the app
 final class AuthManager: NSObject, ObservableObject {
@@ -226,15 +297,23 @@ enum NotificationManager {
             DispatchQueue.main.async { completion(granted) }
         }
     }
-    static func scheduleRepeating(taskTitle: String, plantName: String, identifier: String, everyDays: Int) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+    static func scheduleRepeating(taskTitle: String,
+                                  plantName: String,
+                                  identifier: String,
+                                  intervalSeconds: TimeInterval) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [identifier])
+
         let content = UNMutableNotificationContent()
         content.title = "Time to \(taskTitle.capitalized)"
         content.body  = "Don’t forget to \(taskTitle) your \(plantName) 🌿"
         content.sound = .default
-        let seconds = max(60, everyDays * 24 * 60 * 60)
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: true)
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
+
+        let seconds = max(60, intervalSeconds)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: true)
+
+        UNUserNotificationCenter.current()
+            .add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
     }
     static func cancel(identifier: String) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
@@ -364,11 +443,27 @@ private func loadImageData(from item: PhotosPickerItem?) async -> Data? {
 // ===============================================================
 // MARK: - DATA MODELS
 // ===============================================================
+enum WaterScheduleMode: String, CaseIterable, Identifiable, Hashable {
+    case timesPerDay
+    case everyXDays
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .timesPerDay: return "Per Day"
+        case .everyXDays:  return "Every X Days"
+        }
+    }
+}
 
 struct PlantTask: Identifiable, Hashable {
-    let id = UUID()                     // Unique ID for SwiftUI’s list diffing
-    var title: String                   // reminder name
-    var reminderEnabled: Bool           // bool for if the user enabled the reminder toggle
+    let id = UUID()
+    var title: String                   // "water", "fertilize", "trimming"
+    var reminderEnabled: Bool
+    var frequencyDays: Int              // used for all tasks (and water when mode == .everyXDays)
+    var timesPerDay: Int                // used only for water when mode == .timesPerDay
+    var waterMode: WaterScheduleMode    // ignored for non-water tasks
 }
 
 //Represents a plant with its details and reminders.
@@ -385,6 +480,7 @@ struct Plant: Identifiable, Hashable {
 struct PlantbookEntry: Identifiable, Hashable {
     let id = UUID()
     let speciesName: String
+    let fallbackImageData: Data?   // user photo for that species (if any)
 }
 
 
@@ -406,23 +502,31 @@ final class PlantStore: ObservableObject {
 
 struct PlantsHomeView: View {
     @StateObject private var store = PlantStore()
+    @StateObject private var backendAdapter = BackendPlantAdapter()
     @State private var isAddingPlant = false
     @State private var selectedTab: AppTab = .home
     
     // All unique species from the user's plants
     private var plantbookEntries: [PlantbookEntry] {
-            let groups = Dictionary(grouping: store.plants) { plant in
-                plant.species
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .lowercased()
-            }
+        let groups = Dictionary(grouping: store.plants) { plant in
+            plant.species
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+        }
 
-            return groups.values.compactMap { plantsForSpecies in
-                guard let first = plantsForSpecies.first else { return nil }
-                let display = first.species.trimmingCharacters(in: .whitespacesAndNewlines)
-                return PlantbookEntry(speciesName: display.isEmpty ? "Unknown Species" : display)
-            }
-            .sorted { $0.speciesName.localizedCaseInsensitiveCompare($1.speciesName) == .orderedAscending }
+        return groups.values.compactMap { plantsForSpecies in
+            guard let first = plantsForSpecies.first else { return nil }
+
+            let display = first.species.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = display.isEmpty ? "Unknown Species" : display
+
+            // use the first plant's image as fallback (if it has one)
+            return PlantbookEntry(
+                speciesName: name,
+                fallbackImageData: first.imageData
+            )
+        }
+        .sorted { $0.speciesName.localizedCaseInsensitiveCompare($1.speciesName) == .orderedAscending }
     }
     
     var body: some View {
@@ -467,6 +571,9 @@ struct PlantsHomeView: View {
                                     PlantCard(
                                         plant: $plant,
                                         onDelete: { id in
+                                            if let uiPlant = store.plants.first(where: { $0.id == id }) {
+                                                backendAdapter.delete(uiPlant: uiPlant)
+                                            }
                                             store.plants.removeAll { $0.id == id }
                                         }
                                     )
@@ -492,7 +599,17 @@ struct PlantsHomeView: View {
         }
         .sheet(isPresented: $isAddingPlant) {
             AddPlantSheet(isPresented: $isAddingPlant) { newPlant in
+                // 1) Local UI update
                 store.add(newPlant)
+                // 2) Persist to Kotlin backend
+                backendAdapter.save(uiPlant: newPlant)
+            }
+        }
+        .onReceive(backendAdapter.$backendPlants) { backendPlants in
+            // Sync backend → UI store
+            let mapped = backendPlants.map { convertBackendPlant($0) }
+            if mapped != store.plants {
+                store.plants = mapped
             }
         }
     }
@@ -784,7 +901,7 @@ struct ProfileView: View {
             matching: .images,
             preferredItemEncoding: .compatible
         )
-        .onChange(of: selectedPhotoItem, initial: false) { _, newItem in
+        .onChange(of: selectedPhotoItem) { newItem in
             Task {
                 if let data = await loadImageData(from: newItem) {
                     profileImageData = data
@@ -899,7 +1016,6 @@ struct PlantbookView: View {
     }
 }
 
-// One big card per species, image from backend
 private struct PlantbookCard: View {
     let entry: PlantbookEntry
 
@@ -909,7 +1025,6 @@ private struct PlantbookCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
-                // Main visual
                 Group {
                     if let uiImage = loadedImage {
                         Image(uiImage: uiImage)
@@ -931,7 +1046,7 @@ private struct PlantbookCard: View {
                             ProgressView()
                         }
                     } else {
-                        // Placeholder if backend has no image yet
+                        // fallback placeholder if we have nothing at all
                         ZStack {
                             RoundedRectangle(cornerRadius: 22, style: .continuous)
                                 .fill(
@@ -966,7 +1081,6 @@ private struct PlantbookCard: View {
                 )
                 .clipped()
 
-                // Subtle overlay icon for style
                 VStack {
                     Spacer()
                     HStack {
@@ -983,7 +1097,6 @@ private struct PlantbookCard: View {
             Text(entry.speciesName)
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundColor(Color("DarkGreen"))
-
         }
         .padding(14)
         .background(
@@ -1000,14 +1113,24 @@ private struct PlantbookCard: View {
         guard !isLoading, loadedImage == nil else { return }
         isLoading = true
 
+        // Immediately show the user's photo if we have one
+        if let data = entry.fallbackImageData,
+           let ui = UIImage(data: data) {
+            self.loadedImage = ui
+        }
+
+        // Ask backend for a nicer species image; override only if it returns one
         PlantImageService.fetchSpeciesImage(speciesName: entry.speciesName) { image in
             DispatchQueue.main.async {
-                self.loadedImage = image
+                if let image = image {
+                    self.loadedImage = image   // backend wins if available
+                }
                 self.isLoading = false
             }
         }
     }
 }
+
 
 
 // ===============================================================
@@ -1170,6 +1293,72 @@ struct PlantCard: View {
     }
 }
 
+private struct ReminderConfigRow: View {
+    @Binding var task: PlantTask
+
+    var isWater: Bool {
+        task.title.lowercased() == "water"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // main toggle
+            HStack {
+                Toggle(isOn: $task.reminderEnabled) {
+                    Text(task.title.capitalized)
+                        .font(.subheadline.weight(.semibold))
+                }
+            }
+
+            if isWater {
+                // mode picker: per day vs every X days
+                Picker("Water Schedule Mode", selection: $task.waterMode) {
+                    ForEach(WaterScheduleMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if task.waterMode == .timesPerDay {
+                    // 0 ... N times per day
+                    let label = "\(task.timesPerDay) time\(task.timesPerDay == 1 ? "" : "s") per day"
+
+                    Stepper(
+                        label,
+                        value: $task.timesPerDay,
+                        in: 0...10
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                } else {
+                    // every X days (0 allowed)
+                    let label = "Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")"
+
+                    Stepper(
+                        label,
+                        value: $task.frequencyDays,
+                        in: 0...60
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                }
+            } else {
+                // fertilize / trimming: every X days, starting at 0
+                let label = "Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")"
+
+                Stepper(
+                    label,
+                    value: $task.frequencyDays,
+                    in: 0...180
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 private struct ReminderRow: View {
     @Binding var task: PlantTask
     let plant: Plant
@@ -1201,59 +1390,46 @@ private struct ReminderRow: View {
     }
 
     private var subLabel: some View {
-        switch task.title.lowercased() {
-        case "water":
-            return Text("Every 3 days recommended")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.leading, 16)
-                .eraseToAnyView()
-        case "fertilize":
-            return Text("Every 30 days recommended")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.leading, 16)
-                .eraseToAnyView()
-        default:
-            return EmptyView().eraseToAnyView()
+        let title = task.title.lowercased()
+        let text: String
+
+        if title == "water" {
+            if task.waterMode == .timesPerDay {
+                text = "Repeats \(task.timesPerDay)x per day"
+            } else {
+                text = "Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")"
+            }
+        } else {
+            text = "Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")"
         }
+
+        return Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.leading, 16)
+            .eraseToAnyView()
     }
 
     private func handleToggle(isOn: Bool) {
         let id = "\(plant.id.uuidString)::\(task.title.lowercased())"
-        let days = (task.title.lowercased() == "water") ? 3 : 30
 
         if isOn {
-            // 1) Check current status
             NotificationManager.currentStatus { status in
                 switch status {
                 case .notDetermined:
-                    // 2) First time: request → schedule or revert
                     NotificationManager.requestAuthorization { granted in
                         if granted {
-                            NotificationManager.scheduleRepeating(
-                                taskTitle: task.title,
-                                plantName: plant.name.isEmpty ? "your plant" : plant.name,
-                                identifier: id,
-                                everyDays: days
-                            )
+                            scheduleCurrentReminder(identifier: id)
                         } else {
                             task.reminderEnabled = false
                             showNotifDeniedAlert = true
                         }
                     }
                 case .denied:
-                    // 3) Already denied → revert & alert with Settings
                     task.reminderEnabled = false
                     showNotifDeniedAlert = true
                 case .authorized, .provisional, .ephemeral:
-                    // 4) Good to go (no prompt)
-                    NotificationManager.scheduleRepeating(
-                        taskTitle: task.title,
-                        plantName: plant.name.isEmpty ? "your plant" : plant.name,
-                        identifier: id,
-                        everyDays: days
-                    )
+                    scheduleCurrentReminder(identifier: id)
                 @unknown default:
                     task.reminderEnabled = false
                 }
@@ -1262,9 +1438,32 @@ private struct ReminderRow: View {
             NotificationManager.cancel(identifier: id)
         }
     }
+
+    private func scheduleCurrentReminder(identifier: String) {
+        let title = task.title.lowercased()
+        let seconds: TimeInterval
+
+        if title == "water" {
+            if task.waterMode == .timesPerDay {
+                let n = max(task.timesPerDay, 1)
+                seconds = TimeInterval((24 * 60 * 60) / n)
+            } else {
+                let days = max(task.frequencyDays, 1)
+                seconds = TimeInterval(days * 24 * 60 * 60)
+            }
+        } else {
+            let days = max(task.frequencyDays, 1)
+            seconds = TimeInterval(days * 24 * 60 * 60)
+        }
+
+        NotificationManager.scheduleRepeating(
+            taskTitle: task.title,
+            plantName: plant.name.isEmpty ? "your plant" : plant.name,
+            identifier: identifier,
+            intervalSeconds: seconds
+        )
+    }
 }
-
-
 
 private extension View { func eraseToAnyView() -> AnyView { AnyView(self) } }
 
@@ -1272,6 +1471,24 @@ private extension View { func eraseToAnyView() -> AnyView { AnyView(self) } }
 // MARK: - ADD PLANT
 // ===============================================================
 struct AddPlantSheet: View {
+    @State private var tasks: [PlantTask] = [
+        PlantTask(title: "water",
+                  reminderEnabled: false,
+                  frequencyDays: 0,
+                  timesPerDay: 0,
+                  waterMode: .timesPerDay),
+        PlantTask(title: "fertilize",
+                  reminderEnabled: false,
+                  frequencyDays: 0,
+                  timesPerDay: 0,
+                  waterMode: .everyXDays),
+        PlantTask(title: "trimming",
+                  reminderEnabled: false,
+                  frequencyDays: 0,
+                  timesPerDay: 0,
+                  waterMode: .everyXDays)
+    ]
+
     @Binding var isPresented: Bool
     var onSave: (Plant) -> Void
 
@@ -1360,13 +1577,94 @@ struct AddPlantSheet: View {
                             .autocorrectionDisabled()
                     }
 
-                    // NOTES
+                    // REMINDERS
+                    Section("Reminders") {
+                        ForEach($tasks) { $task in
+                            VStack(alignment: .leading, spacing: 8) {
+
+                                // Main row: title + toggle
+                                HStack {
+                                    Text(task.title.capitalized)
+                                        .font(.system(size: 18, weight: .semibold))
+                                    Spacer()
+                                    Toggle("", isOn: $task.reminderEnabled)
+                                        .labelsHidden()
+                                }
+
+                                // WATER SPECIAL CASE
+                                if task.title.lowercased() == "water" {
+
+                                    // Per Day vs Every X Days
+                                    Picker("Water Schedule Mode", selection: $task.waterMode) {
+                                        ForEach(WaterScheduleMode.allCases) { mode in
+                                            Text(mode.label).tag(mode)
+                                        }
+                                    }
+                                    .pickerStyle(.segmented)
+
+                                    if task.waterMode == .timesPerDay {
+                                        // "X times per day"
+                                        Text("\(task.timesPerDay) time\(task.timesPerDay == 1 ? "" : "s") per day")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+
+                                        HStack {
+                                            Spacer()
+                                            Stepper(
+                                                "",
+                                                value: $task.timesPerDay,
+                                                in: 0...10
+                                            )
+                                            .labelsHidden()
+                                            .frame(width: 120)
+                                        }
+
+                                    } else {
+                                        // "Every X days"
+                                        Text("Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+
+                                        HStack {
+                                            Spacer()
+                                            Stepper(
+                                                "",
+                                                value: $task.frequencyDays,
+                                                in: 0...60
+                                            )
+                                            .labelsHidden()
+                                            .frame(width: 120)
+                                        }
+                                    }
+
+                                } else {
+                                    // FERTILIZE + TRIMMING
+                                    Text("Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+
+                                    HStack {
+                                        Spacer()
+                                        Stepper(
+                                            "",
+                                            value: $task.frequencyDays,
+                                            in: 0...180
+                                        )
+                                        .labelsHidden()
+                                        .frame(width: 120)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 6)
+                        }
+                    }
+
                     Section("Notes") {
                         TextEditor(text: $notes)
-                            .frame(minHeight: 120)
+                            .frame(minHeight: 80, maxHeight: 140)   // smaller but scrollable
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(.quaternary, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.quaternary, lineWidth: 1)
                             )
                             .listRowInsets(EdgeInsets())
                     }
@@ -1382,16 +1680,12 @@ struct AddPlantSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let defaultTasks = [
-                            PlantTask(title: "water", reminderEnabled: false),
-                            PlantTask(title: "fertilize", reminderEnabled: false)
-                        ]
                         let plant = Plant(
                             name: name.trimmingCharacters(in: .whitespaces),
                             species: species.trimmingCharacters(in: .whitespaces),
                             imageData: imageData,
                             notes: notes,
-                            tasks: defaultTasks
+                            tasks: tasks
                         )
                         onSave(plant)
                         isPresented = false
@@ -1400,6 +1694,8 @@ struct AddPlantSheet: View {
                 }
             }
         }
+        .presentationDetents([.large])           // always open full-height
+        .presentationDragIndicator(.visible)
         // Show Photos picker only after permission is granted
         .photosPicker(
             isPresented: $showPhotoPicker,
@@ -1407,7 +1703,7 @@ struct AddPlantSheet: View {
             matching: .images,
             preferredItemEncoding: .compatible
         )
-        .onChange(of: selectedPhotoItem, initial: false) { _, newItem in
+        .onChange(of: selectedPhotoItem) { newItem in
             Task {
                 if let data = await loadImageData(from: newItem) {
                     imageData = data
@@ -1591,7 +1887,89 @@ struct EditPlantSheet: View {
                                         )
                                 )
                         }
+                        // Reminders
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Reminders")
+                                .font(.headline)
+                                .foregroundColor(Color("DarkGreen"))
 
+                            ForEach($plant.tasks) { $task in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Toggle(isOn: $task.reminderEnabled) {
+                                            Text(task.title.capitalized)
+                                                .font(.subheadline.weight(.semibold))
+                                        }
+                                    }
+
+                                    if task.title.lowercased() == "water" {
+                                        Picker("Water Schedule Mode", selection: $task.waterMode) {
+                                            ForEach(WaterScheduleMode.allCases) { mode in
+                                                Text(mode.label).tag(mode)
+                                            }
+                                        }
+                                        .pickerStyle(.segmented)
+                                        .onChange(of: task.waterMode) { _ in
+                                            rescheduleIfNeeded(task: task)
+                                        }
+
+                                        if task.waterMode == .timesPerDay {
+                                            HStack {
+                                                Text("Times per day")
+                                                Spacer()
+                                                Stepper(
+                                                    "\(task.timesPerDay)x",
+                                                    value: $task.timesPerDay,
+                                                    in: 1...10
+                                                )
+                                            }
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                            .padding(.leading, 4)
+                                            .onChange(of: task.timesPerDay) { _ in
+                                                rescheduleIfNeeded(task: task)
+                                            }
+
+                                        } else {
+                                            HStack {
+                                                Text("Every")
+                                                Spacer()
+                                                Stepper(
+                                                    "\(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")",
+                                                    value: $task.frequencyDays,
+                                                    in: 1...60
+                                                )
+                                            }
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                            .padding(.leading, 4)
+                                            .onChange(of: task.frequencyDays) { _ in
+                                                rescheduleIfNeeded(task: task)
+                                            }
+                                        }
+
+                                    } else {
+                                        HStack {
+                                            Text("Every")
+                                            Spacer()
+                                            Stepper(
+                                                "\(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")",
+                                                value: $task.frequencyDays,
+                                                in: 1...180
+                                            )
+                                        }
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .padding(.leading, 4)
+                                        .onChange(of: task.frequencyDays) { _ in
+                                            rescheduleIfNeeded(task: task)
+                                        }
+                                    }
+
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
                         // Notes
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Notes")
@@ -1599,7 +1977,7 @@ struct EditPlantSheet: View {
                                 .foregroundColor(Color("DarkGreen"))
 
                             TextEditor(text: $newNotes)
-                                .frame(minHeight: 140)
+                                .frame(minHeight: 80, maxHeight: 140)
                                 .padding(8)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
@@ -1678,7 +2056,7 @@ struct EditPlantSheet: View {
             matching: .images,
             preferredItemEncoding: .compatible
         )
-        .onChange(of: selectedPhotoItem, initial: false) { _, newItem in
+        .onChange(of: selectedPhotoItem) { newItem in
             Task {
                 if let data = await loadImageData(from: newItem) {
                     newImageData = data
@@ -1701,6 +2079,33 @@ struct EditPlantSheet: View {
             newNotes = plant.notes
         }
     }
+    private func rescheduleIfNeeded(task: PlantTask) {
+        guard task.reminderEnabled else { return }
+
+        let identifier = "\(plant.id.uuidString)::\(task.title.lowercased())"
+        let seconds: TimeInterval
+
+        if task.title.lowercased() == "water" {
+            if task.waterMode == .timesPerDay {
+                let n = max(task.timesPerDay, 1)
+                seconds = TimeInterval((24 * 60 * 60) / n)
+            } else {
+                let days = max(task.frequencyDays, 1)
+                seconds = TimeInterval(days * 24 * 60 * 60)
+            }
+        } else {
+            let days = max(task.frequencyDays, 1)
+            seconds = TimeInterval(days * 24 * 60 * 60)
+        }
+
+        NotificationManager.scheduleRepeating(
+            taskTitle: task.title,
+            plantName: plant.name.isEmpty ? "your plant" : plant.name,
+            identifier: identifier,
+            intervalSeconds: seconds
+        )
+    }
+
 }
 
 
@@ -2440,12 +2845,13 @@ struct BindingPreview<Value, Content: View>: View {
     BindingPreview(
         Plant(
             name: "Monstera",
-            species: "Monstera deliciosa",   // NEW
+            species: "Monstera deliciosa",
             imageData: nil,
             notes: "Keep near indirect sunlight.",
             tasks: [
-                PlantTask(title: "water", reminderEnabled: true),
-                PlantTask(title: "fertilize", reminderEnabled: false)
+                PlantTask(title: "water",     reminderEnabled: true,  frequencyDays: 1,  timesPerDay: 2, waterMode: .timesPerDay),
+                PlantTask(title: "fertilize", reminderEnabled: false, frequencyDays: 30, timesPerDay: 1, waterMode: .everyXDays),
+                PlantTask(title: "trimming",  reminderEnabled: false, frequencyDays: 14, timesPerDay: 1, waterMode: .everyXDays)
             ]
         )
     ) { $plant in
