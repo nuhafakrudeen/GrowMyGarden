@@ -19,7 +19,9 @@ data class PlantDoc(
     val scientificName: String = "",
     val species: String = "",
     val wateringFrequency: Duration = Duration.ZERO,
+    var wateringNotificationID: Uuid? = null,
     val fertilizingFrequency: Duration = Duration.ZERO,
+    var fertilizerNotificationID: Uuid? = null,
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
 )
