@@ -111,7 +111,9 @@ open class PlantRepository(
             species = doc.species,
             scientificName = doc.scientificName,
             wateringFrequency = doc.wateringFrequency,
+            wateringNotificationID = doc.wateringNotificationID,
             fertilizingFrequency = doc.fertilizingFrequency,
+            fertilizerNotificationID = doc.fertilizerNotificationID,
             image = doc.image,
         )
     }
@@ -131,7 +133,10 @@ open class PlantRepository(
                     scientificName = plant.scientificName,
                     species = plant.species,
                     wateringFrequency = plant.wateringFrequency,
+                    wateringNotificationID = plant.wateringNotificationID,
                     fertilizingFrequency = plant.fertilizingFrequency,
+                    fertilizerNotificationID = plant.fertilizerNotificationID,
+                    image = plant.image,
                 )
                 val json = Json.encodeToString(updated)
                 val mutableDoc = MutableDocument(plant.uuid.toHexDashString(), json)
