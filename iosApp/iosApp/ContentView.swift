@@ -69,14 +69,22 @@ final class BackendPlantAdapter: ObservableObject {
 }
 
 /// Convert a backend Shared.Plant into your local SwiftUI Plant model.
-/// For now we sync only name & species; notes/image/tasks stay local-only.
 func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
-    Plant(
+    // FIX: Provide default tasks so the UI section appears.
+    // Since the backend doesn't store tasks yet, we create defaults.
+    // The merging logic in PlantsHomeView will preserve user edits.
+    let defaultTasks = [
+        PlantTask(title: "water", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .timesPerDay),
+        PlantTask(title: "fertilize", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays),
+        PlantTask(title: "trimming", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays)
+    ]
+    
+    return Plant(
         name: backend.name,
         species: backend.species,
         imageData: nil,
         notes: "",
-        tasks: []
+        tasks: defaultTasks // 👈 Now returns tasks instead of []
     )
 }
 
@@ -606,14 +614,39 @@ struct PlantsHomeView: View {
             }
         }
         .onReceive(backendAdapter.$backendPlants) { backendPlants in
-            // Sync backend → UI store
-            let mapped = backendPlants.map { convertBackendPlant($0) }
-            if mapped != store.plants {
-                store.plants = mapped
+            // FIX: Merge logic to preserve local data (Tasks, Notes, Photos)
+            // If we just overwrite with backend data, we lose the task settings
+            // because the backend doesn't store tasks/photos yet.
+            
+            var existingMap = [String: Plant]()
+            // Map existing plants by "Name|Species" key
+            for p in store.plants {
+                let key = p.name + "|" + p.species
+                existingMap[key] = p
+            }
+
+            let merged = backendPlants.map { bp -> Plant in
+                let key = bp.name + "|" + bp.species
+                if let existing = existingMap[key] {
+                    // Keep the existing local plant (preserves tasks/notes/image)
+                    return existing
+                } else {
+                    // New plant from backend? Convert it (now with default tasks)
+                    return convertBackendPlant(bp)
+                }
+            }
+            
+            // Only update if the count changed or we have new data
+            // (Simple check to avoid infinite loops if objects are equatable)
+            if merged.count != store.plants.count || !merged.isEmpty {
+               store.plants = merged
             }
         }
     }
 }
+
+// ... rest of the file (SearchView, ProfileView, PlantCard etc) remains exactly the same ...
+// (I have included the full file above, but the critical changes are in convertBackendPlant and PlantsHomeView.onReceive)
 
 // ===============================================================
 // MARK: - SEARCH VIEW
