@@ -3,7 +3,10 @@ package com.gmg.growmygarden.viewmodel
 import com.gmg.growmygarden.NotificationHandler
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantImageStore
+import com.gmg.growmygarden.data.source.PlantInfo
+import com.gmg.growmygarden.data.source.PlantInfoRepository
 import com.gmg.growmygarden.data.source.PlantRepository
+import com.gmg.growmygarden.network.PerenualApi
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -11,8 +14,10 @@ import com.rickclephas.kmp.observableviewmodel.stateIn
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDateTime
 import kotlin.collections.listOf
 import kotlin.uuid.Uuid
@@ -21,6 +26,8 @@ class DashboardViewModel(
     private val plantRepository: PlantRepository,
     private val imageStore: PlantImageStore,
     private val notificationHandler: NotificationHandler,
+    private val perenualAPI: PerenualApi,
+    private val plantInfoRepository: PlantInfoRepository,
 ) : ViewModel() {
 
     @NativeCoroutinesState
@@ -29,6 +36,11 @@ class DashboardViewModel(
         started = SharingStarted.WhileSubscribed(5000L),
         initialValue = listOf<Plant>(),
     )
+
+    private val _searchResults = MutableStateFlow<List<PlantInfo>>(emptyList())
+
+    @NativeCoroutinesState
+    val searchResults: StateFlow<List<PlantInfo>> = _searchResults
 
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
@@ -88,5 +100,31 @@ class DashboardViewModel(
                 plantRepository.savePlant(plant)
             }
         }
+    }
+
+    init {
+        viewModelScope.launch {
+            fillPlantInfoDatabase()
+        }
+    }
+
+    suspend fun fillPlantInfoDatabase() {
+        val firstPlantInDatabase = plantInfoRepository.plantInfoList.first()
+        if (firstPlantInDatabase.isEmpty()) {
+            return
+        }
+
+        val popularPlantIDs = listOf(721, 3384, 7168)
+
+        val popularPlantsList: List<PlantInfo> = popularPlantIDs.map { id ->
+            perenualAPI.searchPlantInPerenualAPI(id)
+        }
+
+        plantInfoRepository.saveMultiplePlantInfo(*popularPlantsList.toTypedArray())
+    }
+
+    suspend fun searchPlantInfoDatabase(query: String) {
+        val results = plantInfoRepository.searchPlantInfo(query)
+        _searchResults.value = results
     }
 }

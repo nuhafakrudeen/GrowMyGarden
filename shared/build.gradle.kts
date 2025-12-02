@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+
 }
 
 kotlin {
@@ -75,10 +77,11 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
-
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.kmp.observableviewmodel.core)
             implementation(libs.alarmee)
+            implementation(libs.bundles.ktor)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -89,7 +92,9 @@ kotlin {
         }
 
         iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
             api(libs.kmp.observableviewmodel.core)
+
         }
         iosTest.dependencies {
             implementation(libs.alarmee)
@@ -102,13 +107,13 @@ kotlin {
     }
 }
 
-tasks.withType<AbstractTestTask> {
+tasks.withType<KotlinNativeTest>().configureEach {
+
+    environment("KONAN_PRINT_BACKTRACE", "1")
     testLogging {
+        showStandardStreams = true
+        showStackTraces = true
         events("passed", "skipped", "failed", "standardOut", "standardError")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showExceptions = true
-        showCauses = false
-        showStackTraces = false
     }
 }
 
@@ -131,6 +136,7 @@ spotless {
         )
     }
 }
+
 
 //android {
 //    namespace = "com.gmg.growmygarden.shared"
