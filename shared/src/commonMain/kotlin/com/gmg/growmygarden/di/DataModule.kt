@@ -3,8 +3,8 @@ package com.gmg.growmygarden.di
 import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantScopeProvider
 import com.gmg.growmygarden.data.source.PlantImageStore
-import com.gmg.growmygarden.data.source.PlantRepository
 import com.gmg.growmygarden.data.source.PlantInfoRepository
+import com.gmg.growmygarden.data.source.PlantRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
