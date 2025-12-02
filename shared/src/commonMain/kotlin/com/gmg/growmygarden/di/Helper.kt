@@ -37,7 +37,6 @@ internal expect fun getPropertiesMap(): Map<String, Any>
 @Suppress("unused")
 fun doInitKoin(apiKey: String) = initKoin(apiKey)
 
-// ... rest of file remains the same ...
 /**
  * Resolve the shared DashboardViewModel instance for iOS.
  */
