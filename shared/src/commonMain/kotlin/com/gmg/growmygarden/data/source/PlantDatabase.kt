@@ -42,9 +42,9 @@ data class Plant(
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
-    val wateringFrequency: Duration = Duration.ZERO,
+    var wateringFrequency: Duration = Duration.ZERO,
     var wateringNotificationID: Uuid? = null,
-    val fertilizingFrequency: Duration = Duration.ZERO,
+    var fertilizingFrequency: Duration = Duration.ZERO,
     var fertilizerNotificationID: Uuid? = null,
 
     @Serializable(with = PlantImageSerializer::class)
