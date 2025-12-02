@@ -79,6 +79,16 @@ jobs:
             </dict>
             </plist>
           EOF
+      - name: Set Bundle Version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#release/}"
+          VERSION="${VERSION%-ios}"
+          
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "iosApp/iosApp/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "iosApp/iosApp/Info.plist"
+          
+
       - name: Build Archive
         run: |
           cd iosApp
