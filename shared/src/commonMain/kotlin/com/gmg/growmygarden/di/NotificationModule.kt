@@ -1,4 +1,4 @@
-package di
+package com.gmg.growmygarden.di
 
 import com.gmg.growmygarden.NotificationHandler
 import org.koin.core.module.dsl.singleOf
