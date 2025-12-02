@@ -117,7 +117,7 @@ class DashboardViewModel(
             return
         }
 
-        val popularPlantIDs = listOf(721)
+        val popularPlantIDs = listOf(721, 607, 2774, 855, 1716, 2193, 2961, 1474, 367, 2320)
 
         val popularPlantsList: List<PlantInfo> = popularPlantIDs.map { id ->
             perenualAPI.searchPlantInPerenualAPI(id)
