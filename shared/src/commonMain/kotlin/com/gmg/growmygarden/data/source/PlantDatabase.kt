@@ -105,7 +105,6 @@ open class PlantRepository(
     suspend fun getPlant(uuid: Uuid): Plant? {
         return getPlant(uuid.toHexDashString())
     }
-
     private fun docToPlant(doc: PlantDoc): Plant {
         return Plant(
             uuid = doc.uuid,
