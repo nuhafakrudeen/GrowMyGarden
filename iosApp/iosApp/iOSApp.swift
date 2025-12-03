@@ -2,8 +2,11 @@ import SwiftUI
 import FirebaseCore
 import Shared
 
+class AppDelegate: NSObject, UIApplicationDelegate {}
+
 @main
 struct iOSApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var auth = AuthManager()
 
     init() {

@@ -16,11 +16,17 @@
 				<string>com.googleusercontent.apps.1068954647105-nqh55sleujing7e7c2vkoak7ts9dirt0</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>Google</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.1068954647105-ihmthto561u9a6vhs6d9j5o1u4tp0rfr</string>
+			</array>
+		</dict>
 	</array>
-    <key>CFBundleShortVersionString</key>
-    <string>0.0</string>
-    <key>CFBundleVersion</key>
-    <string>0.0</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>We send notifications to remind you to water and fertilize your plants.</string>
 </dict>
