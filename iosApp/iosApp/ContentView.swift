@@ -12,7 +12,6 @@ import Shared
 import KMPNativeCoroutinesCombine
 import Combine
 
-
 // ===============================================================
 // MARK: - Backend (Kotlin) Plant Adapter
 // ===============================================================
@@ -42,7 +41,7 @@ final class BackendPlantAdapter: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] (plants: [Shared.Plant]) in
-                    print("🌱 Received \(plants.count) plants from Kotlin")
+                    // Update the published array whenever Kotlin database changes
                     self?.backendPlants = plants
                 }
             )
@@ -50,33 +49,107 @@ final class BackendPlantAdapter: ObservableObject {
     }
 
     /// Persist a SwiftUI Plant to the backend.
+    /// This extracts the frequencies from your tasks and the image data
+    /// to send them to Kotlin.
     func save(uiPlant: Plant) {
-        let backend = HelperKt.createBackendPlant(
+        // 1. Extract Frequencies from Swift Tasks
+        var waterDays: Int32 = 0
+        var fertDays: Int32 = 0
+        
+        for task in uiPlant.tasks {
+            // Only save frequency if the reminder is actually enabled
+            if task.reminderEnabled {
+                if task.title.lowercased() == "water" {
+                    // Logic to handle "Per Day" vs "Every X Days"
+                    if task.waterMode == .timesPerDay {
+                        // Backend expects Frequency (Duration between waters).
+                        // If 2x per day, that's 0.5 days.
+                        // For simplicity in this version, we treat "Per Day" as 1 day frequency
+                        waterDays = 1
+                    } else {
+                        waterDays = Int32(task.frequencyDays)
+                    }
+                } else if task.title.lowercased() == "fertilize" {
+                    fertDays = Int32(task.frequencyDays)
+                }
+            }
+        }
+
+        // 2. Create the Plant Object in Kotlin using the frequencies calculated above
+        let backendPlant = HelperKt.createBackendPlant(
             name: uiPlant.name,
-            species: uiPlant.species
+            species: uiPlant.species,
+            waterDays: waterDays,
+            fertilizeDays: fertDays
         )
-        vm.savePlant(plant: backend)
+        
+        // 3. Save the Image (if exists)
+        if let data = uiPlant.imageData {
+            // Convert Swift Data to KotlinByteArray so Kotlin can save it to disk
+            let byteArray = toKotlinByteArray(data)
+            HelperKt.savePlantImage(plant: backendPlant, imageData: byteArray)
+        }
+        
+        // 4. Save the plant object to the Kotlin Database
+        vm.savePlant(plant: backendPlant)
     }
 
     /// Delete the corresponding backend plant for a given SwiftUI Plant.
     func delete(uiPlant: Plant) {
+        // Find the backend plant that matches the UI plant's name/species
         if let backend = backendPlants.first(where: {
             $0.name == uiPlant.name && $0.species == uiPlant.species
         }) {
             vm.deletePlant(plant: backend)
         }
     }
+    
+    /// Helper to convert Swift Data -> KotlinByteArray
+    private func toKotlinByteArray(_ data: Data) -> KotlinByteArray {
+        let byteArray = KotlinByteArray(size: Int32(data.count))
+        data.withUnsafeBytes { buffer in
+            if let baseAddress = buffer.baseAddress {
+                let ptr = baseAddress.bindMemory(to: Int8.self, capacity: data.count)
+                for i in 0..<data.count {
+                    byteArray.set(index: Int32(i), value: ptr[i])
+                }
+            }
+        }
+        return byteArray
+    }
 }
 
-/// Convert a backend Shared.Plant into your local SwiftUI Plant model.
 func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
-    // FIX: Provide default tasks so the UI section appears.
-    // Since the backend doesn't store tasks yet, we create defaults.
-    // The merging logic in PlantsHomeView will preserve user edits.
-    let defaultTasks = [
-        PlantTask(title: "water", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .timesPerDay),
-        PlantTask(title: "fertilize", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays),
-        PlantTask(title: "trimming", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays)
+    
+    // FIX: Use the new helper function because Swift can't read .inWholeDays directly
+    let waterDays = Int(HelperKt.durationToDays(duration: backend.wateringFrequency))
+    let waterEnabled = waterDays > 0
+    
+    let fertDays = Int(HelperKt.durationToDays(duration: backend.fertilizingFrequency))
+    let fertEnabled = fertDays > 0
+    
+    let tasks = [
+        PlantTask(
+            title: "water",
+            reminderEnabled: waterEnabled,
+            frequencyDays: waterDays > 0 ? waterDays : 1,
+            timesPerDay: 1,
+            waterMode: .everyXDays
+        ),
+        PlantTask(
+            title: "fertilize",
+            reminderEnabled: fertEnabled,
+            frequencyDays: fertDays > 0 ? fertDays : 30,
+            timesPerDay: 0,
+            waterMode: .everyXDays
+        ),
+        PlantTask(
+            title: "trimming",
+            reminderEnabled: false,
+            frequencyDays: 0,
+            timesPerDay: 0,
+            waterMode: .everyXDays
+        )
     ]
     
     return Plant(
@@ -84,10 +157,9 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
         species: backend.species,
         imageData: nil,
         notes: "",
-        tasks: defaultTasks // 👈 Now returns tasks instead of []
+        tasks: tasks
     )
 }
-
 //shared auth state for the app
 final class AuthManager: NSObject, ObservableObject {
     @Published var isLoggedIn: Bool = false
@@ -507,10 +579,11 @@ final class PlantStore: ObservableObject {
 // ===============================================================
 // MARK: - MAIN SCREEN
 // ===============================================================
-
 struct PlantsHomeView: View {
     @StateObject private var store = PlantStore()
+    // 1. Initialize the adapter to sync with Kotlin
     @StateObject private var backendAdapter = BackendPlantAdapter()
+    
     @State private var isAddingPlant = false
     @State private var selectedTab: AppTab = .home
     
@@ -576,13 +649,19 @@ struct PlantsHomeView: View {
                         ScrollView {
                             LazyVStack(spacing: 18) {
                                 ForEach($store.plants) { $plant in
+                                    // UPDATED CARD INITIALIZATION
                                     PlantCard(
                                         plant: $plant,
                                         onDelete: { id in
+                                            // Delete from Backend + Local
                                             if let uiPlant = store.plants.first(where: { $0.id == id }) {
                                                 backendAdapter.delete(uiPlant: uiPlant)
                                             }
                                             store.plants.removeAll { $0.id == id }
+                                        },
+                                        // NEW: Save to backend immediately when toggles change
+                                        onSave: { plantToSave in
+                                            backendAdapter.save(uiPlant: plantToSave)
                                         }
                                     )
                                 }
@@ -607,19 +686,17 @@ struct PlantsHomeView: View {
         }
         .sheet(isPresented: $isAddingPlant) {
             AddPlantSheet(isPresented: $isAddingPlant) { newPlant in
-                // 1) Local UI update
+                // 3. Save to Local Store immediately for UI responsiveness
                 store.add(newPlant)
-                // 2) Persist to Kotlin backend
+                // 4. Send to Backend (this saves image + freq data)
                 backendAdapter.save(uiPlant: newPlant)
             }
         }
+        // 5. MERGE LOGIC: When backend updates, restore images and settings
         .onReceive(backendAdapter.$backendPlants) { backendPlants in
-            // FIX: Merge logic to preserve local data (Tasks, Notes, Photos)
-            // If we just overwrite with backend data, we lose the task settings
-            // because the backend doesn't store tasks/photos yet.
             
             var existingMap = [String: Plant]()
-            // Map existing plants by "Name|Species" key
+            // Map existing plants by "Name|Species" key so we don't overwrite user edits while app is running
             for p in store.plants {
                 let key = p.name + "|" + p.species
                 existingMap[key] = p
@@ -627,27 +704,50 @@ struct PlantsHomeView: View {
 
             let merged = backendPlants.map { bp -> Plant in
                 let key = bp.name + "|" + bp.species
+                
                 if let existing = existingMap[key] {
-                    // Keep the existing local plant (preserves tasks/notes/image)
+                    // Keep the existing local plant (preserves unsaved edits)
                     return existing
                 } else {
-                    // New plant from backend? Convert it (now with default tasks)
-                    return convertBackendPlant(bp)
+                    // New plant from backend (e.g. app restart)? Convert it.
+                    let newUiPlant = convertBackendPlant(bp)
+                    
+                    // 6. ASYNC IMAGE LOAD
+                    // The backend plant has the file path, but we need the bytes.
+                    Task {
+                        if let kotlinBytes = try? await HelperKt.getPlantImageData(plant: bp) {
+                            let data = toSwiftData(kotlinBytes)
+                            
+                            // Update the store on Main Thread once image is loaded
+                            DispatchQueue.main.async {
+                                if let index = self.store.plants.firstIndex(where: { $0.name == newUiPlant.name }) {
+                                    self.store.plants[index].imageData = data
+                                }
+                            }
+                        }
+                    }
+                    return newUiPlant
                 }
             }
             
-            // Only update if the count changed or we have new data
-            // (Simple check to avoid infinite loops if objects are equatable)
+            // Only update if data actually changed to prevent loops
             if merged.count != store.plants.count || !merged.isEmpty {
                store.plants = merged
             }
         }
     }
+    
+    // Helper to convert KotlinByteArray to Swift Data
+    private func toSwiftData(_ byteArray: KotlinByteArray) -> Data {
+        let count = Int(byteArray.size)
+        var data = Data(count: count)
+        // Copy bytes manually because Swift Data doesn't directly ingest KotlinByteArray
+        for i in 0..<count {
+            data[i] = UInt8(bitPattern: byteArray.get(index: Int32(i)))
+        }
+        return data
+    }
 }
-
-// ... rest of the file (SearchView, ProfileView, PlantCard etc) remains exactly the same ...
-// (I have included the full file above, but the critical changes are in convertBackendPlant and PlantsHomeView.onReceive)
-
 // ===============================================================
 // MARK: - SEARCH VIEW
 // ===============================================================
@@ -1172,6 +1272,9 @@ private struct PlantbookCard: View {
 struct PlantCard: View {
     @Binding var plant: Plant
     var onDelete: (UUID) -> Void = { _ in }
+    // NEW: Save closure passed from parent
+    var onSave: (Plant) -> Void
+    
     @State private var showReminders = false
     @State private var isEditing = false
 
@@ -1199,7 +1302,9 @@ struct PlantCard: View {
             EditPlantSheet(
                 isPresented: $isEditing,
                 plant: $plant,
-                onDelete: { onDelete(plant.id) }
+                onDelete: { onDelete(plant.id) },
+                // NEW: Pass the save action to the edit sheet
+                onSave: { onSave(plant) }
             )
         }
     }
@@ -1295,8 +1400,11 @@ struct PlantCard: View {
                 .background(Color("DarkGreen").opacity(0.15))
 
             ForEach($plant.tasks) { $task in
-                ReminderRow(task: $task, plant: plant)
-                    .padding(.vertical, 4)
+                // NEW: Pass the onUpdate closure here
+                ReminderRow(task: $task, plant: plant, onUpdate: {
+                    onSave(plant)
+                })
+                .padding(.vertical, 4)
             }
 
             if !plant.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1328,6 +1436,8 @@ struct PlantCard: View {
 
 private struct ReminderConfigRow: View {
     @Binding var task: PlantTask
+    // Add this callback
+    var onChange: () -> Void
 
     var isWater: Bool {
         task.title.lowercased() == "water"
@@ -1335,57 +1445,48 @@ private struct ReminderConfigRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // main toggle
+            // Main toggle
             HStack {
                 Toggle(isOn: $task.reminderEnabled) {
                     Text(task.title.capitalized)
                         .font(.subheadline.weight(.semibold))
                 }
+                // Trigger save when toggled here
+                .onChange(of: task.reminderEnabled) { _ in onChange() }
             }
 
             if isWater {
-                // mode picker: per day vs every X days
                 Picker("Water Schedule Mode", selection: $task.waterMode) {
                     ForEach(WaterScheduleMode.allCases) { mode in
                         Text(mode.label).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
+                // Trigger save on mode change
+                .onChange(of: task.waterMode) { _ in onChange() }
 
                 if task.waterMode == .timesPerDay {
-                    // 0 ... N times per day
                     let label = "\(task.timesPerDay) time\(task.timesPerDay == 1 ? "" : "s") per day"
-
-                    Stepper(
-                        label,
-                        value: $task.timesPerDay,
-                        in: 0...10
-                    )
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    Stepper(label, value: $task.timesPerDay, in: 0...10)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        // Trigger save on stepper change
+                        .onChange(of: task.timesPerDay) { _ in onChange() }
                 } else {
-                    // every X days (0 allowed)
                     let label = "Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")"
-
-                    Stepper(
-                        label,
-                        value: $task.frequencyDays,
-                        in: 0...60
-                    )
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    Stepper(label, value: $task.frequencyDays, in: 0...60)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        // Trigger save on stepper change
+                        .onChange(of: task.frequencyDays) { _ in onChange() }
                 }
             } else {
-                // fertilize / trimming: every X days, starting at 0
                 let label = "Every \(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")"
-
-                Stepper(
-                    label,
-                    value: $task.frequencyDays,
-                    in: 0...180
-                )
-                .font(.caption)
-                .foregroundColor(.secondary)
+                Stepper(label, value: $task.frequencyDays, in: 0...180)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    // Trigger save on stepper change
+                    .onChange(of: task.frequencyDays) { _ in onChange() }
             }
         }
         .padding(.vertical, 4)
@@ -1395,6 +1496,9 @@ private struct ReminderConfigRow: View {
 private struct ReminderRow: View {
     @Binding var task: PlantTask
     let plant: Plant
+    // NEW: Callback to save data
+    var onUpdate: () -> Void
+    
     @State private var showNotifDeniedAlert = false
 
     var body: some View {
@@ -1412,6 +1516,8 @@ private struct ReminderRow: View {
                 .labelsHidden()
                 .onChange(of: task.reminderEnabled) { isOn in
                     handleToggle(isOn: isOn)
+                    // NEW: Save immediately when toggled
+                    onUpdate()
                 }
         }
         .alert("Notifications are Off", isPresented: $showNotifDeniedAlert) {
@@ -1454,17 +1560,28 @@ private struct ReminderRow: View {
                         if granted {
                             scheduleCurrentReminder(identifier: id)
                         } else {
-                            task.reminderEnabled = false
-                            showNotifDeniedAlert = true
+                            // Permission denied: Turn off and SAVE
+                            DispatchQueue.main.async {
+                                task.reminderEnabled = false
+                                showNotifDeniedAlert = true
+                                onUpdate()
+                            }
                         }
                     }
                 case .denied:
-                    task.reminderEnabled = false
-                    showNotifDeniedAlert = true
+                    // Permission denied: Turn off and SAVE
+                    DispatchQueue.main.async {
+                        task.reminderEnabled = false
+                        showNotifDeniedAlert = true
+                        onUpdate()
+                    }
                 case .authorized, .provisional, .ephemeral:
                     scheduleCurrentReminder(identifier: id)
                 @unknown default:
-                    task.reminderEnabled = false
+                    DispatchQueue.main.async {
+                        task.reminderEnabled = false
+                        onUpdate()
+                    }
                 }
             }
         } else {
@@ -1497,7 +1614,6 @@ private struct ReminderRow: View {
         )
     }
 }
-
 private extension View { func eraseToAnyView() -> AnyView { AnyView(self) } }
 
 // ===============================================================
@@ -1763,6 +1879,8 @@ struct EditPlantSheet: View {
     @Binding var isPresented: Bool
     @Binding var plant: Plant
     var onDelete: () -> Void
+    // NEW: Callback to trigger backend save
+    var onSave: () -> Void
 
     @State private var newName: String = ""
     @State private var newSpecies: String = ""
@@ -1772,12 +1890,10 @@ struct EditPlantSheet: View {
 
     @State private var showPhotoPicker = false
     @State private var showPhotoDeniedAlert = false
-
     @State private var showDeleteConfirm = false
 
     var body: some View {
         ZStack {
-            //background
             LinearGradient(
                 colors: [Color("LightGreen"), Color("SoftCream")],
                 startPoint: .topLeading,
@@ -1813,6 +1929,10 @@ struct EditPlantSheet: View {
                         if let data = newImageData {
                             plant.imageData = data
                         }
+                        
+                        // NEW: Trigger the backend save
+                        onSave()
+                        
                         isPresented = false
                     }
                     .font(.system(size: 18, weight: .semibold))
@@ -1901,7 +2021,7 @@ struct EditPlantSheet: View {
                                         )
                                 )
                         }
-                        //species
+                        // Species
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Plant Species")
                                 .font(.headline)
@@ -1927,80 +2047,11 @@ struct EditPlantSheet: View {
                                 .foregroundColor(Color("DarkGreen"))
 
                             ForEach($plant.tasks) { $task in
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack {
-                                        Toggle(isOn: $task.reminderEnabled) {
-                                            Text(task.title.capitalized)
-                                                .font(.subheadline.weight(.semibold))
-                                        }
-                                    }
-
-                                    if task.title.lowercased() == "water" {
-                                        Picker("Water Schedule Mode", selection: $task.waterMode) {
-                                            ForEach(WaterScheduleMode.allCases) { mode in
-                                                Text(mode.label).tag(mode)
-                                            }
-                                        }
-                                        .pickerStyle(.segmented)
-                                        .onChange(of: task.waterMode) { _ in
-                                            rescheduleIfNeeded(task: task)
-                                        }
-
-                                        if task.waterMode == .timesPerDay {
-                                            HStack {
-                                                Text("Times per day")
-                                                Spacer()
-                                                Stepper(
-                                                    "\(task.timesPerDay)x",
-                                                    value: $task.timesPerDay,
-                                                    in: 1...10
-                                                )
-                                            }
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .padding(.leading, 4)
-                                            .onChange(of: task.timesPerDay) { _ in
-                                                rescheduleIfNeeded(task: task)
-                                            }
-
-                                        } else {
-                                            HStack {
-                                                Text("Every")
-                                                Spacer()
-                                                Stepper(
-                                                    "\(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")",
-                                                    value: $task.frequencyDays,
-                                                    in: 1...60
-                                                )
-                                            }
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .padding(.leading, 4)
-                                            .onChange(of: task.frequencyDays) { _ in
-                                                rescheduleIfNeeded(task: task)
-                                            }
-                                        }
-
-                                    } else {
-                                        HStack {
-                                            Text("Every")
-                                            Spacer()
-                                            Stepper(
-                                                "\(task.frequencyDays) day\(task.frequencyDays == 1 ? "" : "s")",
-                                                value: $task.frequencyDays,
-                                                in: 1...180
-                                            )
-                                        }
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .padding(.leading, 4)
-                                        .onChange(of: task.frequencyDays) { _ in
-                                            rescheduleIfNeeded(task: task)
-                                        }
-                                    }
-
+                                // Note: We don't force save on every stepper click here.
+                                // We wait for the main "Save" button to commit everything.
+                                ReminderConfigRow(task: $task) {
+                                     rescheduleIfNeeded(task: task)
                                 }
-                                .padding(.vertical, 4)
                             }
                         }
                         // Notes
@@ -2029,7 +2080,7 @@ struct EditPlantSheet: View {
 
                 Spacer()
 
-                // trash popup
+                // Trash popup
                 VStack(spacing: 12) {
                     if showDeleteConfirm {
                         VStack(spacing: 12) {
@@ -2082,7 +2133,6 @@ struct EditPlantSheet: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.9), value: showDeleteConfirm)
             }
         }
-        // show photos only after permission
         .photosPicker(
             isPresented: $showPhotoPicker,
             selection: $selectedPhotoItem,
@@ -2112,6 +2162,7 @@ struct EditPlantSheet: View {
             newNotes = plant.notes
         }
     }
+    
     private func rescheduleIfNeeded(task: PlantTask) {
         guard task.reminderEnabled else { return }
 
@@ -2138,9 +2189,7 @@ struct EditPlantSheet: View {
             intervalSeconds: seconds
         )
     }
-
 }
-
 
 //MARK: - BOTTOM PAGES
 enum AppTab: Hashable{
@@ -2888,8 +2937,13 @@ struct BindingPreview<Value, Content: View>: View {
             ]
         )
     ) { $plant in
-        PlantCard(plant: $plant)
-            .padding()
+        PlantCard(
+            plant: $plant,
+            onSave: { _ in
+                print("Preview: Save triggered")
+            }
+        )
+        .padding()
     }
 }
 
