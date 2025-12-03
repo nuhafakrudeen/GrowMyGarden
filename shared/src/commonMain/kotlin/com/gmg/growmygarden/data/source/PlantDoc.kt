@@ -22,6 +22,8 @@ data class PlantDoc(
     var wateringNotificationID: Uuid? = null,
     val fertilizingFrequency: Duration = Duration.ZERO,
     var fertilizerNotificationID: Uuid? = null,
+    var trimmingFrequency: Duration = Duration.ZERO,
+    var trimmingNotificationID: Uuid? = null,
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
 )

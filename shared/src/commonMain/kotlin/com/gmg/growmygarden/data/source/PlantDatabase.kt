@@ -46,6 +46,8 @@ data class Plant(
     var wateringNotificationID: Uuid? = null,
     var fertilizingFrequency: Duration = Duration.ZERO,
     var fertilizerNotificationID: Uuid? = null,
+    var trimmingFrequency: Duration = Duration.ZERO,
+    var trimmingNotificationID: Uuid? = null,
 
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
@@ -103,7 +105,6 @@ open class PlantRepository(
     suspend fun getPlant(uuid: Uuid): Plant? {
         return getPlant(uuid.toHexDashString())
     }
-
     private fun docToPlant(doc: PlantDoc): Plant {
         return Plant(
             uuid = doc.uuid,
@@ -114,6 +115,8 @@ open class PlantRepository(
             wateringNotificationID = doc.wateringNotificationID,
             fertilizingFrequency = doc.fertilizingFrequency,
             fertilizerNotificationID = doc.fertilizerNotificationID,
+            trimmingFrequency = doc.trimmingFrequency,
+            trimmingNotificationID = doc.trimmingNotificationID,
             image = doc.image,
         )
     }
@@ -136,6 +139,8 @@ open class PlantRepository(
                     wateringNotificationID = plant.wateringNotificationID,
                     fertilizingFrequency = plant.fertilizingFrequency,
                     fertilizerNotificationID = plant.fertilizerNotificationID,
+                    trimmingFrequency = plant.trimmingFrequency,
+                    trimmingNotificationID = plant.trimmingNotificationID,
                     image = plant.image,
                 )
                 val json = Json.encodeToString(updated)

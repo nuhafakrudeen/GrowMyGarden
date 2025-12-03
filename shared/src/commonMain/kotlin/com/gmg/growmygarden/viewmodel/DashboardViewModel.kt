@@ -71,6 +71,18 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    fun createTrimmingNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
+        val title = "Reminder: Trim ${plant.name}"
+        val body = "It's time to trim your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
+        plant.trimmingFrequency = notifcationDelay
+        val delay: Long = plant.trimmingFrequency.inWholeMilliseconds / 60000
+
+        val generatedNotificationID: Uuid = Uuid.random()
+        plant.trimmingNotificationID = generatedNotificationID
+
+        notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
+    }
+
     fun cancelWateringNotification(plant: Plant) {
         if (plant.wateringNotificationID != null) {
             notificationHandler.cancelNotification(plant.wateringNotificationID.toString())
@@ -85,9 +97,17 @@ class DashboardViewModel(
         }
     }
 
+    fun cancelTrimmingNotification(plant: Plant) {
+        if (plant.trimmingNotificationID != null) {
+            notificationHandler.cancelNotification(plant.trimmingNotificationID.toString())
+            plant.trimmingNotificationID = null
+        }
+    }
+
     fun cancelAllPlantNotifications(plant: Plant) {
         cancelWateringNotification(plant)
         cancelFertilizerNotification(plant)
+        cancelTrimmingNotification(plant)
     }
 
     fun pickImage(plant: Plant) {
