@@ -2553,10 +2553,30 @@ struct SignInForm: View {
             ForgotPasswordSheet(email: $forgotEmail)
         }
     }
+    
+    private func friendlyMessage(for error: Error) -> String {
+        let nsError = error as NSError
+        if let code = AuthErrorCode(rawValue: nsError.code) {
+            switch code {
+            case .invalidCredential, .wrongPassword:
+                return "Your email or password is incorrect. Please try again."
+            case .invalidEmail:
+                return "Please enter a valid email address."
+            case .userNotFound:
+                return "No account found with that email. Try signing up instead."
+            case .networkError:
+                return "Network error. Check your connection and try again."
+            default:
+                return "Something went wrong while signing you in. Please try again."
+            }
+        }
+        return "Something went wrong while signing you in. Please try again."
+    }
+
 
     private func signIn() {
         let email = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pwd = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pwd   = password.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !email.isEmpty, !pwd.isEmpty else {
             showError = true
@@ -2567,7 +2587,7 @@ struct SignInForm: View {
         Auth.auth().signIn(withEmail: email, password: pwd) { _, error in
             if let error = error {
                 showError = true
-                errorMessage = error.localizedDescription
+                errorMessage = friendlyMessage(for: error)   // custom text
                 print("Sign in failed:", error)
             } else {
                 showError = false
@@ -2576,6 +2596,7 @@ struct SignInForm: View {
             }
         }
     }
+
 }
 
 
@@ -2771,7 +2792,9 @@ struct ForgotPasswordSheet: View {
     @Binding var email: String
 
     @Environment(\.dismiss) private var dismiss
-    @State private var showError: Bool = false
+    @State private var showMessage: Bool = false
+    @State private var messageText: String = ""
+    @State private var isError: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -2807,28 +2830,56 @@ struct ForgotPasswordSheet: View {
                             )
                     }
 
-                    if showError {
-                        Text("Please enter an email address.")
+                    if showMessage {
+                        Text(messageText)
                             .font(.caption)
-                            .foregroundColor(.red)
+                            .foregroundColor(isError ? .red : .green)
                     }
 
                     Button {
                         let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if trimmed.isEmpty {
-                            showError = true
-                        } else {
-                            showError = false
-                            Auth.auth().sendPasswordReset(withEmail: trimmed) { error in
-                                if let error = error {
-                                    showError = true
-                                    print("Password reset error:", error)
-                                } else {
-                                    // success: dismiss the sheet
-                                    dismiss()
+
+                        guard !trimmed.isEmpty else {
+                            showMessage = true
+                            isError = true
+                            messageText = "Please enter an email address."
+                            return
+                        }
+
+                        // clear old message
+                        showMessage = false
+                        messageText = ""
+
+                        Auth.auth().sendPasswordReset(withEmail: trimmed) { error in
+                            if let error = error as NSError?,
+                               let code = AuthErrorCode(rawValue: error.code) {
+
+                                showMessage = true
+                                isError = true
+
+                                switch code {
+                                case .invalidEmail:
+                                    messageText = "Please enter a valid email address."
+
+                                case .networkError:
+                                    messageText = "Network error. Check your connection and try again."
+
+                                // Firebase *rarely* sends this — usually never
+                                case .userNotFound:
+                                    messageText = "If an account exists for that email, a reset link has been sent."
+
+                                default:
+                                    messageText = "Something went wrong. Please try again."
                                 }
+
+                            } else {
+                                // Firebase returns SUCCESS *even if the email isn’t registered*
+                                showMessage = true
+                                isError = false
+                                messageText = "If an account exists for that email, we've sent a reset link."
                             }
                         }
+
                     } label: {
                         Text("Send Reset Link")
                             .font(.system(size: 16, weight: .semibold))
@@ -2839,6 +2890,7 @@ struct ForgotPasswordSheet: View {
                             .cornerRadius(12)
                     }
                     .padding(.top, 4)
+
                     Spacer()
                 }
                 .padding(20)
@@ -2855,6 +2907,7 @@ struct ForgotPasswordSheet: View {
         }
     }
 }
+
 
 
 
