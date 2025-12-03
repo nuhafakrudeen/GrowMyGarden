@@ -19,6 +19,7 @@ import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDateTime
 import kotlin.collections.listOf
@@ -39,11 +40,6 @@ class DashboardViewModel(
         started = SharingStarted.WhileSubscribed(5000L),
         initialValue = listOf<Plant>(),
     )
-
-    private val _searchResults = MutableStateFlow<List<PlantInfo>>(emptyList())
-
-    @NativeCoroutinesState
-    val searchResults: StateFlow<List<PlantInfo>> = _searchResults
 
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
@@ -132,8 +128,7 @@ class DashboardViewModel(
         plantInfoRepository.saveMultiplePlantInfo(*popularPlantsList.toTypedArray())
     }
 
-    suspend fun searchPlantInfoDatabase(query: String) {
-        val results = plantInfoRepository.searchPlantInfo(query)
-        _searchResults.value = results
+    suspend fun searchPlantInfoDatabase(query: String): List<PlantInfo> {
+        return plantInfoRepository.searchPlantInfo(query)
     }
 }
