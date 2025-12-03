@@ -189,6 +189,8 @@ extension AuthManager {
         controller.delegate = self
         controller.presentationContextProvider = self
         controller.performRequests()
+        
+        
     }
 
     // MARK: - Nonce helpers
@@ -285,9 +287,15 @@ struct AuthRootView: View {
     var body: some View {
         if auth.isLoggedIn {
             PlantsHomeView()
+                .onAppear {
+                    print("🌱 AuthRootView: showing PlantsHomeView, isLoggedIn = \(auth.isLoggedIn)")
+                }
         } else {
             AuthView {
-                // Firebase listener in AuthManager will update isLoggedIN
+                print("✅ onAuthSuccess callback fired")
+            }
+            .onAppear {
+                print("🌱 AuthRootView: showing AuthView, isLoggedIn = \(auth.isLoggedIn)")
             }
         }
     }
