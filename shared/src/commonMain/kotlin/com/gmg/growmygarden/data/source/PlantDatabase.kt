@@ -6,6 +6,7 @@ import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.image.PlantImageSerializer
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import kotbase.Expression
 import kotbase.MutableDocument
 import kotbase.ktx.all
 import kotbase.ktx.asObjectsFlow
@@ -16,7 +17,10 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -39,6 +43,7 @@ import kotlin.uuid.Uuid
 @Serializable
 data class Plant(
     val uuid: Uuid = Uuid.random(),
+    val userId: String = "", // <--- ADDED: Links the plant to a specific user
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
@@ -57,6 +62,14 @@ data class Plant(
 open class PlantRepository(
     private val dbProvider: DatabaseProvider,
 ) {
+    // <--- ADDED: State to hold the current User ID
+    private val currentUserId = MutableStateFlow<String?>(null)
+
+    // <--- ADDED: Call this from your ViewModel/AuthManager to update the context
+    fun setUserId(id: String?) {
+        currentUserId.value = id
+    }
+
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection
         get() = dbProvider.database.createCollection(COLLECTION_NAME)
@@ -64,15 +77,32 @@ open class PlantRepository(
     @NativeCoroutines
     val plants: Flow<List<Plant>>
         get() {
-            val query = select(all()) from collection orderBy { "name".descending() }
-            return query.asObjectsFlow { json: String ->
-                Json.decodeFromString<Plant>(json)
+            // <--- MODIFIED: Dynamically switch query based on currentUserId
+            return currentUserId.flatMapLatest { userId ->
+                if (userId.isNullOrEmpty()) {
+                    // If no user is logged in, show nothing
+                    flowOf(emptyList())
+                } else {
+                    // Filter query: SELECT * FROM plants WHERE userId = 'xyz'
+                    val query = select(all())
+                        .from(collection)
+                        .where(Expression.property("userId").equalTo(Expression.string(userId)))
+                        .orderBy { "name".descending() }
+
+                    query.asObjectsFlow { json: String ->
+                        Json.decodeFromString<Plant>(json)
+                    }
+                }
             }
         }
 
     private val saveChannel = Channel<Plant>(Channel.CONFLATED)
+
     fun savePlant(plant: Plant) {
-        saveChannel.trySend(plant)
+        // <--- MODIFIED: Inject the current User ID into the plant before saving
+        val uid = currentUserId.value ?: return
+        val plantWithUser = plant.copy(userId = uid)
+        saveChannel.trySend(plantWithUser)
     }
 
     @NativeCoroutines
@@ -105,9 +135,11 @@ open class PlantRepository(
     suspend fun getPlant(uuid: Uuid): Plant? {
         return getPlant(uuid.toHexDashString())
     }
+
     private fun docToPlant(doc: PlantDoc): Plant {
         return Plant(
             uuid = doc.uuid,
+            userId = doc.userId, // <--- MODIFIED: Map userId from Doc
             name = doc.name,
             species = doc.species,
             scientificName = doc.scientificName,
@@ -130,8 +162,11 @@ open class PlantRepository(
                 val doc = coll.getDocument(plant.uuid.toHexDashString())
                     ?.let(::decodeDocument)
                     ?: PlantDoc()
+
+                // <--- MODIFIED: Save userId to the document
                 val updated = doc.copy(
                     uuid = plant.uuid,
+                    userId = plant.userId,
                     name = plant.name,
                     scientificName = plant.scientificName,
                     species = plant.species,

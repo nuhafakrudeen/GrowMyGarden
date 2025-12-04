@@ -39,6 +39,14 @@ class DashboardViewModel(
         initialValue = listOf<Plant>(),
     )
 
+    /**
+     * Updates the repository with the current User ID.
+     * Call this when the user logs in (with UID) or logs out (with null).
+     */
+    fun setUserId(userId: String?) {
+        plantRepository.setUserId(userId)
+    }
+
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
     }

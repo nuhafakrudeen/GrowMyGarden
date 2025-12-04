@@ -95,12 +95,27 @@ final class AuthManager: NSObject, ObservableObject {
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
     fileprivate var currentNonce: String?
     
+    // 1. Get reference to Kotlin ViewModel so we can set the User ID
+    private let vm = HelperKt.getDashboardViewModel()
+    
     override init() {
         super.init()
 
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             DispatchQueue.main.async {
-                self?.isLoggedIn = (user != nil)
+                guard let self = self else { return }
+                
+                if let user = user {
+                    // 2. User Logged In: Tell Kotlin the UID
+                    print("🔵 User logged in: \(user.uid). Syncing with Kotlin DB.")
+                    self.vm.setUserId(userId: user.uid)
+                    self.isLoggedIn = true
+                } else {
+                    // 3. User Logged Out: Tell Kotlin to clear data
+                    print("🔴 User logged out. Clearing Kotlin DB scope.")
+                    self.vm.setUserId(userId: nil)
+                    self.isLoggedIn = false
+                }
             }
         }
     }
@@ -114,12 +129,12 @@ final class AuthManager: NSObject, ObservableObject {
     func signOut() {
         do {
             try Auth.auth().signOut()
+            // The listener above will trigger and set vm.setUserId(nil) automatically
         } catch {
             print("Error signing out: \(error)")
         }
         isLoggedIn = false
     }
-    
 }
 
 extension AuthManager {
