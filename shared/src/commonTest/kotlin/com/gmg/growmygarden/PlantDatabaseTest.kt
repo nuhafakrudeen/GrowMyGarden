@@ -3,10 +3,12 @@
 
 package com.gmg.growmygarden
 
+import com.gmg.growmygarden.auth.UserManager
 import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantRepository
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
+import di.userModule
 import kotbase.Meta
 import kotbase.ktx.from
 import kotbase.ktx.select
@@ -34,7 +36,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 
-class TestPlantRepository(dbProvider: DatabaseProvider) : PlantRepository(dbProvider) {
+class TestPlantRepository(dbProvider: DatabaseProvider, userManager: UserManager) : PlantRepository(dbProvider, userManager) {
     fun clearDatabase() {
         (select(Meta.id) from this.collection).execute().use { results ->
             results.allResults().forEach { result ->
@@ -87,8 +89,9 @@ class PlantDatabaseTest : KoinTest {
 //            modules(dataModule)
             modules(
                 module {
+                    includes(userModule)
                     single { DatabaseProvider(dispatcher = dispatcher) }
-                    single { TestPlantRepository(get()) }
+                    single { TestPlantRepository(get(), get()) }
                 },
             )
         }

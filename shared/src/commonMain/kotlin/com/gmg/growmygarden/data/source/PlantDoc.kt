@@ -15,7 +15,7 @@ import kotlin.uuid.Uuid
 @Serializable
 data class PlantDoc(
     val uuid: Uuid = Uuid.random(),
-    val userId: String = "",
+    val userId: String? = null,
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",

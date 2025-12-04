@@ -43,8 +43,9 @@ class DashboardViewModel(
      * Updates the repository with the current User ID.
      * Call this when the user logs in (with UID) or logs out (with null).
      */
+    @Deprecated("Do Not Use", replaceWith = ReplaceWith("LoginViewModel.login(userId)"))
     fun setUserId(userId: String?) {
-        plantRepository.setUserId(userId)
+        throw NotImplementedError()
     }
 
     fun savePlant(plant: Plant) {

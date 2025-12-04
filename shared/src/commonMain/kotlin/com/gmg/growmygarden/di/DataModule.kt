@@ -1,4 +1,4 @@
-package com.gmg.growmygarden.di
+package di
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
 import com.gmg.growmygarden.data.image.PlantScopeProvider
