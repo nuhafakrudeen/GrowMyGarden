@@ -1,6 +1,7 @@
 package com.gmg.growmygarden.viewmodel
 
 import com.gmg.growmygarden.NotificationHandler
+import com.gmg.growmygarden.auth.UserManager
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantImageStore
 import com.gmg.growmygarden.data.source.PlantInfo
@@ -30,6 +31,7 @@ class DashboardViewModel(
     private val notificationHandler: NotificationHandler,
     private val perenualAPI: PerenualApi,
     private val plantInfoRepository: PlantInfoRepository,
+    private val userManager: UserManager,
 ) : ViewModel() {
 
     @NativeCoroutinesState
@@ -45,7 +47,11 @@ class DashboardViewModel(
      */
     @Deprecated("Do Not Use", replaceWith = ReplaceWith("LoginViewModel.login(userId)"))
     fun setUserId(userId: String?) {
-        throw NotImplementedError()
+        if (userId != null) {
+            userManager.login(userId)
+        } else {
+            userManager.logout()
+        }
     }
 
     fun savePlant(plant: Plant) {

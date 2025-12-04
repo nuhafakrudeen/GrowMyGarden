@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys // ✅ 1. ADD THIS IMPORT
 import kotlin.String
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -39,6 +40,7 @@ import kotlin.uuid.Uuid
  * how much and how often to water the plant
  * */
 @Serializable
+@JsonIgnoreUnknownKeys
 data class Plant(
     val uuid: Uuid = Uuid.random(),
     val name: String = "",
@@ -53,7 +55,16 @@ data class Plant(
 
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
-)
+) {
+    val waterMillis: Long
+        get() = wateringFrequency.inWholeMilliseconds
+
+    val fertMillis: Long
+        get() = fertilizingFrequency.inWholeMilliseconds
+
+    val trimMillis: Long
+        get() = trimmingFrequency.inWholeMilliseconds
+}
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantRepository(
