@@ -16,8 +16,8 @@ import Combine
 // ===============================================================
 // MARK: - Backend (Kotlin) Plant Adapter
 // ===============================================================
-
 /// Wraps the Kotlin DashboardViewModel so SwiftUI can observe it.
+@MainActor
 final class BackendPlantAdapter: ObservableObject {
     @Published var backendPlants: [Shared.Plant] = []
 
@@ -25,11 +25,8 @@ final class BackendPlantAdapter: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        print("👉 BackendPlantAdapter init - getting DashboardViewModel")
         vm = HelperKt.getDashboardViewModel()
-        print("✅ Got DashboardViewModel from Kotlin:", vm)
 
-        // Observe Kotlin StateFlow<List<Plant>> via plantsStateFlow
         let publisher: AnyPublisher<[Shared.Plant], Error> =
             createPublisher(for: vm.plantsStateFlow)
 
@@ -42,7 +39,6 @@ final class BackendPlantAdapter: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] (plants: [Shared.Plant]) in
-                    print("🌱 Received \(plants.count) plants from Kotlin")
                     self?.backendPlants = plants
                 }
             )
@@ -50,15 +46,48 @@ final class BackendPlantAdapter: ObservableObject {
     }
 
     /// Persist a SwiftUI Plant to the backend.
-    func save(uiPlant: Plant) {
-        let backend = HelperKt.createBackendPlant(
-            name: uiPlant.name,
-            species: uiPlant.species
-        )
-        vm.savePlant(plant: backend)
-    }
+        func save(uiPlant: Plant) {
+            // 1. Calculate Milliseconds for Watering
+            let waterTask = uiPlant.tasks.first(where: { $0.title == "water" })
+            var waterMillis: Int64 = 0
+            var waterEnabled = waterTask?.reminderEnabled ?? false
+            
+            if let w = waterTask {
+                if w.waterMode == .timesPerDay {
+                    let times = max(1, w.timesPerDay)
+                    waterMillis = Int64((24 * 60 * 60 * 1000) / times)
+                } else {
+                    waterMillis = Int64(w.frequencyDays) * 24 * 60 * 60 * 1000
+                }
+            }
 
-    /// Delete the corresponding backend plant for a given SwiftUI Plant.
+            // 2. Calculate Milliseconds for Fertilizing
+            let fertTask = uiPlant.tasks.first(where: { $0.title == "fertilize" })
+            let fertMillis: Int64 = Int64(fertTask?.frequencyDays ?? 0) * 24 * 60 * 60 * 1000
+            let fertEnabled = fertTask?.reminderEnabled ?? false
+
+            // 3. Calculate Milliseconds for Trimming
+            let trimTask = uiPlant.tasks.first(where: { $0.title == "trimming" })
+            let trimMillis: Int64 = Int64(trimTask?.frequencyDays ?? 0) * 24 * 60 * 60 * 1000
+            let trimEnabled = trimTask?.reminderEnabled ?? false
+
+            // 4. Pass everything to HelperKt
+            // ✅ FIX: Pass the existing ID so Kotlin updates the record instead of creating a new one
+            let backend = HelperKt.createBackendPlant(
+                idString: uiPlant.id.uuidString,
+                name: uiPlant.name,
+                species: uiPlant.species,
+                waterFreqMillis: waterMillis,
+                waterEnabled: waterEnabled,
+                fertFreqMillis: fertMillis,
+                fertEnabled: fertEnabled,
+                trimFreqMillis: trimMillis,
+                trimEnabled: trimEnabled
+            )
+            
+            vm.savePlant(plant: backend)
+        }
+
     func delete(uiPlant: Plant) {
         if let backend = backendPlants.first(where: {
             $0.name == uiPlant.name && $0.species == uiPlant.species
@@ -69,22 +98,56 @@ final class BackendPlantAdapter: ObservableObject {
 }
 
 /// Convert a backend Shared.Plant into your local SwiftUI Plant model.
+/// Convert a backend Shared.Plant into your local SwiftUI Plant model.
 func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
-    // FIX: Provide default tasks so the UI section appears.
-    // Since the backend doesn't store tasks yet, we create defaults.
-    // The merging logic in PlantsHomeView will preserve user edits.
-    let defaultTasks = [
-        PlantTask(title: "water", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .timesPerDay),
-        PlantTask(title: "fertilize", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays),
-        PlantTask(title: "trimming", reminderEnabled: false, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays)
-    ]
     
+    // --- 1. Reconstruct Water Task ---
+    // ✅ FIX: Use .waterMillis directly (It is already a number)
+    let waterMillis = backend.waterMillis
+    let waterEnabled = backend.wateringNotificationID != nil
+    
+    var waterTask = PlantTask(title: "water", reminderEnabled: waterEnabled, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays)
+    
+    let oneDayMillis: Int64 = 24 * 60 * 60 * 1000
+    
+    if waterMillis > 0 {
+        if waterMillis < oneDayMillis {
+            // It's in "Times Per Day" mode
+            waterTask.waterMode = .timesPerDay
+            let times = oneDayMillis / waterMillis
+            waterTask.timesPerDay = Int(times)
+        } else {
+            // It's in "Every X Days" mode
+            waterTask.waterMode = .everyXDays
+            let days = waterMillis / oneDayMillis
+            waterTask.frequencyDays = Int(days)
+        }
+    }
+
+    // --- 2. Reconstruct Fertilize Task ---
+    // ✅ FIX: Use .fertMillis directly
+    let fertMillis = backend.fertMillis
+    let fertEnabled = backend.fertilizerNotificationID != nil
+    let fertDays = Int(fertMillis / oneDayMillis)
+    
+    let fertTask = PlantTask(title: "fertilize", reminderEnabled: fertEnabled, frequencyDays: fertDays, timesPerDay: 0, waterMode: .everyXDays)
+
+    // --- 3. Reconstruct Trimming Task ---
+    // ✅ FIX: Use .trimMillis directly
+    let trimMillis = backend.trimMillis
+    let trimEnabled = backend.trimmingNotificationID != nil
+    let trimDays = Int(trimMillis / oneDayMillis)
+    
+    let trimTask = PlantTask(title: "trimming", reminderEnabled: trimEnabled, frequencyDays: trimDays, timesPerDay: 0, waterMode: .everyXDays)
+
     return Plant(
+        // ✅ FIX: Use .description to get the string from Kotlin, then UUID(uuidString:)
+        id: UUID(uuidString: backend.uuid.description) ?? UUID(),
         name: backend.name,
         species: backend.species,
         imageData: nil,
         notes: "",
-        tasks: defaultTasks // 👈 Now returns tasks instead of []
+        tasks: [waterTask, fertTask, trimTask]
     )
 }
 
@@ -320,7 +383,10 @@ struct AuthRootView: View {
 enum NotificationManager {
     static func currentStatus(_ completion: @escaping (UNAuthorizationStatus) -> Void) {
         UNUserNotificationCenter.current().getNotificationSettings { s in
-            completion(s.authorizationStatus)
+            // ✅ FIX: Dispatch back to Main Thread before calling completion
+            DispatchQueue.main.async {
+                completion(s.authorizationStatus)
+            }
         }
     }
     static func requestAuthorization(_ completion: @escaping (Bool) -> Void) {
@@ -499,7 +565,7 @@ struct PlantTask: Identifiable, Hashable {
 
 //Represents a plant with its details and reminders.
 struct Plant: Identifiable, Hashable {
-    let id = UUID()
+    var id = UUID()
     var name: String                    // Display name
     var species: String                 // Plant species (required)
     var imageData: Data?                // Optional user-selected photo
@@ -514,7 +580,7 @@ struct PlantbookEntry: Identifiable, Hashable {
     let fallbackImageData: Data?   // user photo for that species (if any)
 }
 
-
+@MainActor
 final class PlantStore: ObservableObject {
     @Published var plants: [Plant] = [] // All user-added plants
     
@@ -598,9 +664,14 @@ struct PlantsHomeView: View {
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 18) {
+                                // Inside PlantsHomeView loop
                                 ForEach($store.plants) { $plant in
                                     PlantCard(
                                         plant: $plant,
+                                        // ✅ PASS THE SAVE FUNCTION DOWN
+                                        onSave: { updatedPlant in
+                                            backendAdapter.save(uiPlant: updatedPlant)
+                                        },
                                         onDelete: { id in
                                             if let uiPlant = store.plants.first(where: { $0.id == id }) {
                                                 backendAdapter.delete(uiPlant: uiPlant)
@@ -1194,7 +1265,12 @@ private struct PlantbookCard: View {
 // ===============================================================
 struct PlantCard: View {
     @Binding var plant: Plant
+    
+    // ✅ ADDED: Callback to trigger save when data changes
+    var onSave: (Plant) -> Void
+    
     var onDelete: (UUID) -> Void = { _ in }
+    
     @State private var showReminders = false
     @State private var isEditing = false
 
@@ -1224,6 +1300,14 @@ struct PlantCard: View {
                 plant: $plant,
                 onDelete: { onDelete(plant.id) }
             )
+            // ✅ ADDED: Save when the edit sheet closes
+            .onDisappear {
+                onSave(plant)
+            }
+        }
+        // ✅ ADDED: Save immediately if tasks (toggles/frequency) change
+        .onChange(of: plant.tasks) { _ in
+            onSave(plant)
         }
     }
 
@@ -2964,13 +3048,10 @@ struct BindingPreview<Value, Content: View>: View {
             ]
         )
     ) { $plant in
-        PlantCard(plant: $plant)
-            .padding()
+        PlantCard(
+            plant: $plant,
+            onSave: { _ in print("Preview saved!") } // <--- ADD THIS
+        )
+        .padding()
     }
 }
-
-#Preview("Profile") {
-    ProfileView()
-        .environmentObject(AuthManager())
-}
-

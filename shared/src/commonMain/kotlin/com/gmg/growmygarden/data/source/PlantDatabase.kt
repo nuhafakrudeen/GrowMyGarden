@@ -34,16 +34,10 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-/**
- * name of plant (users choice)
- * scientific name of the plant -> for dashboard
- * species of the plant (for the plantbook)
- * how much and how often to water the plant
- * */
 @Serializable
 data class Plant(
     val uuid: Uuid = Uuid.random(),
-    val userId: String = "", // <--- ADDED: Links the plant to a specific user
+    val userId: String = "",
     val name: String = "",
     val scientificName: String = "",
     val species: String = "",
@@ -56,16 +50,23 @@ data class Plant(
 
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
-)
+) {
+    val waterMillis: Long
+        get() = wateringFrequency.inWholeMilliseconds
+
+    val fertMillis: Long
+        get() = fertilizingFrequency.inWholeMilliseconds
+
+    val trimMillis: Long
+        get() = trimmingFrequency.inWholeMilliseconds
+}
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantRepository(
     private val dbProvider: DatabaseProvider,
 ) {
-    // <--- ADDED: State to hold the current User ID
     private val currentUserId = MutableStateFlow<String?>(null)
 
-    // <--- ADDED: Call this from your ViewModel/AuthManager to update the context
     fun setUserId(id: String?) {
         currentUserId.value = id
     }
@@ -77,13 +78,10 @@ open class PlantRepository(
     @NativeCoroutines
     val plants: Flow<List<Plant>>
         get() {
-            // <--- MODIFIED: Dynamically switch query based on currentUserId
             return currentUserId.flatMapLatest { userId ->
                 if (userId.isNullOrEmpty()) {
-                    // If no user is logged in, show nothing
                     flowOf(emptyList())
                 } else {
-                    // Filter query: SELECT * FROM plants WHERE userId = 'xyz'
                     val query = select(all())
                         .from(collection)
                         .where(Expression.property("userId").equalTo(Expression.string(userId)))
@@ -99,7 +97,6 @@ open class PlantRepository(
     private val saveChannel = Channel<Plant>(Channel.CONFLATED)
 
     fun savePlant(plant: Plant) {
-        // <--- MODIFIED: Inject the current User ID into the plant before saving
         val uid = currentUserId.value ?: return
         val plantWithUser = plant.copy(userId = uid)
         saveChannel.trySend(plantWithUser)
@@ -139,7 +136,7 @@ open class PlantRepository(
     private fun docToPlant(doc: PlantDoc): Plant {
         return Plant(
             uuid = doc.uuid,
-            userId = doc.userId, // <--- MODIFIED: Map userId from Doc
+            userId = doc.userId,
             name = doc.name,
             species = doc.species,
             scientificName = doc.scientificName,
@@ -163,7 +160,6 @@ open class PlantRepository(
                     ?.let(::decodeDocument)
                     ?: PlantDoc()
 
-                // <--- MODIFIED: Save userId to the document
                 val updated = doc.copy(
                     uuid = plant.uuid,
                     userId = plant.userId,
