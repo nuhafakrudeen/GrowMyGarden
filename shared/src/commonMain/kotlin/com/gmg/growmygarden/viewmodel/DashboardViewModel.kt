@@ -59,6 +59,7 @@ class DashboardViewModel(
     }
 
     fun deletePlant(plant: Plant) {
+        cancelAllPlantNotifications(plant)
         plantRepository.delete(plant)
     }
 
