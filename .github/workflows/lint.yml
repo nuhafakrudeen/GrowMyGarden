@@ -8,5 +8,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/job-setup
+        with:
+          perenual_api_key: ${{secrets.PERENUAL_API_KEY}}
       - name: Lint
-        run: ./gradlew spotlessCheck
+        run: |
+          ./gradlew spotlessCheck
+      - name: SwiftLint
+        uses: norio-nomura/action-SwiftLint@3.2.1
+        env:
+          WOKRING_DIRECTORY: iosApp/iosApp
