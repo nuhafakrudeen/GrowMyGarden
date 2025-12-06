@@ -33,8 +33,8 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlinx.serialization.json.JsonIgnoreUnknownKeys
+import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlin.Int
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
@@ -65,7 +65,7 @@ data class PlantInfo(
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantInfoRepository(
     private val dbProvider: DatabaseProvider,
-    private val api: PerenualApi
+    private val api: PerenualApi,
 ) {
 
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")

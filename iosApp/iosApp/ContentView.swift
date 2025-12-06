@@ -12,7 +12,6 @@ import Shared
 import KMPNativeCoroutinesCombine
 import Combine
 
-
 // ===============================================================
 // MARK: - Backend (Kotlin) Plant Adapter
 // ===============================================================
@@ -51,7 +50,7 @@ final class BackendPlantAdapter: ObservableObject {
             let waterTask = uiPlant.tasks.first(where: { $0.title == "water" })
             var waterMillis: Int64 = 0
             var waterEnabled = waterTask?.reminderEnabled ?? false
-            
+
             if let w = waterTask {
                 if w.waterMode == .timesPerDay {
                     let times = max(1, w.timesPerDay)
@@ -84,7 +83,7 @@ final class BackendPlantAdapter: ObservableObject {
                 trimFreqMillis: trimMillis,
                 trimEnabled: trimEnabled
             )
-            
+
             vm.savePlant(plant: backend)
         }
 
@@ -100,16 +99,16 @@ final class BackendPlantAdapter: ObservableObject {
 /// Convert a backend Shared.Plant into your local SwiftUI Plant model.
 /// Convert a backend Shared.Plant into your local SwiftUI Plant model.
 func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
-    
+
     // --- 1. Reconstruct Water Task ---
     // ✅ FIX: Use .waterMillis directly (It is already a number)
     let waterMillis = backend.waterMillis
     let waterEnabled = backend.wateringNotificationID != nil
-    
+
     var waterTask = PlantTask(title: "water", reminderEnabled: waterEnabled, frequencyDays: 0, timesPerDay: 0, waterMode: .everyXDays)
-    
+
     let oneDayMillis: Int64 = 24 * 60 * 60 * 1000
-    
+
     if waterMillis > 0 {
         if waterMillis < oneDayMillis {
             // It's in "Times Per Day" mode
@@ -129,7 +128,7 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
     let fertMillis = backend.fertMillis
     let fertEnabled = backend.fertilizerNotificationID != nil
     let fertDays = Int(fertMillis / oneDayMillis)
-    
+
     let fertTask = PlantTask(title: "fertilize", reminderEnabled: fertEnabled, frequencyDays: fertDays, timesPerDay: 0, waterMode: .everyXDays)
 
     // --- 3. Reconstruct Trimming Task ---
@@ -137,7 +136,7 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
     let trimMillis = backend.trimMillis
     let trimEnabled = backend.trimmingNotificationID != nil
     let trimDays = Int(trimMillis / oneDayMillis)
-    
+
     let trimTask = PlantTask(title: "trimming", reminderEnabled: trimEnabled, frequencyDays: trimDays, timesPerDay: 0, waterMode: .everyXDays)
 
     return Plant(
@@ -151,23 +150,23 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
     )
 }
 
-//shared auth state for the app
+// shared auth state for the app
 final class AuthManager: NSObject, ObservableObject {
     @Published var isLoggedIn: Bool = false
 
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
     fileprivate var currentNonce: String?
-    
+
     // 1. Get reference to Kotlin ViewModel so we can set the User ID
     private let vm = HelperKt.getDashboardViewModel()
-    
+
     override init() {
         super.init()
 
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                
+
                 if let user = user {
                     // 2. User Logged In: Tell Kotlin the UID
                     print("🔵 User logged in: \(user.uid). Syncing with Kotlin DB.")
@@ -182,13 +181,13 @@ final class AuthManager: NSObject, ObservableObject {
             }
         }
     }
-    
+
     deinit {
         if let handle = authListenerHandle {
             Auth.auth().removeStateDidChangeListener(handle)
         }
     }
-    
+
     func signOut() {
         do {
             try Auth.auth().signOut()
@@ -245,7 +244,7 @@ extension AuthManager {
                     print("Firebase Google auth failed:", error)
                 } else {
                     print("Google Sign-In + Firebase auth success")
-                    
+
                 }
             }
         }
@@ -267,8 +266,7 @@ extension AuthManager {
         controller.delegate = self
         controller.presentationContextProvider = self
         controller.performRequests()
-        
-        
+
     }
 
     // MARK: - Nonce helpers
@@ -301,7 +299,6 @@ extension AuthManager {
         return hashed.map { String(format: "%02x", $0) }.joined()
     }
 }
-
 
 extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     func authorizationController(controller: ASAuthorizationController,
@@ -355,7 +352,6 @@ extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControl
     }
 }
 
-
 // ===============================================================
 // MARK: - AUTH ROOT (Chooses between login and main app)
 // ===============================================================
@@ -378,7 +374,6 @@ struct AuthRootView: View {
         }
     }
 }
-
 
 enum NotificationManager {
     static func currentStatus(_ completion: @escaping (UNAuthorizationStatus) -> Void) {
@@ -467,28 +462,28 @@ class SearchViewModel: ObservableObject {
     @Published var results: [SearchResult] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    
+
     // Get the Kotlin repository via the Helper function we just added
     private let repository: PlantInfoRepository = HelperKt.getPlantInfoRepository()
-    
+
     func performSearch(query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             self.results = []
             return
         }
-        
+
         self.isLoading = true
         self.errorMessage = nil
-        
+
         do {
             // 3. Call the Kotlin suspend function directly
             // Swift automatically bridges Kotlin suspend functions to 'async throws'
             let result = try await repository.searchRemotePlants(query: trimmed)
-                        
+
                         // 2. Cast [Any] -> [PlantInfo]
                         let kotlinResults = result as? [Shared.PlantInfo] ?? []
-                        
+
                         // Debug print to confirm it works
                         print("🌿 API Results: \(kotlinResults.count) plants found.")
             if let first = kotlinResults.first {
@@ -496,20 +491,20 @@ class SearchViewModel: ObservableObject {
                     } else {
                         print("🔍 API DEBUG: No results returned.")
                     }
-            
+
             for plant in kotlinResults {
                 print("🌿 RECEIVED PLANT: ID=\(plant.id), Name=\(plant.name ?? "nil")")
             }
-            
+
             // 4. Map Kotlin 'PlantInfo' to Swift 'SearchResult'
             self.results = kotlinResults.map { info in
                 let name = info.name ?? "Unknown Plant"
-                
+
                 // scientificName is a List<String>? in Kotlin
                 let sciName = info.scientificName?.first ?? ""
-                
+
                 let family = info.family ?? ""
-                
+
                 return SearchResult(
                     title: name,
                     subtitle: sciName,
@@ -522,12 +517,10 @@ class SearchViewModel: ObservableObject {
             self.errorMessage = "Failed to search local database."
             self.results = []
         }
-        
+
         self.isLoading = false
     }
 }
-
-
 
 // Helper to normalize PhotosPicker images into JPEG Data
 private func loadImageData(from item: PhotosPickerItem?) async -> Data? {
@@ -569,7 +562,7 @@ struct PlantTask: Identifiable, Hashable {
     var waterMode: WaterScheduleMode    // ignored for non-water tasks
 }
 
-//Represents a plant with its details and reminders.
+// Represents a plant with its details and reminders.
 struct Plant: Identifiable, Hashable {
     var id = UUID()
     var name: String                    // Display name
@@ -589,9 +582,9 @@ struct PlantbookEntry: Identifiable, Hashable {
 @MainActor
 final class PlantStore: ObservableObject {
     @Published var plants: [Plant] = [] // All user-added plants
-    
+
     func add(_ plant: Plant) { plants.append(plant) }
-    
+
     func update(_ plant: Plant) {
         if let i = plants.firstIndex(where: { $0.id == plant.id }) {
             plants[i] = plant
@@ -608,7 +601,7 @@ struct PlantsHomeView: View {
     @StateObject private var backendAdapter = BackendPlantAdapter()
     @State private var isAddingPlant = false
     @State private var selectedTab: AppTab = .home
-    
+
     // All unique species from the user's plants
     private var plantbookEntries: [PlantbookEntry] {
         let groups = Dictionary(grouping: store.plants) { plant in
@@ -631,7 +624,7 @@ struct PlantsHomeView: View {
         }
         .sorted { $0.speciesName.localizedCaseInsensitiveCompare($1.speciesName) == .orderedAscending }
     }
-    
+
     var body: some View {
         ZStack {
             // Gradient background
@@ -641,7 +634,7 @@ struct PlantsHomeView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 switch selectedTab {
                 case .home:
@@ -701,7 +694,7 @@ struct PlantsHomeView: View {
                 case .profile:
                     ProfileView()
                 }
-                
+
                 RoundedBottomBar(selected: $selectedTab)
             }
         }
@@ -717,7 +710,7 @@ struct PlantsHomeView: View {
             // FIX: Merge logic to preserve local data (Tasks, Notes, Photos)
             // If we just overwrite with backend data, we lose the task settings
             // because the backend doesn't store tasks/photos yet.
-            
+
             var existingMap = [String: Plant]()
             // Map existing plants by "Name|Species" key
             for p in store.plants {
@@ -735,7 +728,7 @@ struct PlantsHomeView: View {
                     return convertBackendPlant(bp)
                 }
             }
-            
+
             // Only update if the count changed or we have new data
             // (Simple check to avoid infinite loops if objects are equatable)
             if merged.count != store.plants.count || !merged.isEmpty {
@@ -837,7 +830,7 @@ struct SearchView: View {
     private func triggerSearch() {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        
+
         hasSearched = true
         // ✅ Call the ViewModel async method
         Task {
@@ -878,8 +871,6 @@ private struct SearchResultCard: View {
         )
     }
 }
-
-
 
 // ===============================================================
 // MARK: - PROFILE VIEW
@@ -1060,8 +1051,7 @@ struct ProfileView: View {
             showPhotoPicker = true
         case .notDetermined:
             PhotoPermissionManager.requestReadWrite { granted in
-                if granted { showPhotoPicker = true }
-                else { showPhotoDeniedAlert = true }
+                if granted { showPhotoPicker = true } else { showPhotoDeniedAlert = true }
             }
         case .denied, .restricted:
             showPhotoDeniedAlert = true
@@ -1260,19 +1250,17 @@ private struct PlantbookCard: View {
     }
 }
 
-
-
 // ===============================================================
 // MARK: - PLANT CARD
 // ===============================================================
 struct PlantCard: View {
     @Binding var plant: Plant
-    
+
     // ✅ ADDED: Callback to trigger save when data changes
     var onSave: (Plant) -> Void
-    
+
     var onDelete: (UUID) -> Void = { _ in }
-    
+
     @State private var showReminders = false
     @State private var isEditing = false
 
@@ -1886,7 +1874,7 @@ struct EditPlantSheet: View {
 
     var body: some View {
         ZStack {
-            //background
+            // background
             LinearGradient(
                 colors: [Color("LightGreen"), Color("SoftCream")],
                 startPoint: .topLeading,
@@ -2010,7 +1998,7 @@ struct EditPlantSheet: View {
                                         )
                                 )
                         }
-                        //species
+                        // species
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Plant Species")
                                 .font(.headline)
@@ -2250,9 +2238,8 @@ struct EditPlantSheet: View {
 
 }
 
-
-//MARK: - BOTTOM PAGES
-enum AppTab: Hashable{
+// MARK: - BOTTOM PAGES
+enum AppTab: Hashable {
     case home, search, plantbook, profile
 }
 
@@ -2263,7 +2250,7 @@ enum AppTab: Hashable{
 struct HomeHeader: View {
     let count: Int
     let onAdd: () -> Void
-    
+
     var body: some View {
         ZStack(alignment: .top) {
             Rectangle()
@@ -2283,7 +2270,7 @@ struct HomeHeader: View {
                             .foregroundColor(Color("DarkGreen"))
                             .font(.system(size: 20, weight: .bold))
                             .accessibilityHidden(true)
-                        
+
                         Text("Your Plants")
                             .font(.system(size: 35, weight: .semibold, design: .rounded))
                             .foregroundColor(Color("DarkGreen"))
@@ -2305,7 +2292,7 @@ struct HomeHeader: View {
                         .animation(.spring(response: 0.25, dampingFraction: 0.9), value: count)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 Button(action: onAdd) {
                     ZStack {
                         Circle()
@@ -2329,7 +2316,6 @@ struct HomeHeader: View {
         }
     }
 }
-
 
 // ===============================================================
 // MARK: - BOTTOM BAR COMPONENTS
@@ -2523,14 +2509,13 @@ struct AuthView: View {
     }
 }
 
-
 // ===============================================================
 // MARK: - SIGN IN FORM
 // ===============================================================
 
 struct SignInForm: View {
     @EnvironmentObject var auth: AuthManager
-    
+
     @State private var username: String = ""   // email
     @State private var password: String = ""
     @State private var showError: Bool = false
@@ -2654,7 +2639,7 @@ struct SignInForm: View {
             ForgotPasswordSheet(email: $forgotEmail)
         }
     }
-    
+
     private func friendlyMessage(for error: Error) -> String {
         let nsError = error as NSError
         if let code = AuthErrorCode(rawValue: nsError.code) {
@@ -2673,7 +2658,6 @@ struct SignInForm: View {
         }
         return "Something went wrong while signing you in. Please try again."
     }
-
 
     private func signIn() {
         let email = username.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2700,16 +2684,13 @@ struct SignInForm: View {
 
 }
 
-
-
-
 // ===============================================================
 // MARK: - SIGN UP FORM
 // ===============================================================
 
 struct SignUpForm: View {
     @EnvironmentObject var auth: AuthManager
-    
+
     @State private var username: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
@@ -2885,7 +2866,6 @@ struct SignUpForm: View {
     }
 }
 
-
 // ===============================================================
 // MARK: - FORGOT PASSWORD
 // ===============================================================
@@ -3009,9 +2989,6 @@ struct ForgotPasswordSheet: View {
     }
 }
 
-
-
-
 // ===============================================================
 // MARK: - BINDING PREVIEW HELPER
 // ===============================================================
@@ -3019,12 +2996,12 @@ struct ForgotPasswordSheet: View {
 struct BindingPreview<Value, Content: View>: View {
     @State private var value: Value
     private let content: (Binding<Value>) -> Content
-    
+
     init(_ initialValue: Value, @ViewBuilder content: @escaping (Binding<Value>) -> Content) {
         _value = State(wrappedValue: initialValue)
         self.content = content
     }
-    
+
     var body: some View { content($value) }
 }
 
@@ -3044,9 +3021,9 @@ struct BindingPreview<Value, Content: View>: View {
             imageData: nil,
             notes: "Keep near indirect sunlight.",
             tasks: [
-                PlantTask(title: "water",     reminderEnabled: true,  frequencyDays: 1,  timesPerDay: 2, waterMode: .timesPerDay),
+                PlantTask(title: "water", reminderEnabled: true, frequencyDays: 1, timesPerDay: 2, waterMode: .timesPerDay),
                 PlantTask(title: "fertilize", reminderEnabled: false, frequencyDays: 30, timesPerDay: 1, waterMode: .everyXDays),
-                PlantTask(title: "trimming",  reminderEnabled: false, frequencyDays: 14, timesPerDay: 1, waterMode: .everyXDays)
+                PlantTask(title: "trimming", reminderEnabled: false, frequencyDays: 14, timesPerDay: 1, waterMode: .everyXDays)
             ]
         )
     ) { $plant in

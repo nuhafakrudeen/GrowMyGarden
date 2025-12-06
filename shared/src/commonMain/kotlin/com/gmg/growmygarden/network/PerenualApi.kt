@@ -5,14 +5,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.serialization.Serializable
-import io.ktor.client.statement.bodyAsText
-import kotlinx.serialization.json.Json
 @Serializable
 data class PerenualListResponse<T>(val data: List<T>)
 
 class PerenualApi(
     private val client: HttpClient,
-    private val apiKey: String
+    private val apiKey: String,
 ) {
 
     // ✅ This is the function the build error said was missing.

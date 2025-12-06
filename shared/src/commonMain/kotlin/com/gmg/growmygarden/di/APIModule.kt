@@ -11,7 +11,7 @@ val apiModule = module {
     single {
         PerenualApi(
             client = get(),
-            apiKey = getProperty("PERENUAL_API_KEY")
+            apiKey = getProperty("PERENUAL_API_KEY"),
         )
     }
 }
