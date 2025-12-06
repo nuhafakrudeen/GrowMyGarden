@@ -457,67 +457,73 @@ struct SearchResult: Identifiable, Hashable {
     let title: String
     let subtitle: String
     let detail: String
+    // We can hold the full Kotlin object if we need to pass it to a detail view later
+    let originalData: Shared.PlantInfo?
 }
 
-enum SearchService {
-    static func search(query: String, completion: @escaping ([SearchResult]) -> Void) {
+// 2. ViewModel to handle the Kotlin interaction
+@MainActor
+class SearchViewModel: ObservableObject {
+    @Published var results: [SearchResult] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    
+    // Get the Kotlin repository via the Helper function we just added
+    private let repository: PlantInfoRepository = HelperKt.getPlantInfoRepository()
+    
+    func performSearch(query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            completion([])
+            self.results = []
             return
         }
-
-        // 1. Build URL to your API
-        //    e.g. GET https://api.yourapp.com/plants/search?q=<query>
-        guard var components = URLComponents(string: "https://api.yourapp.com/plants/search") else {
-            completion([])
-            return
+        
+        self.isLoading = true
+        self.errorMessage = nil
+        
+        do {
+            // 3. Call the Kotlin suspend function directly
+            // Swift automatically bridges Kotlin suspend functions to 'async throws'
+            let result = try await repository.searchRemotePlants(query: trimmed)
+                        
+                        // 2. Cast [Any] -> [PlantInfo]
+                        let kotlinResults = result as? [Shared.PlantInfo] ?? []
+                        
+                        // Debug print to confirm it works
+                        print("🌿 API Results: \(kotlinResults.count) plants found.")
+            if let first = kotlinResults.first {
+                        print("🔍 API DEBUG: ID=\(first.id), Name=\(first.name ?? "nil")")
+                    } else {
+                        print("🔍 API DEBUG: No results returned.")
+                    }
+            
+            for plant in kotlinResults {
+                print("🌿 RECEIVED PLANT: ID=\(plant.id), Name=\(plant.name ?? "nil")")
+            }
+            
+            // 4. Map Kotlin 'PlantInfo' to Swift 'SearchResult'
+            self.results = kotlinResults.map { info in
+                let name = info.name ?? "Unknown Plant"
+                
+                // scientificName is a List<String>? in Kotlin
+                let sciName = info.scientificName?.first ?? ""
+                
+                let family = info.family ?? ""
+                
+                return SearchResult(
+                    title: name,
+                    subtitle: sciName,
+                    detail: family,
+                    originalData: info
+                )
+            }
+        } catch {
+            print("❌ Search Error: \(error)")
+            self.errorMessage = "Failed to search local database."
+            self.results = []
         }
-        components.queryItems = [
-            URLQueryItem(name: "q", value: trimmed)
-        ]
-
-        guard let url = components.url else {
-            completion([])
-            return
-        }
-
-        // 2. Call backend
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            // Basic error handling
-            guard
-                let data = data,
-                error == nil
-            else {
-                DispatchQueue.main.async { completion([]) }
-                return
-            }
-
-            // 3. Decode whatever your backend returns
-            struct PlantSearchDTO: Decodable {
-                let name: String
-                let summary: String
-                let details: String
-            }
-
-            do {
-                let decoded = try JSONDecoder().decode([PlantSearchDTO].self, from: data)
-
-                let mapped = decoded.map { dto in
-                    SearchResult(
-                        title: dto.name,
-                        subtitle: dto.summary,
-                        detail: dto.details
-                    )
-                }
-
-                DispatchQueue.main.async {
-                    completion(mapped)
-                }
-            } catch {
-                DispatchQueue.main.async { completion([]) }
-            }
-        }.resume()
+        
+        self.isLoading = false
     }
 }
 
@@ -746,9 +752,8 @@ struct PlantsHomeView: View {
 // MARK: - SEARCH VIEW
 // ===============================================================
 struct SearchView: View {
+    @StateObject private var vm = SearchViewModel()
     @State private var query: String = ""
-    @State private var results: [SearchResult] = []
-    @State private var isLoading: Bool = false
     @State private var hasSearched: Bool = false
 
     var body: some View {
@@ -771,13 +776,13 @@ struct SearchView: View {
                         .autocorrectionDisabled()
                         .submitLabel(.search)
                         .onSubmit {
-                            performSearch()
+                            triggerSearch()
                         }
 
                     if !query.isEmpty {
                         Button {
                             query = ""
-                            results = []
+                            vm.results = [] // Clear VM results
                             hasSearched = false
                         } label: {
                             Image(systemName: "xmark.circle.fill")
@@ -795,19 +800,19 @@ struct SearchView: View {
                 .padding(.top, 20)
 
                 // Content
-                if isLoading {
+                if vm.isLoading {
                     Spacer()
-                    ProgressView("Searching…")
+                    ProgressView("Searching Database…")
                         .foregroundColor(Color("DarkGreen"))
                     Spacer()
-                } else if results.isEmpty {
+                } else if vm.results.isEmpty {
                     Spacer()
                     VStack(spacing: 10) {
                         Image(systemName: hasSearched ? "leaf.circle" : "text.magnifyingglass")
                             .font(.system(size: 40, weight: .regular))
                             .foregroundColor(Color("DarkGreen").opacity(0.8))
 
-                        Text(hasSearched ? "No results found." : "Start by typing something to search.")
+                        Text(hasSearched ? "No results found in library." : "Start by typing to search the library.")
                             .font(.subheadline)
                             .foregroundColor(Color("DarkGreen").opacity(0.8))
                             .multilineTextAlignment(.center)
@@ -817,7 +822,7 @@ struct SearchView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 16) {
-                            ForEach(results) { result in
+                            ForEach(vm.results) { result in
                                 SearchResultCard(result: result)
                             }
                         }
@@ -829,17 +834,14 @@ struct SearchView: View {
         }
     }
 
-    private func performSearch() {
+    private func triggerSearch() {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-
-        isLoading = true
+        
         hasSearched = true
-        SearchService.search(query: trimmed) { newResults in
-            DispatchQueue.main.async {
-                self.results = newResults
-                self.isLoading = false
-            }
+        // ✅ Call the ViewModel async method
+        Task {
+            await vm.performSearch(query: trimmed)
         }
     }
 }

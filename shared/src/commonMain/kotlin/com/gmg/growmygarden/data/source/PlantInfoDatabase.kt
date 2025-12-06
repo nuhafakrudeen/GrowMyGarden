@@ -1,6 +1,7 @@
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
+import com.gmg.growmygarden.network.PerenualApi // Ensure this import matches your package
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotbase.DataSource
 import kotbase.Expression
@@ -27,15 +28,23 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonTransformingSerializer
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 import kotlin.Int
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
+// 1. Apply the custom serializer to 'sunExposure'
 @Serializable
+@JsonIgnoreUnknownKeys
 data class PlantInfo(
     val docId: Uuid = Uuid.random(),
-    val id: Int,
+    val id: Int = 0,
     @SerialName("common_name")
     val name: String? = null,
     @SerialName("scientific_name")
@@ -44,8 +53,11 @@ data class PlantInfo(
     val family: String? = null,
     @SerialName("water")
     val waterInfo: WaterInfo? = null,
+
+    @Serializable(with = StringOrListSerializer::class) // 👈 THIS FIXES THE CRASH
     @SerialName("sunlight")
     val sunExposure: List<String>? = null,
+
     @SerialName("default_image")
     var image: PlantImageInfo? = null,
 )
@@ -53,6 +65,7 @@ data class PlantInfo(
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantInfoRepository(
     private val dbProvider: DatabaseProvider,
+    private val api: PerenualApi
 ) {
 
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
@@ -79,6 +92,16 @@ open class PlantInfoRepository(
         for (plantInfo in multiplePlantInfo) {
             savePlantInfo(plantInfo)
             delay(300.milliseconds)
+        }
+    }
+
+    // 2. Network Search Function (Clean version)
+    suspend fun searchRemotePlants(query: String): List<PlantInfo> {
+        return try {
+            api.searchPerenualAPI(query)
+        } catch (e: Exception) {
+            println("Error searching remote API: ${e.message}")
+            emptyList()
         }
     }
 
@@ -156,6 +179,18 @@ open class PlantInfoRepository(
             collection.getDocument(docId)
                 ?.let(::decodePlantInfoDocument)
                 ?.let(::docToPlantInfo)
+        }
+    }
+}
+
+// 3. The Custom Serializer Helper
+object StringOrListSerializer : JsonTransformingSerializer<List<String>>(ListSerializer(String.serializer())) {
+    override fun transformDeserialize(element: JsonElement): JsonElement {
+        return if (element !is JsonArray) {
+            // If the API sends a String (the upgrade ad), wrap it in a list so parsing succeeds
+            JsonArray(listOf(element))
+        } else {
+            element
         }
     }
 }

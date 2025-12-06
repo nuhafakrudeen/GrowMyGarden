@@ -148,7 +148,7 @@ class DashboardViewModel(
 
     suspend fun fillPlantInfoDatabase() {
         val firstPlantInDatabase = plantInfoRepository.plantInfoList.first()
-        if (firstPlantInDatabase.isEmpty()) {
+        if (firstPlantInDatabase.isNotEmpty()) {
             return
         }
 

@@ -1,6 +1,7 @@
 package com.gmg.growmygarden.di
 
 import com.gmg.growmygarden.data.source.Plant
+import com.gmg.growmygarden.data.source.PlantInfoRepository
 import com.gmg.growmygarden.viewmodel.DashboardViewModel
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatformTools
@@ -28,6 +29,11 @@ fun doInitKoin(apiKey: String) = initKoin(apiKey)
 fun getDashboardViewModel(): DashboardViewModel {
     val koin = KoinPlatformTools.defaultContext().get()
     return koin.get(clazz = DashboardViewModel::class)
+}
+
+fun getPlantInfoRepository(): PlantInfoRepository {
+    val koin = KoinPlatformTools.defaultContext().get()
+    return koin.get(clazz = PlantInfoRepository::class)
 }
 
 @OptIn(ExperimentalUuidApi::class)
