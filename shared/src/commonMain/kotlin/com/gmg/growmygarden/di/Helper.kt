@@ -1,5 +1,6 @@
 package com.gmg.growmygarden.di
 
+import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantInfoRepository
 import com.gmg.growmygarden.viewmodel.DashboardViewModel
@@ -47,8 +48,16 @@ fun createBackendPlant(
     fertEnabled: Boolean,
     trimFreqMillis: Long,
     trimEnabled: Boolean,
+    imageBytes: ByteArray? = null,
 ): Plant {
     val uuid = if (idString != null) Uuid.parse(idString) else Uuid.random()
+
+    // Create PlantImage with the bytes if provided
+    val plantImage: PlantImage? = if (imageBytes != null && imageBytes.isNotEmpty()) {
+        PlantImage(imageBytes = imageBytes)
+    } else {
+        null
+    }
 
     return Plant(
         uuid = uuid,
@@ -60,5 +69,6 @@ fun createBackendPlant(
         fertilizerNotificationID = if (fertEnabled) Uuid.random() else null,
         trimmingFrequency = trimFreqMillis.milliseconds,
         trimmingNotificationID = if (trimEnabled) Uuid.random() else null,
+        image = plantImage,
     )
 }

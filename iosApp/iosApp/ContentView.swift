@@ -45,47 +45,56 @@ final class BackendPlantAdapter: ObservableObject {
     }
 
     /// Persist a SwiftUI Plant to the backend.
-        func save(uiPlant: Plant) {
-            // 1. Calculate Milliseconds for Watering
-            let waterTask = uiPlant.tasks.first(where: { $0.title == "water" })
-            var waterMillis: Int64 = 0
-            var waterEnabled = waterTask?.reminderEnabled ?? false
+    func save(uiPlant: Plant) {
+        // 1. Calculate Milliseconds for Watering
+        let waterTask = uiPlant.tasks.first(where: { $0.title == "water" })
+        var waterMillis: Int64 = 0
+        let waterEnabled = waterTask?.reminderEnabled ?? false
 
-            if let w = waterTask {
-                if w.waterMode == .timesPerDay {
-                    let times = max(1, w.timesPerDay)
-                    waterMillis = Int64((24 * 60 * 60 * 1000) / times)
-                } else {
-                    waterMillis = Int64(w.frequencyDays) * 24 * 60 * 60 * 1000
-                }
+        if let w = waterTask {
+            if w.waterMode == .timesPerDay {
+                let times = max(1, w.timesPerDay)
+                waterMillis = Int64((24 * 60 * 60 * 1000) / times)
+            } else {
+                waterMillis = Int64(w.frequencyDays) * 24 * 60 * 60 * 1000
             }
-
-            // 2. Calculate Milliseconds for Fertilizing
-            let fertTask = uiPlant.tasks.first(where: { $0.title == "fertilize" })
-            let fertMillis: Int64 = Int64(fertTask?.frequencyDays ?? 0) * 24 * 60 * 60 * 1000
-            let fertEnabled = fertTask?.reminderEnabled ?? false
-
-            // 3. Calculate Milliseconds for Trimming
-            let trimTask = uiPlant.tasks.first(where: { $0.title == "trimming" })
-            let trimMillis: Int64 = Int64(trimTask?.frequencyDays ?? 0) * 24 * 60 * 60 * 1000
-            let trimEnabled = trimTask?.reminderEnabled ?? false
-
-            // 4. Pass everything to HelperKt
-            // ✅ FIX: Pass the existing ID so Kotlin updates the record instead of creating a new one
-            let backend = HelperKt.createBackendPlant(
-                idString: uiPlant.id.uuidString,
-                name: uiPlant.name,
-                species: uiPlant.species,
-                waterFreqMillis: waterMillis,
-                waterEnabled: waterEnabled,
-                fertFreqMillis: fertMillis,
-                fertEnabled: fertEnabled,
-                trimFreqMillis: trimMillis,
-                trimEnabled: trimEnabled
-            )
-
-            vm.savePlant(plant: backend)
         }
+
+        // 2. Calculate Milliseconds for Fertilizing
+        let fertTask = uiPlant.tasks.first(where: { $0.title == "fertilize" })
+        let fertMillis: Int64 = Int64(fertTask?.frequencyDays ?? 0) * 24 * 60 * 60 * 1000
+        let fertEnabled = fertTask?.reminderEnabled ?? false
+
+        // 3. Calculate Milliseconds for Trimming
+        let trimTask = uiPlant.tasks.first(where: { $0.title == "trimming" })
+        let trimMillis: Int64 = Int64(trimTask?.frequencyDays ?? 0) * 24 * 60 * 60 * 1000
+        let trimEnabled = trimTask?.reminderEnabled ?? false
+
+        // 4. Convert Swift Data to KotlinByteArray
+        var kotlinImageBytes: KotlinByteArray?
+        if let imageData = uiPlant.imageData {
+            kotlinImageBytes = KotlinByteArray(size: Int32(imageData.count))
+            for i in 0..<imageData.count {
+                kotlinImageBytes?.set(index: Int32(i), value: Int8(bitPattern: imageData[i]))
+            }
+        }
+
+        // 5. Pass everything to HelperKt
+        let backend = HelperKt.createBackendPlant(
+            idString: uiPlant.id.uuidString,
+            name: uiPlant.name,
+            species: uiPlant.species,
+            waterFreqMillis: waterMillis,
+            waterEnabled: waterEnabled,
+            fertFreqMillis: fertMillis,
+            fertEnabled: fertEnabled,
+            trimFreqMillis: trimMillis,
+            trimEnabled: trimEnabled,
+            imageBytes: kotlinImageBytes
+        )
+
+        vm.savePlant(plant: backend)
+    }
 
     func delete(uiPlant: Plant) {
         if let backend = backendPlants.first(where: {
@@ -97,11 +106,9 @@ final class BackendPlantAdapter: ObservableObject {
 }
 
 /// Convert a backend Shared.Plant into your local SwiftUI Plant model.
-/// Convert a backend Shared.Plant into your local SwiftUI Plant model.
 func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
 
     // --- 1. Reconstruct Water Task ---
-    // ✅ FIX: Use .waterMillis directly (It is already a number)
     let waterMillis = backend.waterMillis
     let waterEnabled = backend.wateringNotificationID != nil
 
@@ -111,12 +118,10 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
 
     if waterMillis > 0 {
         if waterMillis < oneDayMillis {
-            // It's in "Times Per Day" mode
             waterTask.waterMode = .timesPerDay
             let times = oneDayMillis / waterMillis
             waterTask.timesPerDay = Int(times)
         } else {
-            // It's in "Every X Days" mode
             waterTask.waterMode = .everyXDays
             let days = waterMillis / oneDayMillis
             waterTask.frequencyDays = Int(days)
@@ -124,27 +129,34 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
     }
 
     // --- 2. Reconstruct Fertilize Task ---
-    // ✅ FIX: Use .fertMillis directly
     let fertMillis = backend.fertMillis
     let fertEnabled = backend.fertilizerNotificationID != nil
     let fertDays = Int(fertMillis / oneDayMillis)
-
     let fertTask = PlantTask(title: "fertilize", reminderEnabled: fertEnabled, frequencyDays: fertDays, timesPerDay: 0, waterMode: .everyXDays)
 
     // --- 3. Reconstruct Trimming Task ---
-    // ✅ FIX: Use .trimMillis directly
     let trimMillis = backend.trimMillis
     let trimEnabled = backend.trimmingNotificationID != nil
     let trimDays = Int(trimMillis / oneDayMillis)
-
     let trimTask = PlantTask(title: "trimming", reminderEnabled: trimEnabled, frequencyDays: trimDays, timesPerDay: 0, waterMode: .everyXDays)
 
+    // --- 4. Convert Kotlin ByteArray to Swift Data ---
+    var imageData: Data?
+    if let plantImage = backend.image,
+       let kotlinBytes = plantImage.imageBytes {
+        let count = Int(kotlinBytes.size)
+        var bytes = [UInt8](repeating: 0, count: count)
+        for i in 0..<count {
+            bytes[i] = UInt8(bitPattern: kotlinBytes.get(index: Int32(i)))
+        }
+        imageData = Data(bytes)
+    }
+
     return Plant(
-        // ✅ FIX: Use .description to get the string from Kotlin, then UUID(uuidString:)
         id: UUID(uuidString: backend.uuid.description) ?? UUID(),
         name: backend.name,
         species: backend.species,
-        imageData: nil,
+        imageData: imageData,
         notes: "",
         tasks: [waterTask, fertTask, trimTask]
     )
