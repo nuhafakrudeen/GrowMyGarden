@@ -60,7 +60,6 @@ data class PlantInfo(
     @SerialName("scientific_name")
     val scientificName: List<String>? = null,
 
-
     @SerialName("family")
     val family: String? = null,
 
