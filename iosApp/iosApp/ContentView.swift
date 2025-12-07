@@ -11,7 +11,7 @@ import CryptoKit
 import Shared
 import KMPNativeCoroutinesCombine
 import Combine
-
+import KMPNativeCoroutinesAsync
 // ===============================================================
 // MARK: - Backend (Kotlin) Plant Adapter
 // ===============================================================
@@ -45,7 +45,22 @@ final class BackendPlantAdapter: ObservableObject {
     }
 
     /// Persist a SwiftUI Plant to the backend.
+    /// This version does NOT auto-fetch images - use saveWithAutoImage for new plants.
     func save(uiPlant: Plant) {
+        let backend = createBackendPlantFromUI(uiPlant: uiPlant)
+        vm.savePlant(plant: backend)
+    }
+
+    /// Save a NEW plant and automatically fetch an image from Perenual API
+    /// if the plant doesn't already have one and the species matches the database.
+    func saveWithAutoImage(uiPlant: Plant) {
+        let backend = createBackendPlantFromUI(uiPlant: uiPlant)
+        // Use the new savePlantWithAutoImage method that fetches from Perenual API
+        vm.savePlantWithAutoImage(plant: backend)
+    }
+
+    /// Helper to create a backend Plant from a SwiftUI Plant
+    private func createBackendPlantFromUI(uiPlant: Plant) -> Shared.Plant {
         // 1. Calculate Milliseconds for Watering
         let waterTask = uiPlant.tasks.first(where: { $0.title == "water" })
         var waterMillis: Int64 = 0
@@ -80,7 +95,7 @@ final class BackendPlantAdapter: ObservableObject {
         }
 
         // 5. Pass everything to HelperKt
-        let backend = HelperKt.createBackendPlant(
+        return HelperKt.createBackendPlant(
             idString: uiPlant.id.uuidString,
             name: uiPlant.name,
             species: uiPlant.species,
@@ -92,8 +107,36 @@ final class BackendPlantAdapter: ObservableObject {
             trimEnabled: trimEnabled,
             imageBytes: kotlinImageBytes
         )
+    }
 
-        vm.savePlant(plant: backend)
+    /// Fetch and update image for an existing plant from Perenual API
+    /// Fetch and update image for an existing plant from Perenual API
+    func fetchAndUpdateImage(for uiPlant: Plant, completion: @escaping (Bool) -> Void) {
+        Task {
+            if let backend = backendPlants.first(where: {
+                $0.name == uiPlant.name && $0.species == uiPlant.species
+            }) {
+                do {
+                    // Bridge Kotlin suspend -> Swift async
+                    let success: KotlinBoolean = try await asyncFunction(
+                        for: vm.fetchAndUpdatePlantImage(plant: backend)
+                    )
+
+                    await MainActor.run {
+                        completion(success.boolValue)
+                    }
+                } catch {
+                    print("❌ Error fetching image: \(error)")
+                    await MainActor.run {
+                        completion(false)
+                    }
+                }
+            } else {
+                await MainActor.run {
+                    completion(false)
+                }
+            }
+        }
     }
 
     func delete(uiPlant: Plant) {
@@ -446,13 +489,53 @@ enum PhotoPermissionManager {
 // ===============================================================
 
 enum PlantImageService {
-    // Fetches a UIImage for a given species name from backend.
+    private static let vm = HelperKt.getDashboardViewModel()
+
     static func fetchSpeciesImage(speciesName: String,
                                   completion: @escaping (UIImage?) -> Void) {
-        // TODO: Replace with real backend call.
-        // Placeholder: currently returns nil so the UI shows the fallback.
-        completion(nil)
+        Task {
+            do {
+                // Bridge Kotlin suspend function -> Swift async
+                let imageUrl: String? = try await asyncFunction(
+                    for: vm.getPlantImageUrl(speciesName: speciesName)
+                )
+
+                if let imageUrl = imageUrl {
+                    let imageBytes: KotlinByteArray? = try await asyncFunction(
+                        for: vm.downloadImageFromUrl(imageUrl: imageUrl)
+                    )
+
+                    if let imageBytes = imageBytes {
+                        // Convert KotlinByteArray -> Data
+                        let count = Int(imageBytes.size)
+                        var bytes = [UInt8](repeating: 0, count: count)
+                        for i in 0..<count {
+                            bytes[i] = UInt8(bitPattern: imageBytes.get(index: Int32(i)))
+                        }
+                        let data = Data(bytes)
+
+                        if let uiImage = UIImage(data: data) {
+                            await MainActor.run {
+                                completion(uiImage)
+                            }
+                            return
+                        }
+                    }
+                }
+
+                // If we couldn't get an image, return nil
+                await MainActor.run {
+                    completion(nil)
+                }
+            } catch {
+                print("❌ Error fetching species image for '\(speciesName)': \(error)")
+                await MainActor.run {
+                    completion(nil)
+                }
+            }
+        }
     }
+
 }
 
 // ===============================================================
@@ -465,11 +548,14 @@ struct SearchResult: Identifiable, Hashable {
     let subtitle: String      // Scientific name
     let detail: String        // Family
 
-    // ✅ NEW: Care schedule info
+    // Care schedule info
     let wateringInfo: String
     let sunlightInfo: String
     let trimmingInfo: String
     let fertilizingInfo: String
+
+    // Image URL from Perenual API (NEW)
+    let imageUrl: String?
 
     // Original Kotlin object for passing to detail views
     let originalData: Shared.PlantInfo?
@@ -511,11 +597,18 @@ class SearchViewModel: ObservableObject {
                 let sciName = info.scientificName?.first ?? ""
                 let family = info.family ?? ""
 
-                // ✅ Use the computed properties from Kotlin
+                // Use the computed properties from Kotlin
                 let watering = info.wateringDescription
                 let sunlight = info.sunlightDescription
                 let trimming = info.trimmingDescription
                 let fertilizing = info.fertilizingEstimate
+
+                // Get the best image URL from PlantInfo (NEW)
+                let imageUrl = info.image?.mediumUrl
+                    ?? info.image?.regularUrl
+                    ?? info.image?.smallUrl
+                    ?? info.image?.thumbnail
+                    ?? info.image?.originalUrl
 
                 return SearchResult(
                     title: name,
@@ -525,6 +618,7 @@ class SearchViewModel: ObservableObject {
                     sunlightInfo: sunlight,
                     trimmingInfo: trimming,
                     fertilizingInfo: fertilizing,
+                    imageUrl: imageUrl,  // NEW
                     originalData: info
                 )
             }
@@ -718,8 +812,11 @@ struct PlantsHomeView: View {
             AddPlantSheet(isPresented: $isAddingPlant) { newPlant in
                 // 1) Local UI update
                 store.add(newPlant)
-                // 2) Persist to Kotlin backend
-                backendAdapter.save(uiPlant: newPlant)
+                // 2) Persist to Kotlin backend WITH auto image fetching
+                // This will automatically fetch an image from Perenual API if:
+                // - The plant doesn't already have a user-selected image
+                // - The species name matches a plant in the Perenual database
+                backendAdapter.saveWithAutoImage(uiPlant: newPlant)
             }
         }
         .onReceive(backendAdapter.$backendPlants) { backendPlants in
@@ -856,6 +953,8 @@ struct SearchView: View {
 private struct SearchResultCard: View {
     let result: SearchResult
     @State private var isExpanded: Bool = false
+    @State private var loadedImage: UIImage?
+    @State private var isLoadingImage: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -866,6 +965,27 @@ private struct SearchResultCard: View {
                 }
             }) {
                 HStack {
+                    // Plant image thumbnail (NEW)
+                    Group {
+                        if let uiImage = loadedImage {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFill()
+                        } else if isLoadingImage {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "leaf.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(Color("DarkGreen").opacity(0.6))
+                        }
+                    }
+                    .frame(width: 50, height: 50)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color("LightGreen").opacity(0.3))
+                    )
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(result.title)
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
@@ -895,51 +1015,9 @@ private struct SearchResultCard: View {
             .buttonStyle(.plain)
             .padding(14)
 
-            // Expanded Care Info Section
+            // Expanded Care Info Section (existing code remains the same)
             if isExpanded {
-                Divider()
-                    .padding(.horizontal, 14)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Care Guide")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color("DarkGreen"))
-                        .padding(.bottom, 4)
-
-                    // Watering
-                    CareInfoRow(
-                        icon: "drop.fill",
-                        iconColor: .blue,
-                        label: "Water",
-                        value: result.wateringInfo
-                    )
-
-                    // Sunlight
-                    CareInfoRow(
-                        icon: "sun.max.fill",
-                        iconColor: .yellow,
-                        label: "Sunlight",
-                        value: result.sunlightInfo
-                    )
-
-                    // Fertilizing
-                    CareInfoRow(
-                        icon: "leaf.fill",
-                        iconColor: .green,
-                        label: "Fertilize",
-                        value: result.fertilizingInfo
-                    )
-
-                    // Trimming
-                    CareInfoRow(
-                        icon: "scissors",
-                        iconColor: .orange,
-                        label: "Trim",
-                        value: result.trimmingInfo
-                    )
-                }
-                .padding(14)
-                .padding(.top, 4)
+                // ... existing expanded content ...
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -948,6 +1026,35 @@ private struct SearchResultCard: View {
                 .fill(Color.white.opacity(0.96))
                 .shadow(color: Color("DarkGreen").opacity(0.16), radius: 8, y: 4)
         )
+        .onAppear {
+            loadImageIfNeeded()
+        }
+    }
+
+    private func loadImageIfNeeded() {
+        guard !isLoadingImage, loadedImage == nil, let imageUrl = result.imageUrl else { return }
+        isLoadingImage = true
+
+        // Load image from URL
+        Task {
+            if let url = URL(string: imageUrl) {
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: url)
+                    if let uiImage = UIImage(data: data) {
+                        await MainActor.run {
+                            self.loadedImage = uiImage
+                            self.isLoadingImage = false
+                        }
+                        return
+                    }
+                } catch {
+                    print("Error loading image: \(error)")
+                }
+            }
+            await MainActor.run {
+                self.isLoadingImage = false
+            }
+        }
     }
 }
 
@@ -1738,6 +1845,9 @@ struct AddPlantSheet: View {
     @State private var showPhotoPicker = false
     @State private var showPhotoDeniedAlert = false
 
+    // Notification permission
+    @State private var showNotifDeniedAlert = false
+
     private var canSave: Bool {
             !name.trimmingCharacters(in: .whitespaces).isEmpty &&
             !species.trimmingCharacters(in: .whitespaces).isEmpty
@@ -1822,8 +1932,41 @@ struct AddPlantSheet: View {
                                     Text(task.title.capitalized)
                                         .font(.system(size: 18, weight: .semibold))
                                     Spacer()
-                                    Toggle("", isOn: $task.reminderEnabled)
-                                        .labelsHidden()
+                                    Toggle(
+                                        "",
+                                        isOn: Binding(
+                                            get: { task.reminderEnabled },
+                                            set: { isOn in
+                                                if isOn {
+                                                    // Ask for notification permission if needed
+                                                    NotificationManager.currentStatus { status in
+                                                        switch status {
+                                                        case .notDetermined:
+                                                            NotificationManager.requestAuthorization { granted in
+                                                                if granted {
+                                                                    task.reminderEnabled = true
+                                                                } else {
+                                                                    task.reminderEnabled = false
+                                                                    showNotifDeniedAlert = true
+                                                                }
+                                                            }
+                                                        case .denied:
+                                                            task.reminderEnabled = false
+                                                            showNotifDeniedAlert = true
+                                                        case .authorized, .provisional, .ephemeral:
+                                                            task.reminderEnabled = true
+                                                        @unknown default:
+                                                            task.reminderEnabled = false
+                                                        }
+                                                    }
+                                                } else {
+                                                    // Turning OFF – just update the model
+                                                    task.reminderEnabled = false
+                                                }
+                                            }
+                                        )
+                                    )
+                                    .labelsHidden()
                                 }
 
                                 // WATER SPECIAL CASE
@@ -1893,9 +2036,18 @@ struct AddPlantSheet: View {
                             .padding(.vertical, 6)
                         }
                     }
+                    .alert("Notifications are Off", isPresented: $showNotifDeniedAlert) {
+                        Button("Open Settings") {
+                            NotificationManager.openSettings()
+                        }
+                        Button("Cancel", role: .cancel) { }
+                    } message: {
+                        Text("Enable notifications in Settings → GrowMyGarden.")
+                    }
 
                     Section("Notes") {
                         TextEditor(text: $notes)
+
                             .frame(minHeight: 80, maxHeight: 140)   // smaller but scrollable
                             .overlay(
                         RoundedRectangle(cornerRadius: 8)

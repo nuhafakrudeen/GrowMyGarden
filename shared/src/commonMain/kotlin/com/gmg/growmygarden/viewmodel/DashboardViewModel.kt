@@ -2,6 +2,7 @@ package com.gmg.growmygarden.viewmodel
 
 import com.gmg.growmygarden.NotificationHandler
 import com.gmg.growmygarden.auth.UserManager
+import com.gmg.growmygarden.data.image.PlantImage
 import com.gmg.growmygarden.data.source.Plant
 import com.gmg.growmygarden.data.source.PlantImageStore
 import com.gmg.growmygarden.data.source.PlantInfo
@@ -55,6 +56,132 @@ class DashboardViewModel(
 
     fun savePlant(plant: Plant) {
         plantRepository.savePlant(plant)
+    }
+
+    /**
+     * Save a plant and automatically fetch an image from Perenual API if:
+     * 1. The plant doesn't already have an image
+     * 2. The species name matches a plant in the Perenual database
+     *
+     * This is called when creating a new plant to auto-populate the image.
+     */
+    fun savePlantWithAutoImage(plant: Plant) {
+        viewModelScope.launch {
+            // If plant already has an image, just save it normally
+            if (plant.image != null && plant.image?.imageBytes != null) {
+                plantRepository.savePlant(plant)
+                return@launch
+            }
+
+            // Try to fetch image from Perenual API based on species
+            val speciesQuery = plant.species.ifBlank { plant.name }
+            if (speciesQuery.isBlank()) {
+                plantRepository.savePlant(plant)
+                return@launch
+            }
+
+            try {
+                val (plantInfo, imageBytes) = perenualAPI.searchPlantAndGetImage(speciesQuery)
+
+                if (imageBytes != null && imageBytes.isNotEmpty()) {
+                    // Create a PlantImage with the downloaded bytes
+                    val plantImage = PlantImage(imageBytes = imageBytes)
+                    plant.image = plantImage
+
+                    // Also save to image store for file-based access
+                    imageStore.saveImage(imageBytes)
+
+                    println("✅ Auto-fetched image for '${plant.species}' from Perenual API")
+                }
+
+                // Update scientific name if we found a match and plant doesn't have one
+                if (plantInfo != null && plant.scientificName.isBlank()) {
+                    val sciName = plantInfo.scientificName?.firstOrNull() ?: ""
+                    if (sciName.isNotBlank()) {
+                        // Create a new plant with the scientific name
+                        val updatedPlant = plant.copy(scientificName = sciName)
+                        plantRepository.savePlant(updatedPlant)
+                        return@launch
+                    }
+                }
+
+                plantRepository.savePlant(plant)
+            } catch (e: Exception) {
+                println("⚠️ Failed to auto-fetch image for '${plant.species}': ${e.message}")
+                // Still save the plant even if image fetch fails
+                plantRepository.savePlant(plant)
+            }
+        }
+    }
+
+    /**
+     * Try to fetch and update an existing plant's image from Perenual API.
+     * Useful for retroactively adding images to plants that were created without them.
+     */
+    @NativeCoroutines
+    suspend fun fetchAndUpdatePlantImage(plant: Plant): Boolean {
+        val speciesQuery = plant.species.ifBlank { plant.name }
+        if (speciesQuery.isBlank()) return false
+
+        return try {
+            val (_, imageBytes) = perenualAPI.searchPlantAndGetImage(speciesQuery)
+
+            if (imageBytes != null && imageBytes.isNotEmpty()) {
+                val plantImage = PlantImage(imageBytes = imageBytes)
+                plant.image = plantImage
+                plantRepository.savePlant(plant)
+                println("✅ Updated image for '${plant.species}' from Perenual API")
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            println("⚠️ Failed to fetch image for '${plant.species}': ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Get PlantInfo from Perenual API by species name.
+     * This can be used to show additional plant details or to verify species.
+     */
+    @NativeCoroutines
+    suspend fun getPlantInfoBySpecies(speciesName: String): PlantInfo? {
+        return try {
+            perenualAPI.searchPlantBySpecies(speciesName)
+        } catch (e: Exception) {
+            println("Error fetching plant info for '$speciesName': ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Get image URL for a species from Perenual API.
+     * Returns the best available image URL or null if not found.
+     */
+    @NativeCoroutines
+    suspend fun getPlantImageUrl(speciesName: String): String? {
+        return try {
+            val plantInfo = perenualAPI.searchPlantBySpecies(speciesName)
+            plantInfo?.let { perenualAPI.getBestImageUrl(it) }
+        } catch (e: Exception) {
+            println("Error fetching image URL for '$speciesName': ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Download image bytes from a URL.
+     * Returns null if the download fails.
+     */
+    @NativeCoroutines
+    suspend fun downloadImageFromUrl(imageUrl: String): ByteArray? {
+        return try {
+            perenualAPI.downloadImageFromUrl(imageUrl)
+        } catch (e: Exception) {
+            println("Error downloading image from '$imageUrl': ${e.message}")
+            null
+        }
     }
 
     fun deletePlant(plant: Plant) {
@@ -140,6 +267,7 @@ class DashboardViewModel(
     suspend fun getPlantImage(plant: Plant): ByteArray? {
         return plant.image?.imageBytes
     }
+
     init {
         viewModelScope.launch {
             fillPlantInfoDatabase()

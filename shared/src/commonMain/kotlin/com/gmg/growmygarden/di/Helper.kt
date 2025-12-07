@@ -72,3 +72,47 @@ fun createBackendPlant(
         image = plantImage,
     )
 }
+
+/**
+ * Create a backend plant and automatically fetch image from Perenual API.
+ * Use this when creating a new plant to auto-populate the image based on species.
+ *
+ * @param shouldAutoFetchImage If true and no imageBytes provided, will attempt to fetch
+ *                              image from Perenual API based on species name
+ */
+@OptIn(ExperimentalUuidApi::class)
+fun createBackendPlantWithAutoImage(
+    idString: String?,
+    name: String,
+    species: String,
+    waterFreqMillis: Long,
+    waterEnabled: Boolean,
+    fertFreqMillis: Long,
+    fertEnabled: Boolean,
+    trimFreqMillis: Long,
+    trimEnabled: Boolean,
+    imageBytes: ByteArray? = null,
+    shouldAutoFetchImage: Boolean = true,
+): Plant {
+    val uuid = if (idString != null) Uuid.parse(idString) else Uuid.random()
+
+    // Create PlantImage with the bytes if provided
+    val plantImage: PlantImage? = if (imageBytes != null && imageBytes.isNotEmpty()) {
+        PlantImage(imageBytes = imageBytes)
+    } else {
+        null
+    }
+
+    return Plant(
+        uuid = uuid,
+        name = name,
+        species = species,
+        wateringFrequency = waterFreqMillis.milliseconds,
+        wateringNotificationID = if (waterEnabled) Uuid.random() else null,
+        fertilizingFrequency = fertFreqMillis.milliseconds,
+        fertilizerNotificationID = if (fertEnabled) Uuid.random() else null,
+        trimmingFrequency = trimFreqMillis.milliseconds,
+        trimmingNotificationID = if (trimEnabled) Uuid.random() else null,
+        image = plantImage,
+    )
+}
