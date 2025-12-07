@@ -8,6 +8,8 @@ data class PlantImageInfo(
     @SerialName("image_id")
     val imageId: Int? = null,
     val license: Int? = null,
+    @SerialName("license_name")
+    val licenseName: String? = null,
     @SerialName("license_url")
     val licenseUrl: String? = null,
     @SerialName("original_url")
@@ -21,18 +23,5 @@ data class PlantImageInfo(
     val thumbnail: String? = null,
 )
 
-@Serializable
-data class WaterInfo(
-    @SerialName("watering")
-    val waterFrequency: String? = null,
-    @SerialName("watering_general_benchmark")
-    val waterBenchmark: WaterBenchmark? = null,
-)
-
-@Serializable
-data class WaterBenchmark(
-    @SerialName("value")
-    val timesToWater: String? = null,
-    @SerialName("unit")
-    val timeframe: String? = null,
-)
+// Note: WateringBenchmark and PruningCount require premium API access
+// Keeping simple models for free tier

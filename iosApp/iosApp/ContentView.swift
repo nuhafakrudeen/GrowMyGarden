@@ -462,9 +462,16 @@ enum PlantImageService {
 struct SearchResult: Identifiable, Hashable {
     let id = UUID()
     let title: String
-    let subtitle: String
-    let detail: String
-    // We can hold the full Kotlin object if we need to pass it to a detail view later
+    let subtitle: String      // Scientific name
+    let detail: String        // Family
+
+    // ✅ NEW: Care schedule info
+    let wateringInfo: String
+    let sunlightInfo: String
+    let trimmingInfo: String
+    let fertilizingInfo: String
+
+    // Original Kotlin object for passing to detail views
     let originalData: Shared.PlantInfo?
 }
 
@@ -475,7 +482,6 @@ class SearchViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
-    // Get the Kotlin repository via the Helper function we just added
     private let repository: PlantInfoRepository = HelperKt.getPlantInfoRepository()
 
     func performSearch(query: String) async {
@@ -489,44 +495,42 @@ class SearchViewModel: ObservableObject {
         self.errorMessage = nil
 
         do {
-            // 3. Call the Kotlin suspend function directly
-            // Swift automatically bridges Kotlin suspend functions to 'async throws'
+            // Call the Kotlin suspend function
             let result = try await repository.searchRemotePlants(query: trimmed)
+            let kotlinResults = result as? [Shared.PlantInfo] ?? []
 
-                        // 2. Cast [Any] -> [PlantInfo]
-                        let kotlinResults = result as? [Shared.PlantInfo] ?? []
-
-                        // Debug print to confirm it works
-                        print("🌿 API Results: \(kotlinResults.count) plants found.")
+            print("🌿 API Results: \(kotlinResults.count) plants found.")
+            
             if let first = kotlinResults.first {
-                        print("🔍 API DEBUG: ID=\(first.id), Name=\(first.name ?? "nil")")
-                    } else {
-                        print("🔍 API DEBUG: No results returned.")
-                    }
-
-            for plant in kotlinResults {
-                print("🌿 RECEIVED PLANT: ID=\(plant.id), Name=\(plant.name ?? "nil")")
+                print("🔍 First result: \(first.name ?? "nil"), watering=\(first.wateringDescription)")
             }
 
-            // 4. Map Kotlin 'PlantInfo' to Swift 'SearchResult'
+            // Map Kotlin PlantInfo to Swift SearchResult
             self.results = kotlinResults.map { info in
                 let name = info.name ?? "Unknown Plant"
-
-                // scientificName is a List<String>? in Kotlin
                 let sciName = info.scientificName?.first ?? ""
-
                 let family = info.family ?? ""
+                
+                // ✅ Use the computed properties from Kotlin
+                let watering = info.wateringDescription
+                let sunlight = info.sunlightDescription
+                let trimming = info.trimmingDescription
+                let fertilizing = info.fertilizingEstimate
 
                 return SearchResult(
                     title: name,
                     subtitle: sciName,
                     detail: family,
+                    wateringInfo: watering,
+                    sunlightInfo: sunlight,
+                    trimmingInfo: trimming,
+                    fertilizingInfo: fertilizing,
                     originalData: info
                 )
             }
         } catch {
             print("❌ Search Error: \(error)")
-            self.errorMessage = "Failed to search local database."
+            self.errorMessage = "Failed to search database."
             self.results = []
         }
 
@@ -655,7 +659,7 @@ struct PlantsHomeView: View {
                     }
 
                     if store.plants.isEmpty {
-                        // EMPTY STATE
+
                         VStack(spacing: 18) {
                             Image(systemName: "leaf.circle")
                                 .font(.system(size: 60, weight: .regular))
@@ -679,7 +683,7 @@ struct PlantsHomeView: View {
                                 ForEach($store.plants) { $plant in
                                     PlantCard(
                                         plant: $plant,
-                                        // ✅ PASS THE SAVE FUNCTION DOWN
+
                                         onSave: { updatedPlant in
                                             backendAdapter.save(uiPlant: updatedPlant)
                                         },
@@ -719,9 +723,6 @@ struct PlantsHomeView: View {
             }
         }
         .onReceive(backendAdapter.$backendPlants) { backendPlants in
-            // FIX: Merge logic to preserve local data (Tasks, Notes, Photos)
-            // If we just overwrite with backend data, we lose the task settings
-            // because the backend doesn't store tasks/photos yet.
 
             var existingMap = [String: Plant]()
             // Map existing plants by "Name|Species" key
@@ -854,27 +855,93 @@ struct SearchView: View {
 // A simple “info flows nicely” card for each search result
 private struct SearchResultCard: View {
     let result: SearchResult
+    @State private var isExpanded: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(result.title)
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundColor(Color("DarkGreen"))
+        VStack(alignment: .leading, spacing: 0) {
+            // Header - Always visible (tap to expand)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    isExpanded.toggle()
+                }
+            }) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(result.title)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color("DarkGreen"))
 
-            if !result.subtitle.isEmpty {
-                Text(result.subtitle)
-                    .font(.footnote)
-                    .foregroundColor(Color("DarkGreen").opacity(0.75))
+                        if !result.subtitle.isEmpty {
+                            Text(result.subtitle)
+                                .font(.footnote)
+                                .italic()
+                                .foregroundColor(Color("DarkGreen").opacity(0.7))
+                        }
+
+                        if !result.detail.isEmpty {
+                            Text("Family: \(result.detail)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
+                        .font(.system(size: 20))
+                        .foregroundColor(Color("DarkGreen").opacity(0.6))
+                }
             }
-
-            if !result.detail.isEmpty {
-                Text(result.detail)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            .buttonStyle(.plain)
+            .padding(14)
+            
+            // Expanded Care Info Section
+            if isExpanded {
+                Divider()
+                    .padding(.horizontal, 14)
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Care Guide")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color("DarkGreen"))
+                        .padding(.bottom, 4)
+                    
+                    // Watering
+                    CareInfoRow(
+                        icon: "drop.fill",
+                        iconColor: .blue,
+                        label: "Water",
+                        value: result.wateringInfo
+                    )
+                    
+                    // Sunlight
+                    CareInfoRow(
+                        icon: "sun.max.fill",
+                        iconColor: .yellow,
+                        label: "Sunlight",
+                        value: result.sunlightInfo
+                    )
+                    
+                    // Fertilizing
+                    CareInfoRow(
+                        icon: "leaf.fill",
+                        iconColor: .green,
+                        label: "Fertilize",
+                        value: result.fertilizingInfo
+                    )
+                    
+                    // Trimming
+                    CareInfoRow(
+                        icon: "scissors",
+                        iconColor: .orange,
+                        label: "Trim",
+                        value: result.trimmingInfo
+                    )
+                }
+                .padding(14)
+                .padding(.top, 4)
             }
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -884,6 +951,32 @@ private struct SearchResultCard: View {
     }
 }
 
+private struct CareInfoRow: View {
+    let icon: String
+    let iconColor: Color
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(iconColor)
+                .frame(width: 20)
+
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(Color("DarkGreen").opacity(0.85))
+                .frame(width: 65, alignment: .leading)
+
+            Text(value)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
 // ===============================================================
 // MARK: - PROFILE VIEW
 // ===============================================================

@@ -1,7 +1,7 @@
 package com.gmg.growmygarden.data.source
 
 import com.gmg.growmygarden.data.db.DatabaseProvider
-import com.gmg.growmygarden.network.PerenualApi // Ensure this import matches your package
+import com.gmg.growmygarden.network.PerenualApi
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotbase.DataSource
 import kotbase.Expression
@@ -39,28 +39,89 @@ import kotlin.Int
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
-// 1. Apply the custom serializer to 'sunExposure'
+/**
+ * PlantInfo - works with FREE Perenual API tier.
+ *
+ * The free /species-list endpoint returns:
+ * - "watering": "Frequent" | "Average" | "Minimum" (simple string)
+ * - "sunlight": ["Full sun", "Part shade"]
+ * - NO watering_general_benchmark (that's premium only)
+ */
 @Serializable
 @JsonIgnoreUnknownKeys
 data class PlantInfo(
     val docId: Uuid = Uuid.random(),
     val id: Int = 0,
+
     @SerialName("common_name")
     val name: String? = null,
+
     @SerialName("scientific_name")
     val scientificName: List<String>? = null,
+
     @SerialName("family")
     val family: String? = null,
-    @SerialName("water")
-    val waterInfo: WaterInfo? = null,
 
-    @Serializable(with = StringOrListSerializer::class) // 👈 THIS FIXES THE CRASH
+    // "watering" is a simple string: "Frequent", "Average", "Minimum", etc.
+    @SerialName("watering")
+    val watering: String? = null,
+
+    @Serializable(with = StringOrListSerializer::class)
     @SerialName("sunlight")
     val sunExposure: List<String>? = null,
 
     @SerialName("default_image")
     var image: PlantImageInfo? = null,
-)
+) {
+    // ================================================================
+    // COMPUTED PROPERTIES - Friendly descriptions for the UI
+    // ================================================================
+
+    /**
+     * Returns watering description with helpful context.
+     */
+    val wateringDescription: String
+        get() = when (watering?.lowercase()) {
+            "frequent" -> "Frequent (every 2-3 days)"
+            "average" -> "Average (weekly)"
+            "minimum" -> "Minimum (every 2-3 weeks)"
+            "none" -> "Rarely (drought tolerant)"
+            else -> watering?.replaceFirstChar { it.uppercase() } ?: "Unknown"
+        }
+
+    /**
+     * Returns formatted sunlight description.
+     */
+    val sunlightDescription: String
+        get() = sunExposure?.joinToString(", ") {
+            it.replace("_", " ")
+                .replace("-", " ")
+                .split(" ")
+                .joinToString(" ") { word -> word.replaceFirstChar { c -> c.uppercase() } }
+        } ?: "Unknown"
+
+    /**
+     * Estimated trimming schedule based on growth rate (inferred from watering needs).
+     */
+    val trimmingDescription: String
+        get() = when (watering?.lowercase()) {
+            "frequent" -> "Every 2-4 weeks (fast grower)"
+            "average" -> "Monthly, as needed"
+            "minimum", "none" -> "Every 2-3 months"
+            else -> "As needed"
+        }
+
+    /**
+     * Estimated fertilizing schedule based on growth rate.
+     */
+    val fertilizingEstimate: String
+        get() = when (watering?.lowercase()) {
+            "frequent" -> "Every 2-4 weeks (growing season)"
+            "average" -> "Every 4-6 weeks (growing season)"
+            "minimum", "none" -> "Every 6-8 weeks (growing season)"
+            else -> "Monthly during growing season"
+        }
+}
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 open class PlantInfoRepository(
@@ -77,7 +138,7 @@ open class PlantInfoRepository(
         get() {
             val query = select(all()) from collection orderBy { "id".descending() }
             return query.asObjectsFlow { json: String ->
-                Json.decodeFromString<PlantInfo>(json)
+                Json { ignoreUnknownKeys = true }.decodeFromString<PlantInfo>(json)
             }
         }
 
@@ -95,7 +156,10 @@ open class PlantInfoRepository(
         }
     }
 
-    // 2. Network Search Function (Clean version)
+    /**
+     * Search for plants using the FREE Perenual API tier.
+     * Returns results from /species-list endpoint.
+     */
     suspend fun searchRemotePlants(query: String): List<PlantInfo> {
         return try {
             api.searchPerenualAPI(query)
@@ -112,7 +176,7 @@ open class PlantInfoRepository(
             name = plantInfoDoc.name,
             scientificName = plantInfoDoc.scientificName?.split(", ") ?: emptyList(),
             family = plantInfoDoc.family,
-            waterInfo = plantInfoDoc.waterInfo,
+            watering = plantInfoDoc.watering,
             sunExposure = plantInfoDoc.sunExposure,
             image = plantInfoDoc.image,
         )
@@ -132,7 +196,8 @@ open class PlantInfoRepository(
                     id = plantInfo.id,
                     name = plantInfo.name,
                     scientificName = plantInfo.scientificName?.joinToString(", "),
-                    waterInfo = plantInfo.waterInfo,
+                    family = plantInfo.family,
+                    watering = plantInfo.watering,
                     sunExposure = plantInfo.sunExposure,
                     image = plantInfo.image,
                 )
@@ -183,11 +248,10 @@ open class PlantInfoRepository(
     }
 }
 
-// 3. The Custom Serializer Helper
+// Custom Serializer for sunlight field (can be List<String> or single String)
 object StringOrListSerializer : JsonTransformingSerializer<List<String>>(ListSerializer(String.serializer())) {
     override fun transformDeserialize(element: JsonElement): JsonElement {
         return if (element !is JsonArray) {
-            // If the API sends a String (the upgrade ad), wrap it in a list so parsing succeeds
             JsonArray(listOf(element))
         } else {
             element

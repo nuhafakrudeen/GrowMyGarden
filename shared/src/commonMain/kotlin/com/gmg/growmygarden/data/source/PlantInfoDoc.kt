@@ -10,22 +10,29 @@ import kotlin.uuid.Uuid
 data class PlantInfoDoc(
     val docId: Uuid = Uuid.random(),
     val id: Int = 0,
+
     @SerialName("common_name")
     val name: String? = "",
+
     @SerialName("scientific_name")
     val scientificName: String? = "",
+
     @SerialName("family")
     val family: String? = "",
-    @SerialName("water")
-    val waterInfo: WaterInfo? = null,
+
+    // Simple watering string: "Frequent", "Average", "Minimum"
+    @SerialName("watering")
+    val watering: String? = null,
+
     @SerialName("sunlight")
     val sunExposure: List<String>? = null,
+
     @SerialName("default_image")
     var image: PlantImageInfo? = null,
 )
 
 fun decodePlantInfoDocument(doc: Document?): PlantInfoDoc? {
     return doc?.toJSON()?.let { json ->
-        Json.decodeFromString<PlantInfoDoc>(json)
+        Json { ignoreUnknownKeys = true }.decodeFromString<PlantInfoDoc>(json)
     }
 }
