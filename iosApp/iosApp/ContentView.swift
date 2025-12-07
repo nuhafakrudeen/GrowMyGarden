@@ -500,7 +500,7 @@ class SearchViewModel: ObservableObject {
             let kotlinResults = result as? [Shared.PlantInfo] ?? []
 
             print("🌿 API Results: \(kotlinResults.count) plants found.")
-            
+
             if let first = kotlinResults.first {
                 print("🔍 First result: \(first.name ?? "nil"), watering=\(first.wateringDescription)")
             }
@@ -510,7 +510,7 @@ class SearchViewModel: ObservableObject {
                 let name = info.name ?? "Unknown Plant"
                 let sciName = info.scientificName?.first ?? ""
                 let family = info.family ?? ""
-                
+
                 // ✅ Use the computed properties from Kotlin
                 let watering = info.wateringDescription
                 let sunlight = info.sunlightDescription
@@ -884,9 +884,9 @@ private struct SearchResultCard: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
                         .font(.system(size: 20))
                         .foregroundColor(Color("DarkGreen").opacity(0.6))
@@ -894,18 +894,18 @@ private struct SearchResultCard: View {
             }
             .buttonStyle(.plain)
             .padding(14)
-            
+
             // Expanded Care Info Section
             if isExpanded {
                 Divider()
                     .padding(.horizontal, 14)
-                
+
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Care Guide")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(Color("DarkGreen"))
                         .padding(.bottom, 4)
-                    
+
                     // Watering
                     CareInfoRow(
                         icon: "drop.fill",
@@ -913,7 +913,7 @@ private struct SearchResultCard: View {
                         label: "Water",
                         value: result.wateringInfo
                     )
-                    
+
                     // Sunlight
                     CareInfoRow(
                         icon: "sun.max.fill",
@@ -921,7 +921,7 @@ private struct SearchResultCard: View {
                         label: "Sunlight",
                         value: result.sunlightInfo
                     )
-                    
+
                     // Fertilizing
                     CareInfoRow(
                         icon: "leaf.fill",
@@ -929,7 +929,7 @@ private struct SearchResultCard: View {
                         label: "Fertilize",
                         value: result.fertilizingInfo
                     )
-                    
+
                     // Trimming
                     CareInfoRow(
                         icon: "scissors",
