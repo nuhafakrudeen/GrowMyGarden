@@ -17,9 +17,9 @@ class PlantImage(
     val imageBytes: ByteArray? = null,
 ) {
     val hqPath: String
-        get() = "/img/$uuid.png"
+        get() = "img_$(uuid).png"
     val lqPath: String
-        get() = "/img/${uuid}_lq.png"
+        get() = "img_$(uuid)}_lq.png"
 }
 
 @OptIn(ExperimentalEncodingApi::class, ExperimentalUuidApi::class)

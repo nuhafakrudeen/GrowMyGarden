@@ -56,6 +56,7 @@ data class PlantInfo(
     @SerialName("common_name")
     val name: String? = null,
 
+    @Serializable(with = StringOrListSerializer::class)
     @SerialName("scientific_name")
     val scientificName: List<String>? = null,
 
