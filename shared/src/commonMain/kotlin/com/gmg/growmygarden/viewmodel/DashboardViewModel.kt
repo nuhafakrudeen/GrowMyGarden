@@ -16,7 +16,6 @@ import com.rickclephas.kmp.observableviewmodel.stateIn
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
-import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -139,7 +138,7 @@ class DashboardViewModel(
 
     @NativeCoroutines
     suspend fun getPlantImage(plant: Plant): ByteArray? {
-        return plant.image?.hqFile?.readBytes()
+        return plant.image?.imageBytes
     }
     init {
         viewModelScope.launch {
@@ -149,7 +148,7 @@ class DashboardViewModel(
 
     suspend fun fillPlantInfoDatabase() {
         val firstPlantInDatabase = plantInfoRepository.plantInfoList.first()
-        if (firstPlantInDatabase.isEmpty()) {
+        if (firstPlantInDatabase.isNotEmpty()) {
             return
         }
 

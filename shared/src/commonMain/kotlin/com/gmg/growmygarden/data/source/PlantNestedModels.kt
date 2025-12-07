@@ -3,11 +3,17 @@ package com.gmg.growmygarden.data.source
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Nested model classes for plant data from the Perenual API.
+ */
+
 @Serializable
 data class PlantImageInfo(
     @SerialName("image_id")
     val imageId: Int? = null,
     val license: Int? = null,
+    @SerialName("license_name")
+    val licenseName: String? = null,
     @SerialName("license_url")
     val licenseUrl: String? = null,
     @SerialName("original_url")
@@ -21,18 +27,22 @@ data class PlantImageInfo(
     val thumbnail: String? = null,
 )
 
+/**
+ * Placeholder for future premium API fields.
+ * Watering benchmark and pruning details require a paid Perenual plan.
+ */
 @Serializable
-data class WaterInfo(
-    @SerialName("watering")
-    val waterFrequency: String? = null,
-    @SerialName("watering_general_benchmark")
-    val waterBenchmark: WaterBenchmark? = null,
+data class WateringBenchmark(
+    @SerialName("value")
+    val value: String? = null,
+    @SerialName("unit")
+    val unit: String? = null,
 )
 
 @Serializable
-data class WaterBenchmark(
-    @SerialName("value")
-    val timesToWater: String? = null,
-    @SerialName("unit")
-    val timeframe: String? = null,
+data class PruningCount(
+    @SerialName("amount")
+    val amount: Int? = null,
+    @SerialName("interval")
+    val interval: String? = null,
 )
