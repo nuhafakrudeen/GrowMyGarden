@@ -59,7 +59,7 @@ jobs:
   AllowMerge:
     if: always()
     runs-on: ubuntu-latest
-    needs: [ UnitTests, Build]
+    needs: [ UnitTests, Build, Lint]
     steps:
       - run: |
           if [ ${{ (contains(needs.Build.result, 'failure')) }} == true ] || [ ${{ (contains(needs.UnitTests.result, 'failure')) }} == true ] || [ ${{ (contains(needs.Lint.result, 'failure')) }} == true ]; then
