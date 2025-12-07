@@ -27,6 +27,10 @@
 			</array>
 		</dict>
 	</array>
+    <key>CFBundleShortVersionString</key>
+    <string>0.0</string>
+    <key>CFBundleVersion</key>
+    <string>0.0</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>We send notifications to remind you to water and fertilize your plants.</string>
 </dict>
