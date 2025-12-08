@@ -11,8 +11,6 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - id: labeler
-        uses: actions/labeler@v5
       - id: set-tests
         name: Set Tests
         run: |
