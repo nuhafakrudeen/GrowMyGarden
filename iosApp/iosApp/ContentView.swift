@@ -19,7 +19,7 @@ import KMPNativeCoroutinesAsync
 @MainActor
 final class BackendPlantAdapter: ObservableObject {
     @Published var backendPlants: [Shared.Plant] = []
-    
+
     // FIX: Track plants that are pending deletion to prevent re-adding
     @Published var pendingDeletionIDs: Set<UUID> = []
 
@@ -43,7 +43,7 @@ final class BackendPlantAdapter: ObservableObject {
                 receiveValue: { [weak self] (plants: [Shared.Plant]) in
                     guard let self = self else { return }
                     self.backendPlants = plants
-                    
+
                 }
             )
             .store(in: &cancellables)
@@ -142,10 +142,9 @@ final class BackendPlantAdapter: ObservableObject {
     func delete(uiPlant: Plant) {
         // FIX: Add to pending deletions BEFORE calling backend delete
         pendingDeletionIDs.insert(uiPlant.id)
-        
+
         let uuidString = uiPlant.id.uuidString.uppercased()  // Kotlin uses HEX with dashes
 
-        
         // DEBUG: Print UUIDs to see if they match
         print("🗑️ DELETE ATTEMPT:")
         print("   Swift UUID: \(uuidString)")
@@ -153,7 +152,7 @@ final class BackendPlantAdapter: ObservableObject {
         for bp in backendPlants {
             print("   Backend UUID: \(bp.uuid.description.lowercased())")
         }
-        
+
         if let backend = backendPlants.first(where: {
             $0.uuid.description.uppercased() == uuidString
         }) {
@@ -819,13 +818,13 @@ struct PlantsHomeView: View {
                             Color.clear.frame(height: 120)
                         }
                     }
-                    
+
                 case .search:
                     SearchView()
-                    
+
                 case .plantbook:
                     PlantbookView(entries: plantbookEntries)
-                    
+
                 case .profile:
                     ProfileView()
                 }
@@ -847,21 +846,21 @@ struct PlantsHomeView: View {
             for p in store.plants {
                 existingMap[p.id] = p
             }
-            
+
             // Get the set of IDs that are pending deletion
             let pendingDeletions = backendAdapter.pendingDeletionIDs
-            
+
             // Build merged list, excluding plants pending deletion
             let merged: [Plant] = backendPlants.compactMap { bp -> Plant? in
                 guard let uuid = UUID(uuidString: bp.uuid.description) else {
                     return nil
                 }
-                
+
                 // Skip plants that are pending deletion
                 if pendingDeletions.contains(uuid) {
                     return nil
                 }
-                
+
                 if var existing = existingMap[uuid] {
                     // Keep existing plant but update image if backend has one and local doesn't
                     if existing.imageData == nil,
@@ -880,11 +879,11 @@ struct PlantsHomeView: View {
                     return convertBackendPlant(bp)
                 }
             }
-            
+
             // Only update if there's a real change
             let currentIDs = Set(store.plants.map { $0.id })
             let mergedIDs = Set(merged.map { $0.id })
-            
+
             if currentIDs != mergedIDs {
                 store.plants = merged
             } else {
@@ -1068,7 +1067,7 @@ private struct SearchResultCard: View {
             if isExpanded {
                 Divider()
                     .padding(.horizontal, 14)
-                
+
                 VStack(alignment: .leading, spacing: 12) {
                     CareInfoRow(
                         icon: "drop.fill",
@@ -1076,21 +1075,21 @@ private struct SearchResultCard: View {
                         label: "Watering",
                         value: result.wateringInfo
                     )
-                    
+
                     CareInfoRow(
                         icon: "sun.max.fill",
                         iconColor: .orange,
                         label: "Sunlight",
                         value: result.sunlightInfo
                     )
-                    
+
                     CareInfoRow(
                         icon: "scissors",
                         iconColor: .green,
                         label: "Trimming",
                         value: result.trimmingInfo
                     )
-                    
+
                     CareInfoRow(
                         icon: "leaf.arrow.circlepath",
                         iconColor: .brown,
@@ -1167,21 +1166,20 @@ private struct CareInfoRow: View {
     }
 }
 
-
 struct PlantCardWrapper: View {
     let plant: Plant
     let onUpdate: (Plant) -> Void
     let onDelete: (UUID) -> Void
-    
+
     @State private var localPlant: Plant
-    
+
     init(plant: Plant, onUpdate: @escaping (Plant) -> Void, onDelete: @escaping (UUID) -> Void) {
         self.plant = plant
         self.onUpdate = onUpdate
         self.onDelete = onDelete
         self._localPlant = State(initialValue: plant)
     }
-    
+
     var body: some View {
         PlantCard(
             plant: $localPlant,
