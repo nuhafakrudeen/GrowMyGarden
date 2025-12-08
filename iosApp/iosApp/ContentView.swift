@@ -19,6 +19,9 @@ import KMPNativeCoroutinesAsync
 @MainActor
 final class BackendPlantAdapter: ObservableObject {
     @Published var backendPlants: [Shared.Plant] = []
+    
+    // FIX: Track plants that are pending deletion to prevent re-adding
+    @Published var pendingDeletionIDs: Set<UUID> = []
 
     private let vm: DashboardViewModel
     private var cancellables = Set<AnyCancellable>()
@@ -38,24 +41,23 @@ final class BackendPlantAdapter: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] (plants: [Shared.Plant]) in
-                    self?.backendPlants = plants
+                    guard let self = self else { return }
+                    self.backendPlants = plants
+                    
                 }
             )
             .store(in: &cancellables)
     }
 
     /// Persist a SwiftUI Plant to the backend.
-    /// This version does NOT auto-fetch images - use saveWithAutoImage for new plants.
     func save(uiPlant: Plant) {
         let backend = createBackendPlantFromUI(uiPlant: uiPlant)
         vm.savePlant(plant: backend)
     }
 
     /// Save a NEW plant and automatically fetch an image from Perenual API
-    /// if the plant doesn't already have one and the species matches the database.
     func saveWithAutoImage(uiPlant: Plant) {
         let backend = createBackendPlantFromUI(uiPlant: uiPlant)
-        // Use the new savePlantWithAutoImage method that fetches from Perenual API
         vm.savePlantWithAutoImage(plant: backend)
     }
 
@@ -110,18 +112,16 @@ final class BackendPlantAdapter: ObservableObject {
     }
 
     /// Fetch and update image for an existing plant from Perenual API
-    /// Fetch and update image for an existing plant from Perenual API
     func fetchAndUpdateImage(for uiPlant: Plant, completion: @escaping (Bool) -> Void) {
         Task {
+            let uuidString = uiPlant.id.uuidString.lowercased()
             if let backend = backendPlants.first(where: {
-                $0.name == uiPlant.name && $0.species == uiPlant.species
+                $0.uuid.description.lowercased() == uuidString
             }) {
                 do {
-                    // Bridge Kotlin suspend -> Swift async
                     let success: KotlinBoolean = try await asyncFunction(
                         for: vm.fetchAndUpdatePlantImage(plant: backend)
                     )
-
                     await MainActor.run {
                         completion(success.boolValue)
                     }
@@ -140,11 +140,26 @@ final class BackendPlantAdapter: ObservableObject {
     }
 
     func delete(uiPlant: Plant) {
+        // FIX: Add to pending deletions BEFORE calling backend delete
+        pendingDeletionIDs.insert(uiPlant.id)
+        
+        let uuidString = uiPlant.id.uuidString.uppercased()  // Kotlin uses HEX with dashes
+
+        
+        // DEBUG: Print UUIDs to see if they match
+        print("🗑️ DELETE ATTEMPT:")
+        print("   Swift UUID: \(uuidString)")
+        print("   Backend plants count: \(backendPlants.count)")
+        for bp in backendPlants {
+            print("   Backend UUID: \(bp.uuid.description.lowercased())")
+        }
+        
         if let backend = backendPlants.first(where: {
-            $0.name == uiPlant.name && $0.species == uiPlant.species
+            $0.uuid.description.uppercased() == uuidString
         }) {
             vm.deletePlant(plant: backend)
         }
+
     }
 }
 
@@ -753,7 +768,6 @@ struct PlantsHomeView: View {
                     }
 
                     if store.plants.isEmpty {
-
                         VStack(spacing: 18) {
                             Image(systemName: "leaf.circle")
                                 .font(.system(size: 60, weight: .regular))
@@ -773,19 +787,27 @@ struct PlantsHomeView: View {
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 18) {
-                                // Inside PlantsHomeView loop
-                                ForEach($store.plants) { $plant in
-                                    PlantCard(
-                                        plant: $plant,
-
-                                        onSave: { updatedPlant in
+                                // FIXED: Use ForEach with id and PlantCardWrapper
+                                ForEach(store.plants, id: \.id) { plant in
+                                    PlantCardWrapper(
+                                        plant: plant,
+                                        onUpdate: { updatedPlant in
+                                            // Update local store
+                                            if let idx = store.plants.firstIndex(where: { $0.id == updatedPlant.id }) {
+                                                store.plants[idx] = updatedPlant
+                                            }
+                                            // Save to backend
                                             backendAdapter.save(uiPlant: updatedPlant)
                                         },
                                         onDelete: { id in
+                                            // Tell backend to delete (marks as pending)
                                             if let uiPlant = store.plants.first(where: { $0.id == id }) {
                                                 backendAdapter.delete(uiPlant: uiPlant)
                                             }
-                                            store.plants.removeAll { $0.id == id }
+                                            // Remove from local store
+                                            withAnimation {
+                                                store.plants.removeAll { $0.id == id }
+                                            }
                                         }
                                     )
                                 }
@@ -797,10 +819,13 @@ struct PlantsHomeView: View {
                             Color.clear.frame(height: 120)
                         }
                     }
+                    
                 case .search:
                     SearchView()
+                    
                 case .plantbook:
                     PlantbookView(entries: plantbookEntries)
+                    
                 case .profile:
                     ProfileView()
                 }
@@ -813,43 +838,67 @@ struct PlantsHomeView: View {
                 // 1) Local UI update
                 store.add(newPlant)
                 // 2) Persist to Kotlin backend WITH auto image fetching
-                // This will automatically fetch an image from Perenual API if:
-                // - The plant doesn't already have a user-selected image
-                // - The species name matches a plant in the Perenual database
                 backendAdapter.saveWithAutoImage(uiPlant: newPlant)
             }
         }
         .onReceive(backendAdapter.$backendPlants) { backendPlants in
-
-            var existingMap = [String: Plant]()
-            // Map existing plants by "Name|Species" key
+            // Build map of existing plants by UUID
+            var existingMap = [UUID: Plant]()
             for p in store.plants {
-                let key = p.name + "|" + p.species
-                existingMap[key] = p
+                existingMap[p.id] = p
             }
-
-            let merged = backendPlants.map { bp -> Plant in
-                let key = bp.name + "|" + bp.species
-                if let existing = existingMap[key] {
-                    // Keep the existing local plant (preserves tasks/notes/image)
+            
+            // Get the set of IDs that are pending deletion
+            let pendingDeletions = backendAdapter.pendingDeletionIDs
+            
+            // Build merged list, excluding plants pending deletion
+            let merged: [Plant] = backendPlants.compactMap { bp -> Plant? in
+                guard let uuid = UUID(uuidString: bp.uuid.description) else {
+                    return nil
+                }
+                
+                // Skip plants that are pending deletion
+                if pendingDeletions.contains(uuid) {
+                    return nil
+                }
+                
+                if var existing = existingMap[uuid] {
+                    // Keep existing plant but update image if backend has one and local doesn't
+                    if existing.imageData == nil,
+                       let plantImage = bp.image,
+                       let kotlinBytes = plantImage.imageBytes {
+                        let count = Int(kotlinBytes.size)
+                        var bytes = [UInt8](repeating: 0, count: count)
+                        for i in 0..<count {
+                            bytes[i] = UInt8(bitPattern: kotlinBytes.get(index: Int32(i)))
+                        }
+                        existing.imageData = Data(bytes)
+                    }
                     return existing
                 } else {
-                    // New plant from backend? Convert it (now with default tasks)
+                    // New plant from backend
                     return convertBackendPlant(bp)
                 }
             }
-
-            // Only update if the count changed or we have new data
-            // (Simple check to avoid infinite loops if objects are equatable)
-            if merged.count != store.plants.count || !merged.isEmpty {
-               store.plants = merged
+            
+            // Only update if there's a real change
+            let currentIDs = Set(store.plants.map { $0.id })
+            let mergedIDs = Set(merged.map { $0.id })
+            
+            if currentIDs != mergedIDs {
+                store.plants = merged
+            } else {
+                // Check for image updates only
+                for (index, plant) in store.plants.enumerated() {
+                    if let mergedPlant = merged.first(where: { $0.id == plant.id }),
+                       plant.imageData == nil && mergedPlant.imageData != nil {
+                        store.plants[index].imageData = mergedPlant.imageData
+                    }
+                }
             }
         }
     }
 }
-
-// ... rest of the file (SearchView, ProfileView, PlantCard etc) remains exactly the same ...
-// (I have included the full file above, but the critical changes are in convertBackendPlant and PlantsHomeView.onReceive)
 
 // ===============================================================
 // MARK: - SEARCH VIEW
@@ -1017,7 +1066,40 @@ private struct SearchResultCard: View {
 
             // Expanded Care Info Section (existing code remains the same)
             if isExpanded {
-                // ... existing expanded content ...
+                Divider()
+                    .padding(.horizontal, 14)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    CareInfoRow(
+                        icon: "drop.fill",
+                        iconColor: .blue,
+                        label: "Watering",
+                        value: result.wateringInfo
+                    )
+                    
+                    CareInfoRow(
+                        icon: "sun.max.fill",
+                        iconColor: .orange,
+                        label: "Sunlight",
+                        value: result.sunlightInfo
+                    )
+                    
+                    CareInfoRow(
+                        icon: "scissors",
+                        iconColor: .green,
+                        label: "Trimming",
+                        value: result.trimmingInfo
+                    )
+                    
+                    CareInfoRow(
+                        icon: "leaf.arrow.circlepath",
+                        iconColor: .brown,
+                        label: "Fertilizing",
+                        value: result.fertilizingInfo
+                    )
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1081,6 +1163,36 @@ private struct CareInfoRow: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+
+struct PlantCardWrapper: View {
+    let plant: Plant
+    let onUpdate: (Plant) -> Void
+    let onDelete: (UUID) -> Void
+    
+    @State private var localPlant: Plant
+    
+    init(plant: Plant, onUpdate: @escaping (Plant) -> Void, onDelete: @escaping (UUID) -> Void) {
+        self.plant = plant
+        self.onUpdate = onUpdate
+        self.onDelete = onDelete
+        self._localPlant = State(initialValue: plant)
+    }
+    
+    var body: some View {
+        PlantCard(
+            plant: $localPlant,
+            onSave: { updated in
+                onUpdate(updated)
+            },
+            onDelete: onDelete
+        )
+        .onChange(of: plant) { newPlant in
+            // Sync if parent data changes (e.g., image updated from backend)
+            localPlant = newPlant
         }
     }
 }
