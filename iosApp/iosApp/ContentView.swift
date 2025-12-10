@@ -1,17 +1,23 @@
-import UserNotifications
-import Photos
-import PhotosUI
-import SwiftUI
+import AuthenticationServices
+import Combine
+import CryptoKit
 import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
-import UIKit
-import AuthenticationServices
-import CryptoKit
-import Shared
-import KMPNativeCoroutinesCombine
-import Combine
 import KMPNativeCoroutinesAsync
+import KMPNativeCoroutinesCombine
+import Photos
+import PhotosUI
+import Shared
+import SwiftUI
+import UIKit
+import UserNotifications
+
+// ===============================================================
+// ContentView.swift
+// Main SwiftUI views and screens for the Grow My Garden app.
+// ===============================================================
+
 // ===============================================================
 // MARK: - Backend (Kotlin) Plant Adapter
 // ===============================================================
