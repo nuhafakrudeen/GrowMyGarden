@@ -1,19 +1,6 @@
 import FirebaseAuth
 import SwiftUI
 
-// ===============================================================
-// ContentView.swift
-// Main SwiftUI views and screens for the Grow My Garden app.
-// ===============================================================
-
-
-
-
-
-
-
-
-
 
 
 

@@ -16,11 +16,9 @@ actual fun getPropertiesMap(): Map<String, Any> {
                 }
             }
         } ?: run {
-            println("Failed to load Contents of File")
             emptyMap()
         }
     } ?: run {
-        println("Failed to Find Secrets File")
         emptyMap()
     }
 }

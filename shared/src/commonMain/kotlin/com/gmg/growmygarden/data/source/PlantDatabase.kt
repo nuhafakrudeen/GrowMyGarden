@@ -155,7 +155,6 @@ open class PlantRepository(
                 return@onEach
             }
             val coll = collection
-            println("    Saved Plant ${plant.uuid.toHexDashString()}")
             val doc = coll.getDocument(plant.uuid.toHexDashString())?.let(::decodeDocument) ?: PlantDoc()
             val updated = doc.copy(
                 uuid = plant.uuid,
