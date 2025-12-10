@@ -16,9 +16,7 @@ struct iOSApp: App {
         let perenualKey = "sk-Ipaw69374072bba7513844"
 
         // Initialize the shared Kotlin DI container (Koin) with the key.
-        print("👉 Calling Kotlin doInitKoin()")
         HelperKt.doInitKoin(apiKey: perenualKey)
-        print("✅ Returned from Kotlin doInitKoin()")
     }
 
     var body: some Scene {
