@@ -116,7 +116,8 @@ open class PlantRepository(
             println("   Document found: ${doc != null}")
 
             if (doc != null) {
-                coll.delete(doc)
+                // coll.delete(doc)
+                collection.purge(doc)
                 println("✅ KOTLIN: Document deleted successfully")
 
                 // Verify deletion
