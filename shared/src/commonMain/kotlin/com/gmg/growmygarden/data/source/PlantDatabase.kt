@@ -74,8 +74,7 @@ open class PlantRepository(
     private val userManager: UserManager,
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
-    internal val collection
-        get() = dbProvider.database.createCollection(COLLECTION_NAME)
+    internal val collection by lazy { dbProvider.database.createCollection(COLLECTION_NAME) }
 
     @NativeCoroutines
     val plants: Flow<List<Plant>>
@@ -111,21 +110,20 @@ open class PlantRepository(
         println("   Document ID: $docId")
 
         dbProvider.scope.launch {
-            val coll = collection
-            val doc = coll.getDocument(docId)
+            val doc = collection.getDocument(docId)
             println("   Document found: ${doc != null}")
 
             if (doc != null) {
                 // coll.delete(doc)
-                coll.purge(doc)
+                collection.purge(doc)
                 println("✅ KOTLIN: Document deleted successfully")
 
                 // Verify deletion
-                val verifyDoc = coll.getDocument(docId)
+                val verifyDoc = collection.getDocument(docId)
                 println("   VERIFY after delete - Document still exists: ${verifyDoc != null}")
 
                 // Also check collection count
-                val allDocs = coll.count
+                val allDocs = collection.count
                 println("   Total documents in collection after delete: $allDocs")
             } else {
                 println("❌ KOTLIN: Document NOT FOUND - cannot delete")
