@@ -53,6 +53,8 @@ data class Plant(
     var trimmingFrequency: Duration = Duration.ZERO,
     var trimmingNotificationID: Uuid? = null,
 
+    var notes: String = "",
+
     @Serializable(with = PlantImageSerializer::class)
     var image: PlantImage? = null,
 ) {
@@ -151,7 +153,12 @@ open class PlantRepository(
             species = doc.species,
             scientificName = doc.scientificName,
             wateringFrequency = doc.wateringFrequency,
+            wateringNotificationID = doc.wateringNotificationID,
             fertilizingFrequency = doc.fertilizingFrequency,
+            fertilizerNotificationID = doc.fertilizerNotificationID,
+            trimmingFrequency = doc.trimmingFrequency,
+            trimmingNotificationID = doc.trimmingNotificationID,
+            notes = doc.notes,
             image = doc.image,
         )
     }
@@ -173,6 +180,7 @@ open class PlantRepository(
                 fertilizerNotificationID = plant.fertilizerNotificationID,
                 trimmingFrequency = plant.trimmingFrequency,
                 trimmingNotificationID = plant.trimmingNotificationID,
+                notes = plant.notes,
                 image = plant.image,
             )
             val json = Json.encodeToString(updated)
