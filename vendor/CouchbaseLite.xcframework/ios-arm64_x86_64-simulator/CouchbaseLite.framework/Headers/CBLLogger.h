@@ -1,8 +1,8 @@
 //
-//  CBLReplicatorStatus.h
+//  CBLLogger.h
 //  CouchbaseLite
 //
-//  Copyright (c) 2025 Couchbase, Inc All rights reserved.
+//  Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,25 +17,20 @@
 //  limitations under the License.
 //
 
-#import <Foundation/Foundation.h>
-#import <CouchbaseLite/CBLReplicatorTypes.h>
+#import <CouchbaseLite/CBLLogTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-/** Combined activity level and progress of a replicator. */
-@interface CBLReplicatorStatus: NSObject
+/**
+ Logger protocol
+ */
+@protocol CBLLogger <NSObject>
 
-/** The current activity level. */
-@property (readonly, nonatomic) CBLReplicatorActivityLevel activity;
+/** The minimum log level to be logged. */
+@property (readonly, nonatomic) CBLLogLevel level;
 
-/** The current progress of the replicator. */
-@property (readonly, nonatomic) CBLReplicatorProgress progress;
-
-/** The current error of the replicator. */
-@property (readonly, nonatomic, nullable) NSError* error;
-
-/** Not available */
-- (instancetype) init NS_UNAVAILABLE;
+/** The callback log method. */
+- (void) logWithLevel: (CBLLogLevel)level domain: (CBLLogDomain)domain message: (NSString*)message;
 
 @end
 
