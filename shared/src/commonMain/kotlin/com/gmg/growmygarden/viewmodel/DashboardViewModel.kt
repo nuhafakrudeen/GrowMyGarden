@@ -80,37 +80,35 @@ class DashboardViewModel(
                 return@launch
             }
 
+            var updatedPlant = plant
+
             try {
                 val (plantInfo, imageBytes) = perenualAPI.searchPlantAndGetImage(speciesQuery)
 
                 if (imageBytes != null && imageBytes.isNotEmpty()) {
-                    // Create a PlantImage with the downloaded bytes
                     val plantImage = PlantImage(imageBytes = imageBytes)
-                    plant.image = plantImage
+                    updatedPlant = updatedPlant.copy(image = plantImage)
 
-                    // Also save to image store for file-based access
-                    imageStore.saveImage(imageBytes)
+                    // REMOVED: imageStore.saveImage(imageBytes)
+                    // The bytes are already stored in PlantImage, no need to save separately
+                    // (and FileKit.compress crashes on non-image data)
 
-                    println("✅ Auto-fetched image for '${plant.species}' from Perenual API")
+                    println("✅ Auto-fetched image for '${updatedPlant.species}' from Perenual API")
                 }
 
                 // Update scientific name if we found a match and plant doesn't have one
-                if (plantInfo != null && plant.scientificName.isBlank()) {
+                if (plantInfo != null && updatedPlant.scientificName.isBlank()) {
                     val sciName = plantInfo.scientificName?.firstOrNull() ?: ""
                     if (sciName.isNotBlank()) {
-                        // Create a new plant with the scientific name
-                        val updatedPlant = plant.copy(scientificName = sciName)
-                        plantRepository.savePlant(updatedPlant)
-                        return@launch
+                        updatedPlant = updatedPlant.copy(scientificName = sciName)
                     }
                 }
-
-                plantRepository.savePlant(plant)
             } catch (e: Exception) {
                 println("⚠️ Failed to auto-fetch image for '${plant.species}': ${e.message}")
-                // Still save the plant even if image fetch fails
-                plantRepository.savePlant(plant)
             }
+
+            // Always save the plant (with or without image)
+            plantRepository.savePlant(updatedPlant)
         }
     }
 
