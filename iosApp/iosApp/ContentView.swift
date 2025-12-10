@@ -35,10 +35,8 @@ final class BackendPlantAdapter: ObservableObject {
         publisher
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { completion in
-                    if case let .failure(error) = completion {
-                        print("❌ Error observing plantsStateFlow:", error)
-                    }
+                receiveCompletion: { _ in
+
                 },
                 receiveValue: { [weak self] (plants: [Shared.Plant]) in
                     guard let self = self else { return }
@@ -126,7 +124,6 @@ final class BackendPlantAdapter: ObservableObject {
                         completion(success.boolValue)
                     }
                 } catch {
-                    print("❌ Error fetching image: \(error)")
                     await MainActor.run {
                         completion(false)
                     }
@@ -143,15 +140,7 @@ final class BackendPlantAdapter: ObservableObject {
         // FIX: Add to pending deletions BEFORE calling backend delete
         pendingDeletionIDs.insert(uiPlant.id)
 
-        let uuidString = uiPlant.id.uuidString.uppercased()  // Kotlin uses HEX with dashes
-
-        // DEBUG: Print UUIDs to see if they match
-        print("🗑️ DELETE ATTEMPT:")
-        print("   Swift UUID: \(uuidString)")
-        print("   Backend plants count: \(backendPlants.count)")
-        for bp in backendPlants {
-            print("   Backend UUID: \(bp.uuid.description.lowercased())")
-        }
+        let uuidString = uiPlant.id.uuidString.uppercased()
 
         if let backend = backendPlants.first(where: {
             $0.uuid.description.uppercased() == uuidString
@@ -238,12 +227,10 @@ final class AuthManager: NSObject, ObservableObject {
 
                 if let user = user {
                     // 2. User Logged In: Tell Kotlin the UID
-                    print("🔵 User logged in: \(user.uid). Syncing with Kotlin DB.")
                     self.vm.setUserId(userId: user.uid)
                     self.isLoggedIn = true
                 } else {
                     // 3. User Logged Out: Tell Kotlin to clear data
-                    print("🔴 User logged out. Clearing Kotlin DB scope.")
                     self.vm.setUserId(userId: nil)
                     self.isLoggedIn = false
                 }
@@ -262,7 +249,6 @@ final class AuthManager: NSObject, ObservableObject {
             try Auth.auth().signOut()
             // The listener above will trigger and set vm.setUserId(nil) automatically
         } catch {
-            print("Error signing out: \(error)")
         }
         isLoggedIn = false
     }
@@ -271,7 +257,6 @@ final class AuthManager: NSObject, ObservableObject {
 extension AuthManager {
     func signInWithGoogle() {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
-            print("No Firebase clientID")
             return
         }
 
@@ -283,13 +268,11 @@ extension AuthManager {
             let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let rootVC = scene.windows.first?.rootViewController
         else {
-            print("No root view controller for Google Sign-In")
             return
         }
 
         GIDSignIn.sharedInstance.signIn(withPresenting: rootVC) { result, error in
             if let error = error {
-                print("Google Sign-In error:", error)
                 return
             }
 
@@ -297,7 +280,6 @@ extension AuthManager {
                 let user = result?.user,
                 let idToken = user.idToken?.tokenString
             else {
-                print("Google Sign-In: missing user or idToken")
                 return
             }
 
@@ -307,23 +289,12 @@ extension AuthManager {
                 withIDToken: idToken,
                 accessToken: accessToken
             )
-
-            Auth.auth().signIn(with: credential) { _, error in
-                if let error = error {
-                    print("Firebase Google auth failed:", error)
-                } else {
-                    print("Google Sign-In + Firebase auth success")
-
-                }
             }
         }
     }
-}
 
 extension AuthManager {
     func signInWithApple() {
-        print("Starting Apple sign-in")
-
         let nonce = randomNonceString()
         currentNonce = nonce
 
@@ -372,21 +343,17 @@ extension AuthManager {
 extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     func authorizationController(controller: ASAuthorizationController,
                                  didCompleteWithAuthorization authorization: ASAuthorization) {
-        print("Apple authorization completed")
 
         guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-            print("No AppleIDCredential")
             return
         }
 
         guard let nonce = currentNonce else {
-            print("Missing currentNonce")
             return
         }
 
         guard let appleIDTokenData = appleIDCredential.identityToken,
               let idTokenString = String(data: appleIDTokenData, encoding: .utf8) else {
-            print("Unable to get identity token")
             return
         }
 
@@ -395,22 +362,10 @@ extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControl
             rawNonce: nonce,
             fullName: appleIDCredential.fullName
         )
-
-        print("Got Apple credential, signing in with Firebase...")
-
-        Auth.auth().signIn(with: credential) { _, error in
-            if let error = error {
-                print("Firebase Apple auth error:", error)
-            } else {
-                print("Firebase Apple auth success")
-                // listener will update isLoggedIn
-            }
-        }
     }
 
     func authorizationController(controller: ASAuthorizationController,
                                  didCompleteWithError error: Error) {
-        print("Sign in with Apple failed:", error)
     }
 
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
@@ -430,16 +385,6 @@ struct AuthRootView: View {
     var body: some View {
         if auth.isLoggedIn {
             PlantsHomeView()
-                .onAppear {
-                    print("🌱 AuthRootView: showing PlantsHomeView, isLoggedIn = \(auth.isLoggedIn)")
-                }
-        } else {
-            AuthView {
-                print("✅ onAuthSuccess callback fired")
-            }
-            .onAppear {
-                print("🌱 AuthRootView: showing AuthView, isLoggedIn = \(auth.isLoggedIn)")
-            }
         }
     }
 }
@@ -542,7 +487,6 @@ enum PlantImageService {
                     completion(nil)
                 }
             } catch {
-                print("❌ Error fetching species image for '\(speciesName)': \(error)")
                 await MainActor.run {
                     completion(nil)
                 }
@@ -599,12 +543,6 @@ class SearchViewModel: ObservableObject {
             let result = try await repository.searchRemotePlants(query: trimmed)
             let kotlinResults = result as? [Shared.PlantInfo] ?? []
 
-            print("🌿 API Results: \(kotlinResults.count) plants found.")
-
-            if let first = kotlinResults.first {
-                print("🔍 First result: \(first.name ?? "nil"), watering=\(first.wateringDescription)")
-            }
-
             // Map Kotlin PlantInfo to Swift SearchResult
             self.results = kotlinResults.map { info in
                 let name = info.name ?? "Unknown Plant"
@@ -637,7 +575,7 @@ class SearchViewModel: ObservableObject {
                 )
             }
         } catch {
-            print("❌ Search Error: \(error)")
+
             self.errorMessage = "Failed to search database."
             self.results = []
         }
@@ -1129,7 +1067,7 @@ private struct SearchResultCard: View {
                         return
                     }
                 } catch {
-                    print("Error loading image: \(error)")
+
                 }
             }
             await MainActor.run {
@@ -1401,7 +1339,6 @@ struct ProfileView: View {
                 self.isSavingName = false
                 if let error = error {
                     self.nameSaveError = error.localizedDescription
-                    print("Failed to update displayName:", error)
                 } else {
                     self.nameSaveError = nil
                 }
@@ -3040,7 +2977,7 @@ struct SignInForm: View {
             if let error = error {
                 showError = true
                 errorMessage = friendlyMessage(for: error)   // custom text
-                print("Sign in failed:", error)
+
             } else {
                 showError = false
                 errorMessage = ""
@@ -3208,7 +3145,7 @@ struct SignUpForm: View {
             if let error = error {
                 showError = true
                 errorMessage = error.localizedDescription
-                print("Sign up failed:", error)
+
             } else {
                 showError = false
                 errorMessage = ""
@@ -3219,10 +3156,8 @@ struct SignUpForm: View {
                     let changeRequest = user.createProfileChangeRequest()
                     changeRequest.displayName = trimmedUsername.isEmpty ? trimmedEmail : trimmedUsername
 
-                    changeRequest.commitChanges { commitError in
-                        if let commitError = commitError {
-                            print("Failed to set displayName:", commitError)
-                        }
+                    changeRequest.commitChanges { _ in
+
                         onSignUpSuccess()
                     }
                 } else {
