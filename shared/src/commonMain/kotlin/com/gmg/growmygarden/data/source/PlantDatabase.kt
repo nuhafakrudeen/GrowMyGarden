@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonIgnoreUnknownKeys // ✅ 1. ADD THIS IMPORT
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 import kotlin.String
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -103,30 +103,16 @@ open class PlantRepository(
         }
     }
 
+    private val deletedUuids = mutableSetOf<Uuid>()
+
     fun delete(plant: Plant) {
         val docId = plant.uuid.toHexDashString()
-        println("🗑️ KOTLIN DELETE ATTEMPT:")
-        println("   Plant name: ${plant.name}")
-        println("   Document ID: $docId")
+        deletedUuids.add(plant.uuid)
 
         dbProvider.scope.launch {
-            val coll = collection
-            val doc = coll.getDocument(docId)
-            println("   Document found: ${doc != null}")
-
+            val doc = collection.getDocument(docId)
             if (doc != null) {
-                coll.delete(doc)
-                println("✅ KOTLIN: Document deleted successfully")
-
-                // Verify deletion
-                val verifyDoc = coll.getDocument(docId)
-                println("   VERIFY after delete - Document still exists: ${verifyDoc != null}")
-
-                // Also check collection count
-                val allDocs = coll.count
-                println("   Total documents in collection after delete: $allDocs")
-            } else {
-                println("❌ KOTLIN: Document NOT FOUND - cannot delete")
+                collection.purge(doc)
             }
         }
     }
@@ -165,6 +151,9 @@ open class PlantRepository(
     init {
         @OptIn(FlowPreview::class)
         saveChannel.receiveAsFlow().debounce(debounceTime).onEach { plant ->
+            if (deletedUuids.contains(plant.uuid)) {
+                return@onEach
+            }
             val coll = collection
             println("    Saved Plant ${plant.uuid.toHexDashString()}")
             val doc = coll.getDocument(plant.uuid.toHexDashString())?.let(::decodeDocument) ?: PlantDoc()

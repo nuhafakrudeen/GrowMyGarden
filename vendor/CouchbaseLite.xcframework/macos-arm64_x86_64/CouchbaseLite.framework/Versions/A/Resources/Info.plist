@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>24F74</string>
+	<string>23H222</string>
 	<key>CBLEdition</key>
 	<string>Community</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -19,31 +19,31 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>4.0.0</string>
+	<string>3.2.4</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>43</string>
+	<string>10</string>
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
-	<string>24E241</string>
+	<string></string>
 	<key>DTPlatformName</key>
 	<string>macosx</string>
 	<key>DTPlatformVersion</key>
-	<string>15.4</string>
+	<string>14.2</string>
 	<key>DTSDKBuild</key>
-	<string>24E241</string>
+	<string>23C53</string>
 	<key>DTSDKName</key>
-	<string>macosx15.4</string>
+	<string>macosx14.2</string>
 	<key>DTXcode</key>
-	<string>1630</string>
+	<string>1520</string>
 	<key>DTXcodeBuild</key>
-	<string>16E140</string>
+	<string>15C500b</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>13.0</string>
+	<string>12.0</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2025 Couchbase. All rights reserved.</string>
 </dict>
