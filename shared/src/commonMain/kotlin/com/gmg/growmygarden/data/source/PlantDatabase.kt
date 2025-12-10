@@ -74,7 +74,7 @@ open class PlantRepository(
     private val userManager: UserManager,
 ) {
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
-    internal val collection by lazy { dbProvider.database.createCollection(COLLECTION_NAME) }
+    internal val collection by lazy { dbProvider.database.getCollection(COLLECTION_NAME) ?: dbProvider.database.createCollection(COLLECTION_NAME) }
 
     @NativeCoroutines
     val plants: Flow<List<Plant>>
@@ -166,6 +166,7 @@ open class PlantRepository(
         @OptIn(FlowPreview::class)
         saveChannel.receiveAsFlow().debounce(debounceTime).onEach { plant ->
             val coll = collection
+            println("    Saved Plant ${plant.uuid.toHexDashString()}")
             val doc = coll.getDocument(plant.uuid.toHexDashString())?.let(::decodeDocument) ?: PlantDoc()
             val updated = doc.copy(
                 uuid = plant.uuid,
