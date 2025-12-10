@@ -25,11 +25,11 @@ private enum AppConfig {
     }
 }
 
-// MARK: - iOSApp
+// MARK: - IOSApp
 
 /// The main entry point of the app.
 @main
-struct iOSApp: App {
+struct IOSApp: App {
     
     /// Lets Firebase run setup code when the app launches.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate

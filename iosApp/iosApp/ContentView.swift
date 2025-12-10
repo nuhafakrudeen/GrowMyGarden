@@ -29,14 +29,14 @@ final class BackendPlantAdapter: ObservableObject {
     // FIX: Track plants that are pending deletion to prevent re-adding
     @Published var pendingDeletionIDs: Set<UUID> = []
 
-    private let vm: DashboardViewModel
+    private let dashboardViewModel: DashboardViewModel
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        vm = HelperKt.getDashboardViewModel()
+        dashboardViewModel = HelperKt.getDashboardViewModel()
 
         let publisher: AnyPublisher<[Shared.Plant], Error> =
-            createPublisher(for: vm.plantsStateFlow)
+            createPublisher(for: dashboardViewModel.plantsStateFlow)
 
         publisher
             .receive(on: DispatchQueue.main)
@@ -58,13 +58,13 @@ final class BackendPlantAdapter: ObservableObject {
     /// Persist a SwiftUI Plant to the backend.
     func save(uiPlant: Plant) {
         let backend = createBackendPlantFromUI(uiPlant: uiPlant)
-        vm.savePlant(plant: backend)
+        dashboardViewModel.savePlant(plant: backend)
     }
 
     /// Save a NEW plant and automatically fetch an image from Perenual API
     func saveWithAutoImage(uiPlant: Plant) {
         let backend = createBackendPlantFromUI(uiPlant: uiPlant)
-        vm.savePlantWithAutoImage(plant: backend)
+        dashboardViewModel.savePlantWithAutoImage(plant: backend)
     }
 
     /// Helper to create a backend Plant from a SwiftUI Plant
@@ -74,12 +74,12 @@ final class BackendPlantAdapter: ObservableObject {
         var waterMillis: Int64 = 0
         let waterEnabled = waterTask?.reminderEnabled ?? false
 
-        if let w = waterTask {
-            if w.waterMode == .timesPerDay {
-                let times = max(1, w.timesPerDay)
+        if let waterScheduleTask = waterTask {
+            if waterScheduleTask.waterMode == .timesPerDay {
+                let times = max(1, waterScheduleTask.timesPerDay)
                 waterMillis = Int64((24 * 60 * 60 * 1000) / times)
             } else {
-                waterMillis = Int64(w.frequencyDays) * 24 * 60 * 60 * 1000
+                waterMillis = Int64(waterScheduleTask.frequencyDays) * 24 * 60 * 60 * 1000
             }
         }
 
@@ -97,8 +97,8 @@ final class BackendPlantAdapter: ObservableObject {
         var kotlinImageBytes: KotlinByteArray?
         if let imageData = uiPlant.imageData {
             kotlinImageBytes = KotlinByteArray(size: Int32(imageData.count))
-            for i in 0..<imageData.count {
-                kotlinImageBytes?.set(index: Int32(i), value: Int8(bitPattern: imageData[i]))
+            for index in 0..<imageData.count {
+                kotlinImageBytes?.set(index: Int32(index), value: Int8(bitPattern: imageData[index]))
             }
         }
 
@@ -126,7 +126,7 @@ final class BackendPlantAdapter: ObservableObject {
             }) {
                 do {
                     let success: KotlinBoolean = try await asyncFunction(
-                        for: vm.fetchAndUpdatePlantImage(plant: backend)
+                        for: dashboardViewModel.fetchAndUpdatePlantImage(plant: backend)
                     )
                     await MainActor.run {
                         completion(success.boolValue)
@@ -155,14 +155,14 @@ final class BackendPlantAdapter: ObservableObject {
         print("🗑️ DELETE ATTEMPT:")
         print("   Swift UUID: \(uuidString)")
         print("   Backend plants count: \(backendPlants.count)")
-        for bp in backendPlants {
-            print("   Backend UUID: \(bp.uuid.description.lowercased())")
+        for backendPlant in backendPlants {
+            print("   Backend UUID: \(backendPlant.uuid.description.lowercased())")
         }
 
         if let backend = backendPlants.first(where: {
             $0.uuid.description.uppercased() == uuidString
         }) {
-            vm.deletePlant(plant: backend)
+            dashboardViewModel.deletePlant(plant: backend)
         }
 
     }
@@ -209,8 +209,8 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
        let kotlinBytes = plantImage.imageBytes {
         let count = Int(kotlinBytes.size)
         var bytes = [UInt8](repeating: 0, count: count)
-        for i in 0..<count {
-            bytes[i] = UInt8(bitPattern: kotlinBytes.get(index: Int32(i)))
+        for index in 0..<count {
+            bytes[index] = UInt8(bitPattern: kotlinBytes.get(index: Int32(index)))
         }
         imageData = Data(bytes)
     }
@@ -233,7 +233,7 @@ final class AuthManager: NSObject, ObservableObject {
     fileprivate var currentNonce: String?
 
     // 1. Get reference to Kotlin ViewModel so we can set the User ID
-    private let vm = HelperKt.getDashboardViewModel()
+    private let dashboardViewModel = HelperKt.getDashboardViewModel()
 
     override init() {
         super.init()
@@ -245,12 +245,12 @@ final class AuthManager: NSObject, ObservableObject {
                 if let user = user {
                     // 2. User Logged In: Tell Kotlin the UID
                     print("🔵 User logged in: \(user.uid). Syncing with Kotlin DB.")
-                    self.vm.setUserId(userId: user.uid)
+                    self.dashboardViewModel.setUserId(userId: user.uid)
                     self.isLoggedIn = true
                 } else {
                     // 3. User Logged Out: Tell Kotlin to clear data
                     print("🔴 User logged out. Clearing Kotlin DB scope.")
-                    self.vm.setUserId(userId: nil)
+                    self.dashboardViewModel.setUserId(userId: nil)
                     self.isLoggedIn = false
                 }
             }
@@ -452,10 +452,10 @@ struct AuthRootView: View {
 
 enum NotificationManager {
     static func currentStatus(_ completion: @escaping (UNAuthorizationStatus) -> Void) {
-        UNUserNotificationCenter.current().getNotificationSettings { s in
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
             // ✅ FIX: Dispatch back to Main Thread before calling completion
             DispatchQueue.main.async {
-                completion(s.authorizationStatus)
+                completion(settings.authorizationStatus)
             }
         }
     }
@@ -495,8 +495,8 @@ enum PhotoPermissionManager {
         PHPhotoLibrary.authorizationStatus(for: .readWrite)
     }
     static func requestReadWrite(_ completion: @escaping (Bool) -> Void) {
-        PHPhotoLibrary.requestAuthorization(for: .readWrite) { s in
-            DispatchQueue.main.async { completion(s == .authorized || s == .limited) }
+        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+            DispatchQueue.main.async { completion(status == .authorized || status == .limited) }
         }
     }
     static func openSettings() {
@@ -509,7 +509,7 @@ enum PhotoPermissionManager {
 // ===============================================================
 
 enum PlantImageService {
-    private static let vm = HelperKt.getDashboardViewModel()
+    private static let dashboardViewModel = HelperKt.getDashboardViewModel()
 
     static func fetchSpeciesImage(speciesName: String,
                                   completion: @escaping (UIImage?) -> Void) {
@@ -517,20 +517,20 @@ enum PlantImageService {
             do {
                 // Bridge Kotlin suspend function -> Swift async
                 let imageUrl: String? = try await asyncFunction(
-                    for: vm.getPlantImageUrl(speciesName: speciesName)
+                    for: dashboardViewModel.getPlantImageUrl(speciesName: speciesName)
                 )
 
                 if let imageUrl = imageUrl {
                     let imageBytes: KotlinByteArray? = try await asyncFunction(
-                        for: vm.downloadImageFromUrl(imageUrl: imageUrl)
+                        for: dashboardViewModel.downloadImageFromUrl(imageUrl: imageUrl)
                     )
 
                     if let imageBytes = imageBytes {
                         // Convert KotlinByteArray -> Data
                         let count = Int(imageBytes.size)
                         var bytes = [UInt8](repeating: 0, count: count)
-                        for i in 0..<count {
-                            bytes[i] = UInt8(bitPattern: imageBytes.get(index: Int32(i)))
+                        for index in 0..<count {
+                            bytes[index] = UInt8(bitPattern: imageBytes.get(index: Int32(index)))
                         }
                         let data = Data(bytes)
 
@@ -849,16 +849,16 @@ struct PlantsHomeView: View {
         .onReceive(backendAdapter.$backendPlants) { backendPlants in
             // Build map of existing plants by UUID
             var existingMap = [UUID: Plant]()
-            for p in store.plants {
-                existingMap[p.id] = p
+            for plant in store.plants {
+                existingMap[plant.id] = plant
             }
 
             // Get the set of IDs that are pending deletion
             let pendingDeletions = backendAdapter.pendingDeletionIDs
 
             // Build merged list, excluding plants pending deletion
-            let merged: [Plant] = backendPlants.compactMap { bp -> Plant? in
-                guard let uuid = UUID(uuidString: bp.uuid.description) else {
+            let merged: [Plant] = backendPlants.compactMap { backendPlant -> Plant? in
+                guard let uuid = UUID(uuidString: backendPlant.uuid.description) else {
                     return nil
                 }
 
@@ -870,19 +870,19 @@ struct PlantsHomeView: View {
                 if var existing = existingMap[uuid] {
                     // Keep existing plant but update image if backend has one and local doesn't
                     if existing.imageData == nil,
-                       let plantImage = bp.image,
+                       let plantImage = backendPlant.image,
                        let kotlinBytes = plantImage.imageBytes {
                         let count = Int(kotlinBytes.size)
                         var bytes = [UInt8](repeating: 0, count: count)
-                        for i in 0..<count {
-                            bytes[i] = UInt8(bitPattern: kotlinBytes.get(index: Int32(i)))
+                        for index in 0..<count {
+                            bytes[index] = UInt8(bitPattern: kotlinBytes.get(index: Int32(index)))
                         }
                         existing.imageData = Data(bytes)
                     }
                     return existing
                 } else {
                     // New plant from backend
-                    return convertBackendPlant(bp)
+                    return convertBackendPlant(backendPlant)
                 }
             }
 
@@ -909,7 +909,7 @@ struct PlantsHomeView: View {
 // MARK: - SEARCH VIEW
 // ===============================================================
 struct SearchView: View {
-    @StateObject private var vm = SearchViewModel()
+    @StateObject private var dashboardViewModel = SearchViewModel()
     @State private var query: String = ""
     @State private var hasSearched: Bool = false
 
@@ -939,7 +939,7 @@ struct SearchView: View {
                     if !query.isEmpty {
                         Button {
                             query = ""
-                            vm.results = [] // Clear VM results
+                            dashboardViewModel.results = [] // Clear VM results
                             hasSearched = false
                         } label: {
                             Image(systemName: "xmark.circle.fill")
@@ -957,12 +957,12 @@ struct SearchView: View {
                 .padding(.top, 20)
 
                 // Content
-                if vm.isLoading {
+                if dashboardViewModel.isLoading {
                     Spacer()
                     ProgressView("Searching Database…")
                         .foregroundColor(Color("DarkGreen"))
                     Spacer()
-                } else if vm.results.isEmpty {
+                } else if dashboardViewModel.results.isEmpty {
                     Spacer()
                     VStack(spacing: 10) {
                         Image(systemName: hasSearched ? "leaf.circle" : "text.magnifyingglass")
@@ -979,7 +979,7 @@ struct SearchView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 16) {
-                            ForEach(vm.results) { result in
+                            ForEach(dashboardViewModel.results) { result in
                                 SearchResultCard(result: result)
                             }
                         }
@@ -998,7 +998,7 @@ struct SearchView: View {
         hasSearched = true
         // ✅ Call the ViewModel async method
         Task {
-            await vm.performSearch(query: trimmed)
+            await dashboardViewModel.performSearch(query: trimmed)
         }
     }
 }
@@ -1562,8 +1562,8 @@ private struct PlantbookCard: View {
 
         // Immediately show the user's photo if we have one
         if let data = entry.fallbackImageData,
-           let ui = UIImage(data: data) {
-            self.loadedImage = ui
+           let uiImage = UIImage(data: data) {
+            self.loadedImage = uiImage
         }
 
         // Ask backend for a nicer species image; override only if it returns one
@@ -1663,8 +1663,8 @@ struct PlantCard: View {
             }
 
             if let data = plant.imageData,
-               let ui = UIImage(data: data) {
-                Image(uiImage: ui)
+               let uiImage = UIImage(data: data) {
+                Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 70, height: 70)
@@ -1984,8 +1984,8 @@ struct AddPlantSheet: View {
                     Section("Photo") {
                         HStack(spacing: 16) {
                             Group {
-                                if let imageData, let ui = UIImage(data: imageData) {
-                                    Image(uiImage: ui)
+                                if let imageData, let uiImage = UIImage(data: imageData) {
+                                    Image(uiImage: uiImage)
                                         .resizable()
                                         .scaledToFill()
                                 } else {
@@ -2005,9 +2005,9 @@ struct AddPlantSheet: View {
                                 let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
                                 switch status {
                                 case .notDetermined:
-                                    PHPhotoLibrary.requestAuthorization(for: .readWrite) { s in
+                                    PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
                                         DispatchQueue.main.async {
-                                            if s == .authorized || s == .limited {
+                                            if status == .authorized || status == .limited {
                                                 showPhotoPicker = true
                                             } else {
                                                 showPhotoDeniedAlert = true
@@ -2302,12 +2302,12 @@ struct EditPlantSheet: View {
 
                             HStack(spacing: 16) {
                                 Group {
-                                    if let newImageData, let ui = UIImage(data: newImageData) {
-                                        Image(uiImage: ui)
+                                    if let newImageData, let uiImage = UIImage(data: newImageData) {
+                                        Image(uiImage: uiImage)
                                             .resizable()
                                             .scaledToFill()
-                                    } else if let data = plant.imageData, let ui = UIImage(data: data) {
-                                        Image(uiImage: ui)
+                                    } else if let data = plant.imageData, let uiImage = UIImage(data: data) {
+                                        Image(uiImage: uiImage)
                                             .resizable()
                                             .scaledToFill()
                                     } else {
@@ -2328,9 +2328,9 @@ struct EditPlantSheet: View {
                                     let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
                                     switch status {
                                     case .notDetermined:
-                                        PHPhotoLibrary.requestAuthorization(for: .readWrite) { s in
+                                        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
                                             DispatchQueue.main.async {
-                                                if s == .authorized || s == .limited {
+                                                if status == .authorized || status == .limited {
                                                     showPhotoPicker = true
                                                 } else {
                                                     showPhotoDeniedAlert = true
@@ -2590,8 +2590,8 @@ struct EditPlantSheet: View {
 
         if task.title.lowercased() == "water" {
             if task.waterMode == .timesPerDay {
-                let n = max(task.timesPerDay, 1)
-                seconds = TimeInterval((24 * 60 * 60) / n)
+                let timesPerDay = max(task.timesPerDay, 1)
+                seconds = TimeInterval((24 * 60 * 60) / timesPerDay)
             } else {
                 let days = max(task.frequencyDays, 1)
                 seconds = TimeInterval(days * 24 * 60 * 60)
