@@ -76,7 +76,6 @@ open class PlantRepository(
     @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
     internal val collection by lazy { dbProvider.database.getCollection(COLLECTION_NAME) ?: dbProvider.database.createCollection(COLLECTION_NAME) }
 
-
     @NativeCoroutines
     val plants: Flow<List<Plant>>
         get() {

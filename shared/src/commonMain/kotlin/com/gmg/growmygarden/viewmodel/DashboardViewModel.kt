@@ -103,7 +103,6 @@ class DashboardViewModel(
                         updatedPlant = updatedPlant.copy(scientificName = sciName)
                     }
                 }
-
             } catch (e: Exception) {
                 println("⚠️ Failed to auto-fetch image for '${plant.species}': ${e.message}")
             }
