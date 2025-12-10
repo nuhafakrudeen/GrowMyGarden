@@ -88,12 +88,6 @@ class DashboardViewModel(
                 if (imageBytes != null && imageBytes.isNotEmpty()) {
                     val plantImage = PlantImage(imageBytes = imageBytes)
                     updatedPlant = updatedPlant.copy(image = plantImage)
-
-                    // REMOVED: imageStore.saveImage(imageBytes)
-                    // The bytes are already stored in PlantImage, no need to save separately
-                    // (and FileKit.compress crashes on non-image data)
-
-                    println("✅ Auto-fetched image for '${updatedPlant.species}' from Perenual API")
                 }
 
                 // Update scientific name if we found a match and plant doesn't have one
@@ -104,7 +98,6 @@ class DashboardViewModel(
                     }
                 }
             } catch (e: Exception) {
-                println("⚠️ Failed to auto-fetch image for '${plant.species}': ${e.message}")
             }
 
             // Always save the plant (with or without image)
@@ -128,13 +121,11 @@ class DashboardViewModel(
                 val plantImage = PlantImage(imageBytes = imageBytes)
                 plant.image = plantImage
                 plantRepository.savePlant(plant)
-                println("✅ Updated image for '${plant.species}' from Perenual API")
                 true
             } else {
                 false
             }
         } catch (e: Exception) {
-            println("⚠️ Failed to fetch image for '${plant.species}': ${e.message}")
             false
         }
     }
@@ -148,7 +139,6 @@ class DashboardViewModel(
         return try {
             perenualAPI.searchPlantBySpecies(speciesName)
         } catch (e: Exception) {
-            println("Error fetching plant info for '$speciesName': ${e.message}")
             null
         }
     }
@@ -163,7 +153,6 @@ class DashboardViewModel(
             val plantInfo = perenualAPI.searchPlantBySpecies(speciesName)
             plantInfo?.let { perenualAPI.getBestImageUrl(it) }
         } catch (e: Exception) {
-            println("Error fetching image URL for '$speciesName': ${e.message}")
             null
         }
     }
@@ -177,7 +166,6 @@ class DashboardViewModel(
         return try {
             perenualAPI.downloadImageFromUrl(imageUrl)
         } catch (e: Exception) {
-            println("Error downloading image from '$imageUrl': ${e.message}")
             null
         }
     }

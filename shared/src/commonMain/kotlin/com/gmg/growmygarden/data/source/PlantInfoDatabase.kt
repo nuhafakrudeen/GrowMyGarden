@@ -177,7 +177,6 @@ open class PlantInfoRepository(
         return try {
             api.searchPerenualAPI(query)
         } catch (e: Exception) {
-            println("Error searching remote API: ${e.message}")
             emptyList()
         }
     }

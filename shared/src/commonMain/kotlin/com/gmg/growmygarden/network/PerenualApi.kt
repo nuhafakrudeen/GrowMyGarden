@@ -50,7 +50,6 @@ class PerenualApi(
                     info.scientificName?.any { it.equals(speciesName, ignoreCase = true) } == true
             } ?: results.firstOrNull()
         } catch (e: Exception) {
-            println("Error searching for species '$speciesName': ${e.message}")
             null
         }
     }
@@ -63,7 +62,6 @@ class PerenualApi(
         return try {
             client.get(imageUrl).bodyAsBytes()
         } catch (e: Exception) {
-            println("Error downloading image from '$imageUrl': ${e.message}")
             null
         }
     }
