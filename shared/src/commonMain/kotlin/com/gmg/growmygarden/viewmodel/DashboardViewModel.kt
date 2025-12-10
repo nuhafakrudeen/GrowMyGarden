@@ -80,37 +80,35 @@ class DashboardViewModel(
                 return@launch
             }
 
+            var updatedPlant = plant
+
             try {
                 val (plantInfo, imageBytes) = perenualAPI.searchPlantAndGetImage(speciesQuery)
 
                 if (imageBytes != null && imageBytes.isNotEmpty()) {
-                    // Create a PlantImage with the downloaded bytes
                     val plantImage = PlantImage(imageBytes = imageBytes)
-                    plant.image = plantImage
+                    updatedPlant = updatedPlant.copy(image = plantImage)
 
-                    // Also save to image store for file-based access
-                    imageStore.saveImage(imageBytes)
+                    // REMOVED: imageStore.saveImage(imageBytes)
+                    // The bytes are already stored in PlantImage, no need to save separately
+                    // (and FileKit.compress crashes on non-image data)
 
-                    println("✅ Auto-fetched image for '${plant.species}' from Perenual API")
+                    println("✅ Auto-fetched image for '${updatedPlant.species}' from Perenual API")
                 }
 
                 // Update scientific name if we found a match and plant doesn't have one
-                if (plantInfo != null && plant.scientificName.isBlank()) {
+                if (plantInfo != null && updatedPlant.scientificName.isBlank()) {
                     val sciName = plantInfo.scientificName?.firstOrNull() ?: ""
                     if (sciName.isNotBlank()) {
-                        // Create a new plant with the scientific name
-                        val updatedPlant = plant.copy(scientificName = sciName)
-                        plantRepository.savePlant(updatedPlant)
-                        return@launch
+                        updatedPlant = updatedPlant.copy(scientificName = sciName)
                     }
                 }
-
-                plantRepository.savePlant(plant)
             } catch (e: Exception) {
                 println("⚠️ Failed to auto-fetch image for '${plant.species}': ${e.message}")
-                // Still save the plant even if image fetch fails
-                plantRepository.savePlant(plant)
             }
+
+            // Always save the plant (with or without image)
+            plantRepository.savePlant(updatedPlant)
         }
     }
 
@@ -189,6 +187,9 @@ class DashboardViewModel(
         plantRepository.delete(plant)
     }
 
+    /**
+     * Creates a water notification for passed in plant
+     */
     fun createWaterNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Water ${plant.name}"
         val body = "It's time to water your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
@@ -201,6 +202,9 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    /**
+     * Creates a fertilizer notification for passed in plant
+     */
     fun createFertilizerNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Fertilize ${plant.name}"
         val body = "It's time to give your ${plant.name} some fertilizer. Make sure to do so soon so that it can stay healthy and grow"
@@ -213,6 +217,9 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    /**
+     * Creates a trimming notification for passed in plant
+     */
     fun createTrimmingNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Trim ${plant.name}"
         val body = "It's time to trim your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
@@ -225,6 +232,9 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    /**
+     * Cancels the water notification of passed in plant
+     */
     fun cancelWateringNotification(plant: Plant) {
         if (plant.wateringNotificationID != null) {
             notificationHandler.cancelNotification(plant.wateringNotificationID.toString())
@@ -232,6 +242,9 @@ class DashboardViewModel(
         }
     }
 
+    /**
+     * Cancels the fertilizer notification of passed in plant
+     */
     fun cancelFertilizerNotification(plant: Plant) {
         if (plant.fertilizerNotificationID != null) {
             notificationHandler.cancelNotification(plant.fertilizerNotificationID.toString())
@@ -239,6 +252,9 @@ class DashboardViewModel(
         }
     }
 
+    /**
+     * Cancels the trimming notification of passed in plant
+     */
     fun cancelTrimmingNotification(plant: Plant) {
         if (plant.trimmingNotificationID != null) {
             notificationHandler.cancelNotification(plant.trimmingNotificationID.toString())
@@ -246,6 +262,9 @@ class DashboardViewModel(
         }
     }
 
+    /**
+     * Cancels all notifications of passed in plant
+     */
     fun cancelAllPlantNotifications(plant: Plant) {
         cancelWateringNotification(plant)
         cancelFertilizerNotification(plant)

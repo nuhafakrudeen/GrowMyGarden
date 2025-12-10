@@ -43,8 +43,12 @@ import kotlin.uuid.Uuid
  * PlantInfo - works with FREE Perenual API tier.
  *
  * The free /species-list endpoint returns:
+ * - "common_name": common name of plant
+ * - "scientific_name": The scientific name of the plant
+ * - "family": the family the plant is a part of
  * - "watering": "Frequent" | "Average" | "Minimum" (simple string)
  * - "sunlight": ["Full sun", "Part shade"]
+ * - "default_image": Saves result as a PlantImageInfo
  * - NO watering_general_benchmark (that's premium only)
  */
 @Serializable
@@ -145,10 +149,18 @@ open class PlantInfoRepository(
 
     private val saveChannel = Channel<PlantInfo>(Channel.CONFLATED)
 
+    /**
+     * Take a single PlantInfo object and send it to saveChannel
+     * to be saved to database
+     */
     fun savePlantInfo(plantInfo: PlantInfo) {
         saveChannel.trySend(plantInfo)
     }
 
+    /**
+     * Take multiple PlantInfo objects and send them
+     * to the saveChannel to be saved in a database
+     */
     @NativeCoroutines
     suspend fun saveMultiplePlantInfo(vararg multiplePlantInfo: PlantInfo) {
         for (plantInfo in multiplePlantInfo) {
@@ -170,6 +182,10 @@ open class PlantInfoRepository(
         }
     }
 
+    /**
+     * Takes a PlantInfoDoc object and returns it as an equivalent
+     * PlantInfo object
+     */
     private fun docToPlantInfo(plantInfoDoc: PlantInfoDoc): PlantInfo {
         return PlantInfo(
             docId = plantInfoDoc.docId,
@@ -183,6 +199,11 @@ open class PlantInfoRepository(
         )
     }
 
+    /**
+     * Receives incoming PlantInfo objects and
+     * converts them to PlantInfoDoc objects that get
+     * stored in a database
+     */
     init {
         @OptIn(FlowPreview::class)
         saveChannel.receiveAsFlow()
@@ -209,6 +230,12 @@ open class PlantInfoRepository(
             .launchIn(dbProvider.scope)
     }
 
+    /**
+     * Creates a full-index called plantInfoFTSIndex, on the collection
+     * of PlantInfos on the fields "name", "scientificName",
+     * and "family", i.e. sets up the full text search on
+     * PlantInfo database
+     */
     init {
         collection.createIndex(
             "plantInfoFTSIndex",
@@ -220,6 +247,11 @@ open class PlantInfoRepository(
         )
     }
 
+    /**
+     * Searches local database for PlantInfo objects whose "name",
+     * "scientificName", or "family" matches the query and returns
+     * those objects in a list
+     */
     suspend fun searchPlantInfo(keyWords: String): List<PlantInfo> {
         val ftsQuery =
             QueryBuilder.select(

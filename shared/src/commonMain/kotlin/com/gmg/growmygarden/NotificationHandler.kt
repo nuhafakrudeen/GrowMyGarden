@@ -10,6 +10,10 @@ import com.tweener.alarmee.model.RepeatInterval
 import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration.Companion.minutes
 
+/**
+ * Class that handles the creation and deletion of notifications
+ * Uses the Alarmee library
+ */
 class NotificationHandler {
     private val alarmeeService = createAlarmeeService().apply {
         initialize(createAlarmeePlatformConfiguration())
@@ -17,6 +21,15 @@ class NotificationHandler {
 
     private val localService = alarmeeService.local
 
+    /**
+     * Creates a notification:
+     * id: ID number of notification
+     * title: Title of notification
+     * body: Body text of notification
+     * date: Time notification will start
+     * image (optional): Image of notification
+     * delay: delay between notifications
+     */
     fun setNotification(id: String, title: String, body: String, date: LocalDateTime, image: String?, delay: Long) {
         localService.schedule(
             alarmee = Alarmee(
@@ -35,13 +48,23 @@ class NotificationHandler {
         )
     }
 
+    /**
+     * Given an ID of a notification, cancel that notification
+     */
     fun cancelNotification(id: String) {
         localService.cancel(uuid = id)
     }
 
+    /**
+     * Cancels all set notifications
+     */
     fun cancelAllNotifications() {
         localService.cancelAll()
     }
 }
 
+/**
+ * Expects a function to be created in iOSMain and androidMain (not used)
+ * that configures Alarmee
+ */
 internal expect fun createAlarmeePlatformConfiguration(): AlarmeePlatformConfiguration
