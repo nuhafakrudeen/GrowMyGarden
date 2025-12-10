@@ -9,6 +9,9 @@ import io.ktor.http.appendPathSegments
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
+/**
+ * Creates the ios version of the HttpClient for doing API requests
+ */
 actual fun createHttpClient(perenualKey: String): HttpClient = HttpClient(Darwin.create()) {
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })

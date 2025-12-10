@@ -189,6 +189,9 @@ class DashboardViewModel(
         plantRepository.delete(plant)
     }
 
+    /**
+     * Creates a water notification for passed in plant
+     */
     fun createWaterNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Water ${plant.name}"
         val body = "It's time to water your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
@@ -201,6 +204,9 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    /**
+     * Creates a fertilizer notification for passed in plant
+     */
     fun createFertilizerNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Fertilize ${plant.name}"
         val body = "It's time to give your ${plant.name} some fertilizer. Make sure to do so soon so that it can stay healthy and grow"
@@ -213,6 +219,9 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    /**
+     * Creates a trimming notification for passed in plant
+     */
     fun createTrimmingNotification(date: LocalDateTime, plant: Plant, image: String?, notifcationDelay: Duration) {
         val title = "Reminder: Trim ${plant.name}"
         val body = "It's time to trim your ${plant.name}. Make sure to do so soon so that it can stay healthy and grow"
@@ -225,6 +234,9 @@ class DashboardViewModel(
         notificationHandler.setNotification(generatedNotificationID.toString(), title, body, date, image, delay)
     }
 
+    /**
+     * Cancels the water notification of passed in plant
+     */
     fun cancelWateringNotification(plant: Plant) {
         if (plant.wateringNotificationID != null) {
             notificationHandler.cancelNotification(plant.wateringNotificationID.toString())
@@ -232,6 +244,9 @@ class DashboardViewModel(
         }
     }
 
+    /**
+     * Cancels the fertilizer notification of passed in plant
+     */
     fun cancelFertilizerNotification(plant: Plant) {
         if (plant.fertilizerNotificationID != null) {
             notificationHandler.cancelNotification(plant.fertilizerNotificationID.toString())
@@ -239,6 +254,9 @@ class DashboardViewModel(
         }
     }
 
+    /**
+     * Cancels the trimming notification of passed in plant
+     */
     fun cancelTrimmingNotification(plant: Plant) {
         if (plant.trimmingNotificationID != null) {
             notificationHandler.cancelNotification(plant.trimmingNotificationID.toString())
@@ -246,6 +264,9 @@ class DashboardViewModel(
         }
     }
 
+    /**
+     * Cancels all notifications of passed in plant
+     */
     fun cancelAllPlantNotifications(plant: Plant) {
         cancelWateringNotification(plant)
         cancelFertilizerNotification(plant)
