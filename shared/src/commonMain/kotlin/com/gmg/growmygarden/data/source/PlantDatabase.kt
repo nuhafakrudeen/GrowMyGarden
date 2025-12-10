@@ -105,28 +105,13 @@ open class PlantRepository(
 
     fun delete(plant: Plant) {
         val docId = plant.uuid.toHexDashString()
-        println("🗑️ KOTLIN DELETE ATTEMPT:")
-        println("   Plant name: ${plant.name}")
-        println("   Document ID: $docId")
 
         dbProvider.scope.launch {
             val coll = collection
             val doc = coll.getDocument(docId)
-            println("   Document found: ${doc != null}")
 
             if (doc != null) {
                 coll.delete(doc)
-                println("✅ KOTLIN: Document deleted successfully")
-
-                // Verify deletion
-                val verifyDoc = coll.getDocument(docId)
-                println("   VERIFY after delete - Document still exists: ${verifyDoc != null}")
-
-                // Also check collection count
-                val allDocs = coll.count
-                println("   Total documents in collection after delete: $allDocs")
-            } else {
-                println("❌ KOTLIN: Document NOT FOUND - cannot delete")
             }
         }
     }
