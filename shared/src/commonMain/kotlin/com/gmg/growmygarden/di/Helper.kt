@@ -49,6 +49,7 @@ fun createBackendPlant(
     trimFreqMillis: Long,
     trimEnabled: Boolean,
     imageBytes: ByteArray? = null,
+    notes: String = "",
 ): Plant {
     val uuid = if (idString != null) Uuid.parse(idString) else Uuid.random()
 
@@ -69,6 +70,7 @@ fun createBackendPlant(
         fertilizerNotificationID = if (fertEnabled) Uuid.random() else null,
         trimmingFrequency = trimFreqMillis.milliseconds,
         trimmingNotificationID = if (trimEnabled) Uuid.random() else null,
+        notes = notes,
         image = plantImage,
     )
 }
@@ -93,6 +95,7 @@ fun createBackendPlantWithAutoImage(
     trimEnabled: Boolean,
     imageBytes: ByteArray? = null,
     shouldAutoFetchImage: Boolean = true,
+    notes: String = "",
 ): Plant {
     val uuid = if (idString != null) Uuid.parse(idString) else Uuid.random()
 
@@ -113,6 +116,7 @@ fun createBackendPlantWithAutoImage(
         fertilizerNotificationID = if (fertEnabled) Uuid.random() else null,
         trimmingFrequency = trimFreqMillis.milliseconds,
         trimmingNotificationID = if (trimEnabled) Uuid.random() else null,
+        notes = notes,
         image = plantImage,
     )
 }
