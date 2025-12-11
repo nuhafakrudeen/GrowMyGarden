@@ -266,4 +266,3 @@ private struct CareInfoRow: View {
         }
     }
 }
-

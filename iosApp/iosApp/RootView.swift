@@ -1,11 +1,7 @@
 import FirebaseAuth
 import SwiftUI
 
-
-
-
-
-//private struct ReminderConfigRow: View {
+// private struct ReminderConfigRow: View {
 //    @Binding var task: PlantTask
 //
 //    var isWater: Bool {
@@ -69,9 +65,9 @@ import SwiftUI
 //        }
 //        .padding(.vertical, 4)
 //    }
-//}
+// }
 
-//private struct ReminderRow: View {
+// private struct ReminderRow: View {
 //    @Binding var task: PlantTask
 //    let plant: Plant
 //    @State private var showNotifDeniedAlert = false
@@ -175,11 +171,9 @@ import SwiftUI
 //            intervalSeconds: seconds
 //        )
 //    }
-//}
+// }
 
-//private extension View { func eraseToAnyView() -> AnyView { AnyView(self) } }
-
-
+// private extension View { func eraseToAnyView() -> AnyView { AnyView(self) } }
 
 // ===============================================================
 // MARK: - SIGN IN FORM
@@ -660,4 +654,3 @@ struct ForgotPasswordSheet: View {
         }
     }
 }
-
