@@ -11,7 +11,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {}
 
 /// Loads values from Info.plist, like API keys.
 private enum AppConfig {
-    
+
     /// Gets the Perenual API key from Info.plist.
     /// If the key is missing, the app warns you during development.
     static var perenualAPIKey: String {
@@ -30,10 +30,10 @@ private enum AppConfig {
 /// The main entry point of the app.
 @main
 struct IOSApp: App {
-    
+
     /// Lets Firebase run setup code when the app launches.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    
+
     /// Tracks whether a user is logged in across the whole app.
     @StateObject private var authManager = AuthManager()
 

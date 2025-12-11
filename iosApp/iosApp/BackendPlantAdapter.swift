@@ -100,7 +100,8 @@ final class BackendPlantAdapter: ObservableObject {
             fertEnabled: fertEnabled,
             trimFreqMillis: trimMillis,
             trimEnabled: trimEnabled,
-            imageBytes: kotlinImageBytes
+            imageBytes: kotlinImageBytes,
+            notes: uiPlant.notes
         )
     }
 
@@ -207,7 +208,7 @@ func convertBackendPlant(_ backend: Shared.Plant) -> Plant {
         name: backend.name,
         species: backend.species,
         imageData: imageData,
-        notes: "",
+        notes: backend.notes,
         tasks: [waterTask, fertTask, trimTask]
     )
 }
