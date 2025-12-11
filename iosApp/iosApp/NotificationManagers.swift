@@ -5,7 +5,7 @@ import UserNotifications
 enum NotificationManager {
     static func currentStatus(_ completion: @escaping (UNAuthorizationStatus) -> Void) {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
-            // ✅ FIX: Dispatch back to Main Thread before calling completion
+            
             DispatchQueue.main.async {
                 completion(settings.authorizationStatus)
             }
