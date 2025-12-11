@@ -7,30 +7,40 @@ import Shared
 import SwiftUI
 import UIKit
 
-// shared auth state for the app
+// ===============================================================
+// MARK: - Auth Manager (shared auth state for the app)
+// ===============================================================
+
+/// Central place that keeps track of whether the user is logged in
+/// and handles Google / Apple sign-in + sign-out.
 final class AuthManager: NSObject, ObservableObject {
+    
+    /// True when Firebase has a current user.
     @Published var isLoggedIn: Bool = false
 
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
+    /// Used for "Sign in with Apple" security.
     fileprivate var currentNonce: String?
 
-    // 1. Get reference to Kotlin ViewModel so we can set the User ID
+    /// Kotlin DashboardViewModel so we can tell the shared code
+    /// which Firebase user is active.
     private let dashboardViewModel = HelperKt.getDashboardViewModel()
 
     override init() {
         super.init()
 
+        // Watch Firebase auth changes and keep Swift + Kotlin in sync.
         authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             DispatchQueue.main.async {
                 guard let self = self else { return }
 
                 if let user = user {
-                    // 2. User Logged In: Tell Kotlin the UID
+                    // User logged in → tell Kotlin which user ID to use.
                     print("🔵 User logged in: \(user.uid). Syncing with Kotlin DB.")
                     self.dashboardViewModel.setUserId(userId: user.uid)
                     self.isLoggedIn = true
                 } else {
-                    // 3. User Logged Out: Tell Kotlin to clear data
+                    // User logged out → clear user ID in Kotlin.
                     print("🔴 User logged out. Clearing Kotlin DB scope.")
                     self.dashboardViewModel.setUserId(userId: nil)
                     self.isLoggedIn = false
@@ -45,10 +55,11 @@ final class AuthManager: NSObject, ObservableObject {
         }
     }
 
+    /// Logs out from Firebase. The listener above will update
+    /// `isLoggedIn` and clear the Kotlin user ID.
     func signOut() {
         do {
             try Auth.auth().signOut()
-            // The listener above will trigger and set vm.setUserId(nil) automatically
         } catch {
             print("Error signing out: \(error)")
         }
@@ -56,7 +67,11 @@ final class AuthManager: NSObject, ObservableObject {
     }
 }
 
+// ===============================================================
+// MARK: - Google Sign-In
+// ===============================================================
 extension AuthManager {
+    /// Starts Google Sign-In and signs the result into Firebase.
     func signInWithGoogle() {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
             print("No Firebase clientID")
@@ -67,6 +82,7 @@ extension AuthManager {
         let config = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.configuration = config
 
+        // Get the current root view controller to present the Google sheet.
         guard
             let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let rootVC = scene.windows.first?.rootViewController
@@ -96,6 +112,7 @@ extension AuthManager {
                 accessToken: accessToken
             )
 
+            // Sign into Firebase with the Google credential.
             Auth.auth().signIn(with: credential) { _, error in
                 if let error = error {
                     print("Firebase Google auth failed:", error)
@@ -108,7 +125,12 @@ extension AuthManager {
     }
 }
 
+// ===============================================================
+// MARK: - Apple Sign-In
+// ===============================================================
+
 extension AuthManager {
+    /// Starts Sign in with Apple and hands the result to Firebase.
     func signInWithApple() {
         print("Starting Apple sign-in")
 
@@ -127,7 +149,7 @@ extension AuthManager {
     }
 
     // MARK: - Nonce helpers
-
+    /// Generates a random string used once for Apple sign-in.
     private func randomNonceString(length: Int = 32) -> String {
         precondition(length > 0)
         let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
@@ -149,13 +171,18 @@ extension AuthManager {
 
         return result
     }
-
+    
+    /// Hashes the nonce so it can be sent to Apple.
     private func sha256(_ input: String) -> String {
         let inputData = Data(input.utf8)
         let hashed = SHA256.hash(data: inputData)
         return hashed.map { String(format: "%02x", $0) }.joined()
     }
 }
+
+// ===============================================================
+// MARK: - ASAuthorizationControllerDelegate
+// ===============================================================
 
 extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     func authorizationController(controller: ASAuthorizationController,
@@ -201,6 +228,7 @@ extension AuthManager: ASAuthorizationControllerDelegate, ASAuthorizationControl
         print("Sign in with Apple failed:", error)
     }
 
+    /// Tells Apple which window to present the sign-in sheet in.
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
